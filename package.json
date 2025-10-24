@@ -1,7 +1,7 @@
 {
   "name": "worksafe-now-portal",
   "version": "1.0.0",
-  "description": "WorkSafe Now Portal - Healthcare screening platform with Google Sheets integration",
+  "description": "Worksafe Now Portal - Healthcare screening platform with Google Sheets integration",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -5,8 +5,8 @@ import { SessionProvider } from '@/components/session-provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'WorkSafe Now Portal',
-  description: 'WorkSafe Now Portal - Healthcare screening coordination platform',
+  title: 'Worksafe Now Portal',
+  description: 'Worksafe Now Portal - Healthcare screening coordination platform',
 };
 
 export default function RootLayout({

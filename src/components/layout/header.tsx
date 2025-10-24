@@ -125,7 +125,7 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
             WS
           </div>
           <span className="hidden font-semibold sm:inline-block">
-            WorkSafe Now
+            Worksafe Now
           </span>
         </Link>
 
