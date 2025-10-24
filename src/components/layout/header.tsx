@@ -86,6 +86,25 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
     }
   }
 
+  async function markAsRead(notificationId: string) {
+    try {
+      const response = await fetch(`/api/notifications/${notificationId}`, {
+        method: 'PATCH',
+      });
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(n =>
+            n.id === notificationId
+              ? { ...n, isRead: true, readAt: new Date().toISOString() }
+              : n
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  }
+
   const initials = user.name
     ? user.name
         .split(' ')
@@ -173,6 +192,11 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
                     <Link
                       key={notification.id}
                       href={notification.orderId ? `/orders/${notification.orderId}` : '#'}
+                      onClick={() => {
+                        if (!notification.isRead) {
+                          markAsRead(notification.id);
+                        }
+                      }}
                       className={`block p-3 hover:bg-gray-50 transition-colors ${
                         !notification.isRead ? 'bg-blue-50' : ''
                       }`}
