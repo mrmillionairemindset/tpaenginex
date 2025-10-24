@@ -3,7 +3,7 @@ import { db } from "@/db/client";
 import { users, organizationMembers } from "@/db/schema";
 import { getCurrentUser } from "@/auth/get-user";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';

@@ -1,6 +1,6 @@
 import { db } from "./client";
 import { users, organizations, organizationMembers } from "./schema";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 async function seed() {
   console.log("🌱 Seeding database with test users...");

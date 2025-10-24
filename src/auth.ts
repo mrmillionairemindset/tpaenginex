@@ -4,7 +4,7 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db/client";
 import { users, accounts, sessions, verificationTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import type { DefaultSession } from "next-auth";
 import { authConfig } from "./auth.config";
 
