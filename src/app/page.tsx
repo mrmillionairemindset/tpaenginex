@@ -15,9 +15,9 @@ export default async function HomePage() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-white font-bold text-sm">
-              RS
+              WS
             </div>
-            <span className="font-semibold text-lg">RapidScreen</span>
+            <span className="font-semibold text-lg">Worksafe Now</span>
           </div>
           <div className="flex items-center gap-4">
             {!isAuthenticated ? (
@@ -90,7 +90,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} RapidScreen Platform. HIPAA Compliant.
+              © {new Date().getFullYear()} Worksafe Now. HIPAA Compliant.
             </p>
             <div className="flex gap-6">
               <Link href="/privacy" className="text-sm text-gray-500 hover:text-gray-900">

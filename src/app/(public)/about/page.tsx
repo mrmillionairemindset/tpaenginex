@@ -1,21 +1,21 @@
 import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
-  title: 'About Us | RapidScreen Platform',
-  description: 'Learn about RapidScreen healthcare screening platform',
+  title: 'About Us | Worksafe Now Platform',
+  description: 'Learn about Worksafe Now healthcare screening platform',
 };
 
 export default function AboutPage() {
   return (
     <ComplianceLayout
-      title="About RapidScreen"
+      title="About Worksafe Now"
       lastUpdated="January 2025"
       description="Streamlining healthcare screening for employers and providers"
     >
       <section>
         <h2>Our Mission</h2>
         <p>
-          RapidScreen Platform was founded to modernize and streamline the pre-employment
+          Worksafe Now Platform was founded to modernize and streamline the pre-employment
           and employee health screening process. We connect employers, screening providers,
           and testing facilities through a secure, HIPAA-compliant platform that makes
           coordination simple and efficient.
@@ -25,7 +25,7 @@ export default function AboutPage() {
       <section>
         <h2>What We Do</h2>
         <p>
-          RapidScreen provides a comprehensive platform for managing healthcare screenings:
+          Worksafe Now provides a comprehensive platform for managing healthcare screenings:
         </p>
         <ul>
           <li>Pre-employment drug testing and physical examinations</li>

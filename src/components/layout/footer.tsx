@@ -74,7 +74,7 @@ export function Footer() {
             <h3 className="text-sm font-semibold text-gray-900">Contact</h3>
             <ul className="mt-4 space-y-2">
               <li className="text-sm text-gray-600">
-                Email: support@rapidscreen.com
+                Email: support@worksafenow.com
               </li>
               <li className="text-sm text-gray-600">
                 Phone: (888) 555-0100
@@ -87,7 +87,7 @@ export function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-sm text-gray-500">
-            © {currentYear} RapidScreen Platform. All rights reserved.
+            © {currentYear} Worksafe Now. All rights reserved.
           </p>
           <p className="text-xs text-gray-400">
             HIPAA Compliant Healthcare Screening Platform

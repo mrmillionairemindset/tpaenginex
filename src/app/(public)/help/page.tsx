@@ -2,8 +2,8 @@ import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Help Center | RapidScreen Platform',
-  description: 'RapidScreen help center and frequently asked questions',
+  title: 'Help Center | Worksafe Now Platform',
+  description: 'Worksafe Now help center and frequently asked questions',
 };
 
 export default function HelpPage() {
@@ -117,7 +117,7 @@ export default function HelpPage() {
       <section>
         <h2>Security & Compliance</h2>
 
-        <h3>Is RapidScreen HIPAA compliant?</h3>
+        <h3>Is Worksafe Now HIPAA compliant?</h3>
         <p>
           Yes. We implement comprehensive administrative, physical, and technical safeguards
           required by HIPAA. Learn more on our <Link href="/hipaa">HIPAA Compliance</Link> page.
@@ -176,7 +176,7 @@ export default function HelpPage() {
 
         <h3>What browsers are supported?</h3>
         <p>
-          RapidScreen works best with modern browsers:
+          Worksafe Now works best with modern browsers:
         </p>
         <ul>
           <li>Chrome (recommended)</li>
@@ -194,7 +194,7 @@ export default function HelpPage() {
           A native mobile app is on our roadmap.
         </p>
 
-        <h3>Can I integrate RapidScreen with my existing systems?</h3>
+        <h3>Can I integrate Worksafe Now with my existing systems?</h3>
         <p>
           Yes. We offer API access for enterprise clients to integrate with HR systems, ATS
           platforms, and other tools. Contact{' '}

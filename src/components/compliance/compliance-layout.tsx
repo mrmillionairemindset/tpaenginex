@@ -52,7 +52,7 @@ export function ComplianceLayout({
           <Separator className="mb-6" />
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-gray-500">
-              © {new Date().getFullYear()} RapidScreen Platform. All rights reserved.
+              © {new Date().getFullYear()} Worksafe Now Platform. All rights reserved.
             </p>
             <div className="flex gap-4">
               <Link href="/privacy" className="text-sm text-gray-600 hover:text-gray-900">

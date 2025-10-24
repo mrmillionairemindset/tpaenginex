@@ -1,8 +1,8 @@
 import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
-  title: 'Business Associate Agreement | RapidScreen Platform',
-  description: 'HIPAA Business Associate Agreement for RapidScreen healthcare screening platform',
+  title: 'Business Associate Agreement | Worksafe Now Platform',
+  description: 'HIPAA Business Associate Agreement for Worksafe Now healthcare screening platform',
 };
 
 export default function BAAPage() {
@@ -27,7 +27,7 @@ export default function BAAPage() {
         </p>
         <ul>
           <li><strong>Covered Entity</strong> ("CE"): [Organization Name]</li>
-          <li><strong>Business Associate</strong> ("BA"): RapidScreen Platform, Inc.</li>
+          <li><strong>Business Associate</strong> ("BA"): Worksafe Now Platform, Inc.</li>
         </ul>
         <p>
           Effective Date: [Date]
@@ -332,7 +332,7 @@ export default function BAAPage() {
         </p>
 
         <div className="mt-6 rounded-lg border bg-gray-50 p-6">
-          <p className="font-semibold mb-4">RapidScreen Platform, Inc.</p>
+          <p className="font-semibold mb-4">Worksafe Now Platform, Inc.</p>
           <ul className="space-y-2 text-sm">
             <li><strong>Email:</strong> <a href="mailto:compliance@rapidscreen.com">compliance@rapidscreen.com</a></li>
             <li><strong>Phone:</strong> (888) 555-0100</li>

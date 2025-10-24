@@ -2,8 +2,8 @@ import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 import { Mail, Phone, MapPin } from 'lucide-react';
 
 export const metadata = {
-  title: 'Contact Us | RapidScreen Platform',
-  description: 'Get in touch with RapidScreen support team',
+  title: 'Contact Us | Worksafe Now Platform',
+  description: 'Get in touch with Worksafe Now support team',
 };
 
 export default function ContactPage() {
@@ -16,7 +16,7 @@ export default function ContactPage() {
       <section>
         <h2>Get in Touch</h2>
         <p>
-          Have questions about RapidScreen? Need support? Want to learn more about our
+          Have questions about Worksafe Now? Need support? Want to learn more about our
           platform? We're here to help.
         </p>
       </section>
@@ -66,7 +66,7 @@ export default function ContactPage() {
             <div>
               <h3 className="font-semibold text-gray-900">Address</h3>
               <p className="text-gray-600 mt-1">
-                RapidScreen Platform, Inc.<br />
+                Worksafe Now Platform, Inc.<br />
                 [Address Line 1]<br />
                 [City, State ZIP]
               </p>
