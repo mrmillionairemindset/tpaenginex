@@ -349,6 +349,16 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                 <dd className="font-medium">{order.jobsiteLocation}</dd>
               </div>
             )}
+            <div>
+              <dt className="text-sm text-gray-500">Needs Mask</dt>
+              <dd className="font-medium">{order.needsMask ? 'Yes' : 'No'}</dd>
+            </div>
+            {order.needsMask && order.maskSize && (
+              <div>
+                <dt className="text-sm text-gray-500">Mask Size</dt>
+                <dd className="font-medium">{order.maskSize}</dd>
+              </div>
+            )}
             {isProvider && order.organization && (
               <div>
                 <dt className="text-sm text-gray-500">Employer</dt>

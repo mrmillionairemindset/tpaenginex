@@ -180,6 +180,8 @@ export const orders = pgTable("orders", {
   requestedBy: uuid("requested_by").references(() => users.id),
   notes: text("notes"),
   internalNotes: text("internal_notes"),
+  needsMask: boolean("needs_mask").default(false).notNull(), // Does the candidate need a mask?
+  maskSize: varchar("mask_size", { length: 20 }), // Mask size if needed (e.g., "Small", "Medium", "Large", "X-Large")
   status: orderStatusEnum("status").default("new").notNull(),
   externalRowId: varchar("external_row_id", { length: 40 }),
   scheduledFor: timestamp("scheduled_for"),

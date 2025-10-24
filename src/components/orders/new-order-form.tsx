@@ -46,6 +46,8 @@ export function NewOrderForm({ orgId }: NewOrderFormProps) {
     testType: 'Pre-Employment Drug Screen',
     urgency: 'standard',
     jobsiteLocation: '',
+    needsMask: 'no',
+    maskSize: '',
     notes: '',
   });
 
@@ -125,6 +127,8 @@ export function NewOrderForm({ orgId }: NewOrderFormProps) {
           testType: formData.testType,
           urgency: formData.urgency,
           jobsiteLocation: formData.jobsiteLocation,
+          needsMask: formData.needsMask === 'yes',
+          maskSize: formData.needsMask === 'yes' ? formData.maskSize : undefined,
           notes: formData.notes || undefined,
         }),
       });
@@ -376,6 +380,41 @@ export function NewOrderForm({ orgId }: NewOrderFormProps) {
                 <option value="urgent">Urgent</option>
               </select>
             </div>
+
+            <div>
+              <Label htmlFor="needsMask">Do you need a mask? <span className="text-red-500">*</span></Label>
+              <select
+                id="needsMask"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                required
+                value={formData.needsMask}
+                onChange={(e) => {
+                  setFormData({ ...formData, needsMask: e.target.value, maskSize: e.target.value === 'no' ? '' : formData.maskSize });
+                }}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+
+            {formData.needsMask === 'yes' && (
+              <div>
+                <Label htmlFor="maskSize">What size? <span className="text-red-500">*</span></Label>
+                <select
+                  id="maskSize"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  required
+                  value={formData.maskSize}
+                  onChange={(e) => setFormData({ ...formData, maskSize: e.target.value })}
+                >
+                  <option value="">Select size...</option>
+                  <option value="Small">Small</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Large">Large</option>
+                  <option value="X-Large">X-Large</option>
+                </select>
+              </div>
+            )}
 
             <div>
               <div className="flex items-center gap-2">
