@@ -4,6 +4,9 @@ import { notifications } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq, and } from 'drizzle-orm';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // PATCH /api/notifications/[id] - Mark single notification as read
 export async function PATCH(
   request: NextRequest,

@@ -5,6 +5,9 @@ import { withProviderAuth } from '@/auth/api-middleware';
 import { eq, and, or, ilike, desc } from 'drizzle-orm';
 import { z } from 'zod';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // ============================================================================
 // Validation Schemas
 // ============================================================================

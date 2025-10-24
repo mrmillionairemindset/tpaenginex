@@ -4,6 +4,9 @@ import { organizationMembers, users } from "@/db/schema";
 import { getCurrentUser } from "@/auth/get-user";
 import { eq, and } from "drizzle-orm";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // GET /api/organizations/[id]/members - Get organization members
 export async function GET(
   request: NextRequest,

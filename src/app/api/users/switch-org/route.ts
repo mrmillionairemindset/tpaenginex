@@ -4,6 +4,9 @@ import { users, organizations } from "@/db/schema";
 import { getCurrentUser } from "@/auth/get-user";
 import { eq } from "drizzle-orm";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // POST /api/users/switch-org - Switch user's active organization
 export async function POST(request: Request) {
   try {

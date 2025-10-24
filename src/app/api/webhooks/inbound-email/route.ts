@@ -3,6 +3,9 @@ import { db } from '@/db/client';
 import { orders, documents } from '@/db/schema';
 import { eq, and, or, like } from 'drizzle-orm';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // POST /api/webhooks/inbound-email - Receive emails from SendGrid Inbound Parse
 export async function POST(req: NextRequest) {
   try {

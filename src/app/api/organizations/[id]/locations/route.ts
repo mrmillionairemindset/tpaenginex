@@ -5,6 +5,9 @@ import { getCurrentUser } from "@/auth/get-user";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 const locationSchema = z.object({
   name: z.string().min(1, "Name is required"),
   address: z.string().min(1, "Address is required"),

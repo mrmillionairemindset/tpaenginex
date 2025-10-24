@@ -4,6 +4,9 @@ import { db } from '@/db';
 import { orders, candidates, organizations } from '@/db/schema';
 import { eq, and, gte, count } from 'drizzle-orm';
 
+// Mark this route as dynamic to prevent static rendering
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();

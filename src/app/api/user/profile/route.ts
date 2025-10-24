@@ -4,6 +4,9 @@ import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * PATCH /api/user/profile
  * Update current user's profile

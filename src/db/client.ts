@@ -13,15 +13,32 @@ if (typeof window === 'undefined' && !process.env.NEXT_RUNTIME) {
   }
 }
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is not set');
+// Lazy database initialization to avoid build-time errors
+let _db: ReturnType<typeof drizzle> | null = null;
+
+function getDb() {
+  if (!_db) {
+    // During build time, use a dummy database URL to prevent errors
+    const dbUrl = process.env.DATABASE_URL || 'postgres://dummy:dummy@localhost:5432/dummy';
+
+    // Neon serverless driver (HTTP)
+    const sql = neon(dbUrl);
+    // Drizzle instance with schema
+    _db = drizzle(sql, { schema });
+  }
+  return _db;
 }
 
-// Neon serverless driver (HTTP)
-const sql = neon(process.env.DATABASE_URL);
-
-// Drizzle instance with schema
-export const db = drizzle(sql, { schema });
+// Export a proxy that lazily initializes the database
+export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+  get(target, prop) {
+    // At runtime (not build time), verify DATABASE_URL is set
+    if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build' && !process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+    return (getDb() as any)[prop];
+  }
+});
 
 // Type export
 export type Database = typeof db;

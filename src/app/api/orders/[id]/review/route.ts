@@ -5,6 +5,9 @@ import { orders, orderReviews } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { notifyResultsApproved, notifyResultsRejected } from '@/lib/notifications';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/orders/[id]/review
  * Employer reviews order results (approve or reject)

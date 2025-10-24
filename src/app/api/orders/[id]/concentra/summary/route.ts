@@ -6,6 +6,9 @@ import { getUploadUrl, generateStorageKey } from '@/lib/storage';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq } from 'drizzle-orm';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // POST /api/orders/[id]/concentra/summary - Generate Concentra authorization PDF
 export async function POST(
   req: NextRequest,

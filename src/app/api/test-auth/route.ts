@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth, withPermission, withAdminAuth } from "@/auth/api-middleware";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // Example 1: Simple authentication check
 export const GET = withAuth(async (req, user) => {
   return NextResponse.json({

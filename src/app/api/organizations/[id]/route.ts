@@ -5,6 +5,9 @@ import { withAdminAuth } from "@/auth/api-middleware";
 import { getCurrentUser } from "@/auth/get-user";
 import { eq } from "drizzle-orm";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // GET /api/organizations/[id] - Get single organization
 export async function GET(
   request: NextRequest,

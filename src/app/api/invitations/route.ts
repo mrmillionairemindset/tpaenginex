@@ -5,6 +5,9 @@ import { getCurrentUser } from "@/auth/get-user";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // POST /api/invitations - Invite a new user to organization
 export async function POST(request: Request) {
   try {

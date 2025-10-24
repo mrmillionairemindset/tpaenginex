@@ -4,6 +4,9 @@ import { db } from '@/db';
 import { documents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * DELETE /api/documents/[id]
  * Delete a document (providers only)

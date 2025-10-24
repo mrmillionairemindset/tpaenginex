@@ -4,6 +4,9 @@ import { organizations, users, organizationMembers } from "@/db/schema";
 import { withAuth } from "@/auth/api-middleware";
 import { eq } from "drizzle-orm";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // GET /api/organizations - Get organizations
 // For providers: returns all employer organizations with stats
 // For employers: returns their own organization memberships

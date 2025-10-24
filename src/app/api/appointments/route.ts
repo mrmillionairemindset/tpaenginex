@@ -6,6 +6,9 @@ import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { notifySiteAssigned } from '@/lib/notifications';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // ============================================================================
 // Validation Schemas
 // ============================================================================

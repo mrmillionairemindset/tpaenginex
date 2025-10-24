@@ -4,6 +4,9 @@ import { notifications } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq, desc } from 'drizzle-orm';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // GET /api/notifications - Get user's notifications
 export async function GET(request: NextRequest) {
   try {

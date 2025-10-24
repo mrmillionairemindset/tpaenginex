@@ -6,6 +6,9 @@ import { getUploadUrl, generateStorageKey, isStorageConfigured } from '@/lib/sto
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 const signRequestSchema = z.object({
   orderId: z.string().uuid(),
   kind: z.enum(['result', 'chain_of_custody', 'consent', 'authorization', 'other']),

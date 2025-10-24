@@ -4,6 +4,9 @@ import { orders } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq } from 'drizzle-orm';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // POST /api/orders/[id]/auth-created - Mark when authorization was created in Concentra HUB
 export async function POST(
   req: NextRequest,

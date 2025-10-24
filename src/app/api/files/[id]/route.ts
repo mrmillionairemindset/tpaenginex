@@ -5,6 +5,9 @@ import { documents } from '@/db/schema';
 import { getDownloadUrl, isStorageConfigured } from '@/lib/storage';
 import { eq } from 'drizzle-orm';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/files/[id]
  * Generate a signed download URL for a document
