@@ -103,6 +103,51 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
     }
   };
 
+  const handleGenerateCustomAuth = async () => {
+    setGeneratingAuth(true);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/generate-auth-form`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to generate authorization form');
+      }
+
+      // Download the PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Authorization_${order.orderNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: 'Authorization Form Generated',
+        description: 'PDF has been downloaded. You can now send it to the candidate.',
+      });
+
+      // Refresh order to show updated status
+      const orderResponse = await fetch(`/api/orders/${orderId}`);
+      if (orderResponse.ok) {
+        const orderData = await orderResponse.json();
+        setOrder(orderData.order);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to generate authorization form',
+        variant: 'destructive',
+      });
+    } finally {
+      setGeneratingAuth(false);
+    }
+  };
+
   const handleReview = async (action: 'approved' | 'rejected') => {
     if (action === 'rejected' && !feedback.trim()) {
       toast({
@@ -476,29 +521,70 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
         </Card>
       )}
 
-      {/* Provider: Generate Concentra Authorization */}
+      {/* Provider: Generate Authorization */}
       {isProvider && order.status !== 'complete' && order.status !== 'cancelled' && (
         <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-3">Concentra Authorization</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">
+              {order.useConcentra ? 'Concentra Authorization' : 'Custom Authorization'}
+            </h2>
+            {order.authorizationMethod && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                {order.authorizationMethod === 'concentra' ? 'Concentra Network' : 'Custom Location'}
+              </span>
+            )}
+          </div>
 
           <div className="space-y-4">
-            {/* Step 1: Generate PDF */}
-            <div className="flex items-start justify-between pb-4 border-b">
-              <div className="flex-1">
-                <h3 className="font-medium mb-1">1. Generate Authorization PDF</h3>
-                <p className="text-sm text-gray-600">
-                  Create the authorization summary to manually enter into Concentra HUB
-                </p>
-              </div>
-              <Button
-                onClick={handleGenerateConcentraAuth}
-                disabled={generatingAuth}
-                variant="outline"
-              >
-                <FileDown className="mr-2 h-4 w-4" />
-                {generatingAuth ? 'Generating...' : 'Generate PDF'}
-              </Button>
-            </div>
+            {/* Different flows based on useConcentra */}
+            {order.useConcentra ? (
+              // Concentra Flow
+              <>
+                {/* Step 1: Generate PDF for Concentra */}
+                <div className="flex items-start justify-between pb-4 border-b">
+                  <div className="flex-1">
+                    <h3 className="font-medium mb-1">1. Generate Authorization PDF</h3>
+                    <p className="text-sm text-gray-600">
+                      Create the authorization summary to manually enter into Concentra HUB
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleGenerateConcentraAuth}
+                    disabled={generatingAuth}
+                    variant="outline"
+                  >
+                    <FileDown className="mr-2 h-4 w-4" />
+                    {generatingAuth ? 'Generating...' : 'Generate PDF'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              // Custom Flow
+              <>
+                {/* Generate Custom Authorization Form */}
+                <div className="flex items-start justify-between pb-4 border-b">
+                  <div className="flex-1">
+                    <h3 className="font-medium mb-1">Generate Custom Authorization Form</h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Creates a pre-filled PDF authorization form that the candidate can use at any testing location.
+                    </p>
+                    {order.authorizationMethod === 'custom' && (
+                      <p className="text-sm text-green-600 font-medium">
+                        ✓ Authorization form has been generated
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    onClick={handleGenerateCustomAuth}
+                    disabled={generatingAuth}
+                    variant={order.authorizationMethod === 'custom' ? 'outline' : 'default'}
+                  >
+                    <FileDown className="mr-2 h-4 w-4" />
+                    {generatingAuth ? 'Generating...' : order.authorizationMethod === 'custom' ? 'Regenerate' : 'Generate Form'}
+                  </Button>
+                </div>
+              </>
+            )}
 
             {/* Step 2: Mark Authorization Created */}
             <div className="flex items-start justify-between">
