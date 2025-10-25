@@ -153,15 +153,48 @@ export async function initializeSheet(): Promise<void> {
   ]];
 
   try {
-    // Check if headers already exist
-    const response = await sheets.spreadsheets.values.get({
+    // First, get spreadsheet metadata to check if "Orders" sheet exists
+    const spreadsheet = await sheets.spreadsheets.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Orders!A1:M1',
     });
 
-    if (response.data.values && response.data.values.length > 0) {
-      console.log('✅ Sheet headers already exist');
-      return;
+    const ordersSheet = spreadsheet.data.sheets?.find(
+      (sheet) => sheet.properties?.title === 'Orders'
+    );
+
+    if (!ordersSheet) {
+      // Create the "Orders" sheet
+      console.log('📝 Creating "Orders" sheet...');
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: {
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title: 'Orders',
+                },
+              },
+            },
+          ],
+        },
+      });
+      console.log('✅ Created "Orders" sheet');
+    }
+
+    // Check if headers already exist
+    try {
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'Orders!A1:M1',
+      });
+
+      if (response.data.values && response.data.values.length > 0) {
+        console.log('✅ Sheet headers already exist');
+        return;
+      }
+    } catch (error) {
+      // If the range doesn't exist yet, that's fine - we'll add headers
     }
 
     // Add headers
