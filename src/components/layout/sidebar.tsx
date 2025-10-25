@@ -85,6 +85,12 @@ const providerNav: NavItem[] = [
     icon: FileCheck,
     roles: ['provider_admin', 'provider_agent'],
   },
+  {
+    label: 'Settings',
+    href: '/settings',
+    icon: Settings,
+    roles: ['provider_admin'],
+  },
 ];
 
 interface SidebarProps {
