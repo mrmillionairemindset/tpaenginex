@@ -19,6 +19,7 @@ const updateOrderSchema = z.object({
   internalNotes: z.string().optional(),
   scheduledFor: z.string().datetime().optional(),
   completedAt: z.string().datetime().optional(),
+  useConcentra: z.boolean().optional(), // Provider can override
 });
 
 // ============================================================================
@@ -165,6 +166,22 @@ export async function PATCH(
   if (data.internalNotes !== undefined) updateData.internalNotes = data.internalNotes;
   if (data.scheduledFor) updateData.scheduledFor = new Date(data.scheduledFor);
   if (data.completedAt) updateData.completedAt = new Date(data.completedAt);
+
+  // Provider can override Concentra vs Custom authorization
+  if (data.useConcentra !== undefined) {
+    // Only providers can change this
+    if (!isProvider) {
+      return NextResponse.json(
+        { error: 'Only providers can change authorization method' },
+        { status: 403 }
+      );
+    }
+    updateData.useConcentra = data.useConcentra;
+    // Reset authorization method when switching back to Concentra
+    if (data.useConcentra === true) {
+      updateData.authorizationMethod = null;
+    }
+  }
 
   // Auto-set completedAt if status changes to complete
   if (data.status === 'complete' && !existingOrder.completedAt) {

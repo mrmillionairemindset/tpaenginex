@@ -524,15 +524,66 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
       {/* Provider: Generate Authorization */}
       {isProvider && order.status !== 'complete' && order.status !== 'cancelled' && (
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">
-              {order.useConcentra ? 'Concentra Authorization' : 'Custom Authorization'}
-            </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Authorization</h2>
             {order.authorizationMethod && (
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
                 {order.authorizationMethod === 'concentra' ? 'Concentra Network' : 'Custom Location'}
               </span>
             )}
+          </div>
+
+          {/* Provider Override: Switch Authorization Method */}
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="font-medium text-amber-900 mb-1">
+                  {order.useConcentra ? 'Using Concentra Network' : 'Using Custom Authorization'}
+                </h3>
+                <p className="text-sm text-amber-700">
+                  {order.useConcentra ? (
+                    <>Distance too far or employee complained? Switch to custom authorization to allow any testing location.</>
+                  ) : (
+                    <>Switched to custom authorization. Candidate can choose any testing location.</>
+                  )}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-4"
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`/api/orders/${orderId}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        useConcentra: !order.useConcentra,
+                      }),
+                    });
+
+                    if (response.ok) {
+                      const data = await response.json();
+                      setOrder(data.order);
+                      toast({
+                        title: 'Authorization Method Updated',
+                        description: `Switched to ${!order.useConcentra ? 'Concentra' : 'Custom'} authorization`,
+                      });
+                    } else {
+                      throw new Error('Failed to update');
+                    }
+                  } catch (error) {
+                    toast({
+                      title: 'Error',
+                      description: 'Failed to update authorization method',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+              >
+                Switch to {order.useConcentra ? 'Custom' : 'Concentra'}
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-4">

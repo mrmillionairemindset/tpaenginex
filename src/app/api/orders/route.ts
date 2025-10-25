@@ -32,7 +32,6 @@ const createOrderSchema = z.object({
   testType: z.string().min(1, "Test type is required"),
   urgency: z.enum(['standard', 'rush', 'urgent']).default('standard'),
   jobsiteLocation: z.string().min(1, "Jobsite location is required"),
-  useConcentra: z.boolean().default(true),
   needsMask: z.boolean().default(false),
   maskSize: z.string().optional(),
   notes: z.string().optional(),
@@ -173,7 +172,7 @@ export const POST = withAuth(async (req, user) => {
   // Generate order number
   const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-  // Create order
+  // Create order (useConcentra defaults to true in database)
   const [newOrder] = await db.insert(orders).values({
     orgId: user.organization!.id,
     candidateId,
@@ -181,7 +180,6 @@ export const POST = withAuth(async (req, user) => {
     testType: data.testType,
     urgency: data.urgency,
     jobsiteLocation: data.jobsiteLocation,
-    useConcentra: data.useConcentra,
     needsMask: data.needsMask,
     maskSize: data.maskSize,
     requestedBy: user.id,

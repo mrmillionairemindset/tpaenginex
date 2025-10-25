@@ -46,7 +46,6 @@ export function NewOrderForm({ orgId }: NewOrderFormProps) {
     testType: 'Pre-Employment Drug Screen',
     urgency: 'standard',
     jobsiteLocation: '',
-    useConcentra: 'yes',
     needsMask: 'no',
     maskSize: '',
     notes: '',
@@ -128,7 +127,6 @@ export function NewOrderForm({ orgId }: NewOrderFormProps) {
           testType: formData.testType,
           urgency: formData.urgency,
           jobsiteLocation: formData.jobsiteLocation,
-          useConcentra: formData.useConcentra === 'yes',
           needsMask: formData.needsMask === 'yes',
           maskSize: formData.needsMask === 'yes' ? formData.maskSize : undefined,
           notes: formData.notes || undefined,
@@ -380,31 +378,6 @@ export function NewOrderForm({ orgId }: NewOrderFormProps) {
                 <option value="standard">Standard</option>
                 <option value="rush">Rush</option>
                 <option value="urgent">Urgent</option>
-              </select>
-            </div>
-
-            <div>
-              <Label htmlFor="useConcentra">
-                Use Concentra Network?
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <InfoIcon className="inline-block ml-1 h-4 w-4 text-gray-400 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">If No, provider will generate a custom authorization form for the candidate to choose their own testing location.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Label>
-              <select
-                id="useConcentra"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                value={formData.useConcentra}
-                onChange={(e) => setFormData({ ...formData, useConcentra: e.target.value })}
-              >
-                <option value="yes">Yes - Use Concentra</option>
-                <option value="no">No - Allow any location</option>
               </select>
             </div>
 
