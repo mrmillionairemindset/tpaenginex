@@ -188,21 +188,29 @@ export const POST = withAuth(async (req, context) => {
         });
     }
 
-    // Update order with authorization method
+    // Auto-start expiration timer when generating custom auth form
+    const now = new Date();
+    const expiryDays = order.organization?.authExpiryDays || 3;
+    const expiresAt = new Date(now.getTime() + expiryDays * 24 * 60 * 60 * 1000);
+
+    // Update order with authorization method and auto-start timer
     await db.update(orders)
       .set({
         authorizationMethod: 'custom',
+        authCreatedAt: now,
+        authExpiresAt: expiresAt,
         // authorizationFormUrl: uploadedUrl, // TODO: Add after uploading to storage
         updatedAt: new Date(),
       })
       .where(eq(orders.id, orderId));
 
-    // Return the PDF as a download
-    return new NextResponse(pdfBytes, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="Authorization_${order.orderNumber}.pdf"`,
-      },
+    // Return success response (PDF was emailed, no download needed)
+    return NextResponse.json({
+      success: true,
+      message: `Authorization form generated and emailed to ${recipients.length} recipient${recipients.length > 1 ? 's' : ''}`,
+      recipients,
+      timerStarted: true,
+      expiresAt: expiresAt.toISOString(),
     });
 
   } catch (error) {

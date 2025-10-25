@@ -115,23 +115,14 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
         throw new Error(data.error || 'Failed to generate authorization form');
       }
 
-      // Download the PDF
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Authorization_${order.orderNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const data = await response.json();
 
       toast({
-        title: 'Authorization Form Generated & Sent',
-        description: 'PDF has been downloaded and emailed to the candidate and designated recipients.',
+        title: 'Authorization Form Sent',
+        description: data.message || 'Authorization form has been emailed to all recipients and the expiration timer has been started.',
       });
 
-      // Refresh order to show updated status
+      // Refresh order to show updated status and timer
       const orderResponse = await fetch(`/api/orders/${orderId}`);
       if (orderResponse.ok) {
         const orderData = await orderResponse.json();
@@ -615,9 +606,9 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                 {/* Generate and Send Custom Authorization Form */}
                 <div className="flex items-start justify-between pb-4 border-b">
                   <div className="flex-1">
-                    <h3 className="font-medium mb-1">1. Generate & Send Authorization Form</h3>
+                    <h3 className="font-medium mb-1">1. Send Authorization Form</h3>
                     <p className="text-sm text-gray-600 mb-2">
-                      Creates a pre-filled PDF authorization form and emails it to the candidate and designated recipients. You'll also download a copy.
+                      Generates a pre-filled PDF authorization form and emails it to the candidate and designated recipients. Timer starts automatically.
                     </p>
                     {order.authorizationMethod === 'custom' && order.authorizationFormSentAt && (
                       <p className="text-sm text-green-600 font-medium">
@@ -636,23 +627,27 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                     variant={order.authorizationMethod === 'custom' ? 'outline' : 'default'}
                   >
                     <FileDown className="mr-2 h-4 w-4" />
-                    {generatingAuth ? 'Generating & Sending...' : order.authorizationMethod === 'custom' ? 'Resend Form' : 'Generate & Send'}
+                    {generatingAuth ? 'Sending...' : order.authorizationMethod === 'custom' ? 'Resend Form' : 'Send Form'}
                   </Button>
                 </div>
               </>
             )}
 
-            {/* Step 2: Mark Authorization Created */}
+            {/* Step 2: Authorization Timer Status */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="font-medium mb-1">2. Start Expiration Timer</h3>
+                <h3 className="font-medium mb-1">2. Authorization Timer</h3>
                 <p className="text-sm text-gray-600 mb-2">
                   {!order.authCreatedAt ? (
-                    <>
-                      <strong>Option A:</strong> Forward confirmation email to <span className="font-mono bg-gray-100 px-1 rounded">auth@wsnportal.com</span> to start timer automatically
-                      <br />
-                      <strong>Option B:</strong> Click the button to start timer manually
-                    </>
+                    order.useConcentra ? (
+                      <>
+                        <strong>Option A:</strong> Forward confirmation email to <span className="font-mono bg-gray-100 px-1 rounded">auth@wsnportal.com</span> to start timer automatically
+                        <br />
+                        <strong>Option B:</strong> Click the button to start timer manually
+                      </>
+                    ) : (
+                      <>Timer automatically started when authorization form was generated</>
+                    )
                   ) : (
                     'Authorization timer has been started'
                   )}
@@ -664,6 +659,11 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                       {order.autoTimerStarted && (
                         <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
                           Auto-started via email
+                        </span>
+                      )}
+                      {!order.useConcentra && order.authorizationMethod === 'custom' && (
+                        <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                          Auto-started when form generated
                         </span>
                       )}
                     </p>
@@ -687,7 +687,7 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                   </div>
                 )}
               </div>
-              {!order.authCreatedAt && (
+              {!order.authCreatedAt && order.useConcentra && (
                 <Button
                   onClick={handleMarkAuthCreated}
                   disabled={markingAuthCreated}
