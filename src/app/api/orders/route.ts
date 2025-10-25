@@ -5,6 +5,7 @@ import { withAuth } from '@/auth/api-middleware';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { notifyOrderCreated } from '@/lib/notifications';
+import { appendOrderToSheet } from '@/integrations/sheets';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -212,6 +213,38 @@ export const POST = withAuth(async (req, user) => {
 
   // Send notification to providers
   await notifyOrderCreated(newOrder.id, orderNumber);
+
+  // Sync to Google Sheets (async, don't block response)
+  if (fullOrder?.candidate) {
+    appendOrderToSheet({
+      orderNumber: fullOrder.orderNumber,
+      candidateFirstName: fullOrder.candidate.firstName,
+      candidateLastName: fullOrder.candidate.lastName,
+      candidateEmail: fullOrder.candidate.email,
+      candidatePhone: fullOrder.candidate.phone,
+      testType: fullOrder.testType,
+      urgency: fullOrder.urgency || 'standard',
+      jobsiteLocation: fullOrder.jobsiteLocation,
+      needsMask: fullOrder.needsMask,
+      maskSize: fullOrder.maskSize,
+      status: fullOrder.status,
+      createdAt: fullOrder.createdAt.toISOString(),
+      notes: fullOrder.notes,
+    })
+      .then((rowId) => {
+        if (rowId) {
+          // Update order with the external row ID for future syncing
+          db.update(orders)
+            .set({ externalRowId: rowId })
+            .where(eq(orders.id, fullOrder.id))
+            .catch(console.error);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to sync order to Google Sheets:', error);
+        // Don't fail the request if sheet sync fails
+      });
+  }
 
   return NextResponse.json(
     { order: fullOrder, message: 'Order created successfully' },
