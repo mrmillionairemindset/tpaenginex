@@ -186,9 +186,10 @@ export const orders = pgTable("orders", {
   externalRowId: varchar("external_row_id", { length: 40 }),
   scheduledFor: timestamp("scheduled_for"),
   completedAt: timestamp("completed_at"),
-  useConcentra: boolean("use_concentra").default(true).notNull(), // Whether to use Concentra network (employer choice)
+  useConcentra: boolean("use_concentra").default(true).notNull(), // Whether to use Concentra network (provider choice based on distance)
   authorizationMethod: varchar("authorization_method", { length: 20 }), // "concentra" | "custom" | null
   authorizationFormUrl: text("authorization_form_url"), // URL to generated custom auth form PDF
+  authorizationFormSentAt: timestamp("authorization_form_sent_at"), // When custom auth form was sent via email
   authCreatedAt: timestamp("auth_created_at"), // When provider created authorization in Concentra HUB
   authExpiresAt: timestamp("auth_expires_at"), // Calculated expiration based on authCreatedAt + org.authExpiryDays
   authConfirmationEmail: text("auth_confirmation_email"), // Email body/ID that started the timer

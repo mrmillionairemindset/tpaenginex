@@ -25,6 +25,8 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
   const [reviewing, setReviewing] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [generatingAuth, setGeneratingAuth] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailRecipients, setEmailRecipients] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [markingAuthCreated, setMarkingAuthCreated] = useState(false);
@@ -36,6 +38,13 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
         if (response.ok) {
           const data = await response.json();
           setOrder(data.order);
+
+          // Initialize email recipients with candidate and employer contact
+          if (data.order.candidate?.email && data.order.requestedByUser?.email) {
+            setEmailRecipients(`${data.order.candidate.email}, ${data.order.requestedByUser.email}`);
+          } else if (data.order.candidate?.email) {
+            setEmailRecipients(data.order.candidate.email);
+          }
         } else {
           setError('Order not found');
         }
@@ -145,6 +154,71 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
       });
     } finally {
       setGeneratingAuth(false);
+    }
+  };
+
+  const handleSendAuthEmail = async () => {
+    // Parse and validate email recipients
+    const emails = emailRecipients
+      .split(',')
+      .map(email => email.trim())
+      .filter(email => email.length > 0);
+
+    if (emails.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please enter at least one email recipient',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidEmails = emails.filter(email => !emailRegex.test(email));
+    if (invalidEmails.length > 0) {
+      toast({
+        title: 'Invalid Email',
+        description: `The following emails are invalid: ${invalidEmails.join(', ')}`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/send-auth-form`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipients: emails }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to send authorization form');
+      }
+
+      const data = await response.json();
+
+      toast({
+        title: 'Email Sent',
+        description: data.message || `Authorization form sent to ${emails.length} recipient(s)`,
+      });
+
+      // Refresh order to show sent timestamp
+      const orderResponse = await fetch(`/api/orders/${orderId}`);
+      if (orderResponse.ok) {
+        const orderData = await orderResponse.json();
+        setOrder(orderData.order);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send authorization form',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -615,7 +689,7 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                 {/* Generate Custom Authorization Form */}
                 <div className="flex items-start justify-between pb-4 border-b">
                   <div className="flex-1">
-                    <h3 className="font-medium mb-1">Generate Custom Authorization Form</h3>
+                    <h3 className="font-medium mb-1">1. Generate Custom Authorization Form</h3>
                     <p className="text-sm text-gray-600 mb-2">
                       Creates a pre-filled PDF authorization form that the candidate can use at any testing location.
                     </p>
@@ -634,13 +708,48 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                     {generatingAuth ? 'Generating...' : order.authorizationMethod === 'custom' ? 'Regenerate' : 'Generate Form'}
                   </Button>
                 </div>
+
+                {/* Send Authorization Form via Email */}
+                <div className="flex items-start justify-between pb-4 border-b">
+                  <div className="flex-1">
+                    <h3 className="font-medium mb-1">2. Send Authorization Form via Email</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Send the authorization form PDF to the candidate and employer. Enter email addresses separated by commas.
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="emailRecipients" className="text-sm">
+                        Email Recipients
+                      </Label>
+                      <Textarea
+                        id="emailRecipients"
+                        placeholder="candidate@example.com, employer@example.com"
+                        value={emailRecipients}
+                        onChange={(e) => setEmailRecipients(e.target.value)}
+                        className="font-mono text-sm"
+                        rows={2}
+                      />
+                      {order.authorizationFormSentAt && (
+                        <p className="text-sm text-green-600 font-medium">
+                          ✓ Last sent: {format(new Date(order.authorizationFormSentAt), 'PPp')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleSendAuthEmail}
+                    disabled={sendingEmail || !emailRecipients.trim()}
+                    className="ml-4 bg-blue-600 hover:bg-blue-700"
+                  >
+                    {sendingEmail ? 'Sending...' : 'Send Email'}
+                  </Button>
+                </div>
               </>
             )}
 
-            {/* Step 2: Mark Authorization Created */}
+            {/* Step 3 (or 2 for Concentra): Mark Authorization Created */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="font-medium mb-1">2. Start Expiration Timer</h3>
+                <h3 className="font-medium mb-1">{order.useConcentra ? '2' : '3'}. Start Expiration Timer</h3>
                 <p className="text-sm text-gray-600 mb-2">
                   {!order.authCreatedAt ? (
                     <>
