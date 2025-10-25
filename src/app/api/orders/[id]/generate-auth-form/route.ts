@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { PDFDocument } from 'pdf-lib';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { sendAuthorizationFormEmail } from '@/lib/email';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -146,8 +147,46 @@ export const POST = withAuth(async (req, context) => {
     // Save the filled PDF
     const pdfBytes = await pdfDoc.save();
 
-    // TODO: Upload to storage (Supabase/S3) and save URL
-    // For now, we'll return the PDF directly
+    // Build recipient list: candidate + organization's auth form recipients
+    const recipients: string[] = [];
+
+    // Always include candidate email
+    if (order.candidate.email) {
+      recipients.push(order.candidate.email);
+    }
+
+    // Include organization's configured recipients
+    if (order.organization?.authFormRecipients && order.organization.authFormRecipients.length > 0) {
+      recipients.push(...order.organization.authFormRecipients);
+    }
+
+    // Fallback to requester if no org recipients configured
+    if (recipients.length === 1 && order.requestedByUser?.email) {
+      recipients.push(order.requestedByUser.email);
+    }
+
+    // Send email with PDF attachment (don't block response on email send)
+    if (recipients.length > 0) {
+      sendAuthorizationFormEmail({
+        to: recipients,
+        orderNumber: order.orderNumber,
+        candidateName: `${order.candidate.firstName} ${order.candidate.lastName}`,
+        employerName: order.organization?.name || 'Unknown',
+        pdfBuffer: Buffer.from(pdfBytes),
+      })
+        .then(() => {
+          console.log(`✓ Authorization form emailed to ${recipients.length} recipient(s)`);
+          // Update order with sent timestamp
+          db.update(orders)
+            .set({ authorizationFormSentAt: new Date() })
+            .where(eq(orders.id, orderId))
+            .catch(console.error);
+        })
+        .catch((error) => {
+          console.error('Failed to send authorization form email:', error);
+          // Don't fail the request if email fails
+        });
+    }
 
     // Update order with authorization method
     await db.update(orders)

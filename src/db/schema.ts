@@ -71,6 +71,7 @@ export const organizations = pgTable("organizations", {
   zip: varchar("zip", { length: 10 }),
   isActive: boolean("is_active").default(true).notNull(),
   authExpiryDays: integer("auth_expiry_days").default(3).notNull(), // Days until authorization expires
+  authFormRecipients: text("auth_form_recipients").array(), // Email addresses to receive authorization forms
   settings: jsonb("settings"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
