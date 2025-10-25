@@ -23,8 +23,14 @@ export interface OrderSheetData {
   orderNumber: string;
   candidateFirstName: string;
   candidateLastName: string;
+  candidateDOB: string;
+  candidateSSNLast4: string;
   candidateEmail: string;
   candidatePhone: string;
+  candidateAddress: string;
+  candidateCity: string;
+  candidateState: string;
+  candidateZip: string;
   testType: string;
   urgency: string;
   jobsiteLocation: string;
@@ -51,8 +57,14 @@ export async function appendOrderToSheet(order: OrderSheetData): Promise<string 
     order.orderNumber,
     order.candidateFirstName,
     order.candidateLastName,
+    order.candidateDOB,
+    order.candidateSSNLast4,
     order.candidateEmail,
     order.candidatePhone,
+    order.candidateAddress,
+    order.candidateCity,
+    order.candidateState,
+    order.candidateZip,
     order.testType,
     order.urgency,
     order.jobsiteLocation,
@@ -66,7 +78,7 @@ export async function appendOrderToSheet(order: OrderSheetData): Promise<string 
   try {
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Orders!A:M', // Columns A through M
+      range: 'Orders!A:S', // Columns A through S (19 columns)
       valueInputOption: 'USER_ENTERED',
       requestBody: { values },
     });
@@ -140,8 +152,14 @@ export async function initializeSheet(): Promise<void> {
     'Order Number',
     'First Name',
     'Last Name',
+    'DOB',
+    'SSN Last 4',
     'Email',
     'Phone',
+    'Address',
+    'City',
+    'State',
+    'ZIP',
     'Test Type',
     'Urgency',
     'Jobsite Location',
@@ -186,7 +204,7 @@ export async function initializeSheet(): Promise<void> {
     try {
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: 'Orders!A1:M1',
+        range: 'Orders!A1:S1',
       });
 
       if (response.data.values && response.data.values.length > 0) {
@@ -200,7 +218,7 @@ export async function initializeSheet(): Promise<void> {
     // Add headers
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Orders!A1:M1',
+      range: 'Orders!A1:S1',
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: headers },
     });
