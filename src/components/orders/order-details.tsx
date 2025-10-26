@@ -25,6 +25,7 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
   const [reviewing, setReviewing] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [generatingAuth, setGeneratingAuth] = useState(false);
+  const [uploadingConcentraAuth, setUploadingConcentraAuth] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [markingAuthCreated, setMarkingAuthCreated] = useState(false);
@@ -136,6 +137,62 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
       });
     } finally {
       setGeneratingAuth(false);
+    }
+  };
+
+  const handleUploadConcentraAuth = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: 'Invalid File',
+        description: 'Please upload a PDF file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingConcentraAuth(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`/api/orders/${orderId}/upload-concentra-auth`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to upload authorization form');
+      }
+
+      const data = await response.json();
+
+      toast({
+        title: 'Authorization Form Uploaded',
+        description: data.message || 'Concentra authorization form has been uploaded, emailed to all recipients, and the expiration timer has been started.',
+      });
+
+      // Refresh order to show updated status and timer
+      const orderResponse = await fetch(`/api/orders/${orderId}`);
+      if (orderResponse.ok) {
+        const orderData = await orderResponse.json();
+        setOrder(orderData.order);
+      }
+
+      // Clear the file input
+      event.target.value = '';
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to upload authorization form',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingConcentraAuth(false);
     }
   };
 
@@ -582,22 +639,37 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
             {order.useConcentra ? (
               // Concentra Flow
               <>
-                {/* Step 1: Generate PDF for Concentra */}
+                {/* Step 1: Upload Concentra Authorization Form */}
                 <div className="flex items-start justify-between pb-4 border-b">
                   <div className="flex-1">
-                    <h3 className="font-medium mb-1">1. Generate Authorization PDF</h3>
-                    <p className="text-sm text-gray-600">
-                      Create the authorization summary to manually enter into Concentra HUB
+                    <h3 className="font-medium mb-1">1. Upload Concentra Authorization Form</h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      After creating the authorization in Concentra Hub, upload the PDF here. It will be automatically emailed to all recipients and the expiration timer will start.
                     </p>
+                    {order.authorizationMethod === 'concentra' && order.authorizationFormSentAt && (
+                      <p className="text-sm text-green-600 font-medium">
+                        ✓ Last uploaded: {format(new Date(order.authorizationFormSentAt), 'PPp')}
+                      </p>
+                    )}
                   </div>
-                  <Button
-                    onClick={handleGenerateConcentraAuth}
-                    disabled={generatingAuth}
-                    variant="outline"
-                  >
-                    <FileDown className="mr-2 h-4 w-4" />
-                    {generatingAuth ? 'Generating...' : 'Generate PDF'}
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={handleUploadConcentraAuth}
+                      disabled={uploadingConcentraAuth}
+                      className="hidden"
+                      id="concentra-auth-upload"
+                    />
+                    <Button
+                      onClick={() => document.getElementById('concentra-auth-upload')?.click()}
+                      disabled={uploadingConcentraAuth}
+                      variant={order.authorizationMethod === 'concentra' ? 'outline' : 'default'}
+                    >
+                      <FileDown className="mr-2 h-4 w-4" />
+                      {uploadingConcentraAuth ? 'Uploading...' : order.authorizationMethod === 'concentra' ? 'Reupload Form' : 'Upload Form'}
+                    </Button>
+                  </div>
                 </div>
               </>
             ) : (
@@ -640,11 +712,7 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                 <p className="text-sm text-gray-600 mb-2">
                   {!order.authCreatedAt ? (
                     order.useConcentra ? (
-                      <>
-                        <strong>Option A:</strong> Forward confirmation email to <span className="font-mono bg-gray-100 px-1 rounded">auth@wsnportal.com</span> to start timer automatically
-                        <br />
-                        <strong>Option B:</strong> Click the button to start timer manually
-                      </>
+                      <>Timer will automatically start when you upload the Concentra authorization form above</>
                     ) : (
                       <>Timer automatically started when authorization form was generated</>
                     )
@@ -656,9 +724,9 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                   <div className="text-sm">
                     <p className="text-gray-600">
                       <span className="font-medium">Created:</span> {format(new Date(order.authCreatedAt), 'PPp')}
-                      {order.autoTimerStarted && (
+                      {order.useConcentra && order.authorizationMethod === 'concentra' && (
                         <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                          Auto-started via email
+                          Auto-started when form uploaded
                         </span>
                       )}
                       {!order.useConcentra && order.authorizationMethod === 'custom' && (
@@ -687,15 +755,6 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                   </div>
                 )}
               </div>
-              {!order.authCreatedAt && order.useConcentra && (
-                <Button
-                  onClick={handleMarkAuthCreated}
-                  disabled={markingAuthCreated}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {markingAuthCreated ? 'Starting Timer...' : 'Start Timer Manually'}
-                </Button>
-              )}
             </div>
           </div>
         </Card>
