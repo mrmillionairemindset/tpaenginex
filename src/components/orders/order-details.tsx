@@ -166,15 +166,65 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
 
       if (!response.ok) {
         const data = await response.json();
+
+        // Show detailed validation errors if available
+        if (data.details && Array.isArray(data.details)) {
+          toast({
+            title: data.error || 'Validation Failed',
+            description: (
+              <div className="space-y-1">
+                <p className="font-medium">The uploaded PDF failed validation:</p>
+                <ul className="list-disc list-inside mt-1">
+                  {data.details.map((detail: string, idx: number) => (
+                    <li key={idx} className="text-sm">{detail}</li>
+                  ))}
+                </ul>
+                {data.warnings && data.warnings.length > 0 && (
+                  <div className="mt-2 pt-2 border-t">
+                    <p className="font-medium text-sm">Additional warnings:</p>
+                    <ul className="list-disc list-inside mt-1">
+                      {data.warnings.map((warning: string, idx: number) => (
+                        <li key={idx} className="text-xs">{warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ),
+            variant: 'destructive',
+          });
+          return; // Don't throw, we already showed the error
+        }
+
         throw new Error(data.error || 'Failed to upload authorization form');
       }
 
       const data = await response.json();
 
-      toast({
-        title: 'Authorization Form Uploaded',
-        description: data.message || 'Concentra authorization form has been uploaded, emailed to all recipients, and the expiration timer has been started.',
-      });
+      // Show warnings if present
+      if (data.warnings && data.warnings.length > 0) {
+        toast({
+          title: 'Authorization Form Uploaded with Warnings',
+          description: (
+            <div className="space-y-1">
+              <p>{data.message}</p>
+              <div className="mt-2 text-sm">
+                <strong>Warnings:</strong>
+                <ul className="list-disc list-inside mt-1">
+                  {data.warnings.map((warning: string, idx: number) => (
+                    <li key={idx}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ),
+        });
+      } else {
+        toast({
+          title: 'Authorization Form Uploaded',
+          description: data.message || 'Concentra authorization form has been uploaded, emailed to all recipients, and the expiration timer has been started.',
+        });
+      }
 
       // Refresh order to show updated status and timer
       const orderResponse = await fetch(`/api/orders/${orderId}`);
@@ -186,11 +236,14 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
       // Clear the file input
       event.target.value = '';
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to upload authorization form',
-        variant: 'destructive',
-      });
+      // Only show generic error if we didn't already show detailed validation errors
+      if (error.message) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to upload authorization form',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setUploadingConcentraAuth(false);
     }

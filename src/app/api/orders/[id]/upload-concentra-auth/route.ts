@@ -4,6 +4,7 @@ import { orders } from '@/db/schema';
 import { withAuth } from '@/auth/api-middleware';
 import { eq } from 'drizzle-orm';
 import { sendAuthorizationFormEmail } from '@/lib/email';
+import { validateConcentraAuthForm } from '@/lib/pdf-validator';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -71,9 +72,34 @@ export const POST = withAuth(async (req, context) => {
       );
     }
 
-    // Convert file to buffer for emailing
+    // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
     const pdfBuffer = Buffer.from(arrayBuffer);
+
+    // Validate the PDF
+    const validation = await validateConcentraAuthForm({
+      pdfBuffer,
+      candidateFirstName: order.candidate.firstName,
+      candidateLastName: order.candidate.lastName,
+      orderNumber: order.orderNumber,
+    });
+
+    // If validation fails, return errors
+    if (!validation.isValid) {
+      return NextResponse.json(
+        {
+          error: 'PDF validation failed',
+          details: validation.errors,
+          warnings: validation.warnings,
+        },
+        { status: 400 }
+      );
+    }
+
+    // If there are warnings but validation passes, log them
+    if (validation.warnings.length > 0) {
+      console.warn('PDF validation warnings:', validation.warnings);
+    }
 
     // Build recipient list: candidate + organization's auth form recipients
     const recipients: string[] = [];
@@ -135,13 +161,14 @@ export const POST = withAuth(async (req, context) => {
       })
       .where(eq(orders.id, orderId));
 
-    // Return success response
+    // Return success response with any validation warnings
     return NextResponse.json({
       success: true,
       message: `Concentra authorization form uploaded and emailed to ${recipients.length} recipient${recipients.length > 1 ? 's' : ''}`,
       recipients,
       timerStarted: true,
       expiresAt: expiresAt.toISOString(),
+      warnings: validation.warnings, // Include warnings for user notification
     });
 
   } catch (error) {
