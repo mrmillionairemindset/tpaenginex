@@ -1,4 +1,4 @@
-import pdf from 'pdf-parse';
+import * as pdfParse from 'pdf-parse';
 
 interface PDFValidationResult {
   isValid: boolean;
@@ -31,7 +31,7 @@ export async function validateConcentraAuthForm(
 
   try {
     // Extract text from PDF
-    const data = await pdf(pdfBuffer);
+    const data = await pdfParse(pdfBuffer);
     const text = data.text.toLowerCase();
     const originalText = data.text; // Keep original case for name matching
 
@@ -140,7 +140,7 @@ export async function validateCustomAuthForm(
   const warnings: string[] = [];
 
   try {
-    const data = await pdf(pdfBuffer);
+    const data = await pdfParse(pdfBuffer);
     const text = data.text.toLowerCase();
 
     // Check candidate name
