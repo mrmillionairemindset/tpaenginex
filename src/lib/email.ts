@@ -1,7 +1,7 @@
-import { Resend } from 'resend';
+import sgMail from '@sendgrid/mail';
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize SendGrid client
+sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
 
 interface SendAuthorizationFormEmailOptions {
   to: string[];
@@ -18,9 +18,9 @@ export async function sendAuthorizationFormEmail(options: SendAuthorizationFormE
   const { to, orderNumber, candidateName, employerName, pdfBuffer } = options;
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'WorkSafe Now <noreply@worksafenow.com>',
+    const msg = {
       to,
+      from: 'WorkSafe Now <noreply@wsnportal.com>',
       subject: `Authorization Form for ${candidateName} - Order ${orderNumber}`,
       html: `
         <!DOCTYPE html>
@@ -75,17 +75,16 @@ export async function sendAuthorizationFormEmail(options: SendAuthorizationFormE
       attachments: [
         {
           filename: `Authorization_${orderNumber}.pdf`,
-          content: pdfBuffer,
+          content: pdfBuffer.toString('base64'),
+          type: 'application/pdf',
+          disposition: 'attachment',
         },
       ],
-    });
+    };
 
-    if (error) {
-      console.error('Error sending email:', error);
-      throw new Error(`Failed to send email: ${error.message}`);
-    }
+    const response = await sgMail.send(msg);
 
-    return { success: true, emailId: data?.id };
+    return { success: true, emailId: response[0].headers['x-message-id'] };
   } catch (error) {
     console.error('Error in sendAuthorizationFormEmail:', error);
     throw error;
@@ -97,18 +96,16 @@ export async function sendAuthorizationFormEmail(options: SendAuthorizationFormE
  */
 export async function sendTestEmail(to: string) {
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'WorkSafe Now <noreply@worksafenow.com>',
-      to: [to],
+    const msg = {
+      to,
+      from: 'WorkSafe Now <noreply@wsnportal.com>',
       subject: 'Test Email from WorkSafe Now',
       html: '<p>This is a test email from WorkSafe Now Portal. Email configuration is working correctly!</p>',
-    });
+    };
 
-    if (error) {
-      throw new Error(`Failed to send test email: ${error.message}`);
-    }
+    const response = await sgMail.send(msg);
 
-    return { success: true, emailId: data?.id };
+    return { success: true, emailId: response[0].headers['x-message-id'] };
   } catch (error) {
     console.error('Error sending test email:', error);
     throw error;
