@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { OrganizationSwitcher } from '@/components/organization-switcher';
 import { ProfileModal } from '@/components/profile-modal';
 import { OrganizationSettingsModal } from '@/components/organization-settings-modal';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { signOut } from 'next-auth/react';
 
 interface HeaderProps {
@@ -126,7 +127,7 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
         onOpenChange={setOrgSettingsModalOpen}
         user={user}
       />
-    <header className="sticky top-0 z-40 w-full border-b bg-white">
+    <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8">
         {/* Mobile menu toggle */}
         <Button
@@ -155,6 +156,9 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
               <OrganizationSwitcher currentOrg={user.organization} />
             </div>
           )}
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* Notifications */}
           <DropdownMenu>
