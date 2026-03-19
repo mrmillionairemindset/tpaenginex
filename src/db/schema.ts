@@ -5,42 +5,54 @@ import { relations } from "drizzle-orm";
 // ENUMS
 // ============================================================================
 
-export const organizationTypeEnum = pgEnum("organization_type", ["employer", "provider"]);
-export const userRoleEnum = pgEnum("user_role", [
-  "employer_admin",
-  "employer_user",
-  "provider_admin",
-  "provider_agent"
+export const organizationTypeEnum = pgEnum("organization_type", [
+  "platform",  // Super-admin (one row ever)
+  "tpa",       // TPA tenants (paying customers)
+  "client",    // Clients of a TPA (employers they serve)
 ]);
+
+export const userRoleEnum = pgEnum("user_role", [
+  "platform_admin",   // Full access to everything
+  "tpa_admin",        // TPA owner/manager — full access to their tenant
+  "tpa_staff",        // TPA scheduler/coordinator — create orders, assign collectors
+  "tpa_records",      // TPA records — update results, manage documents
+  "tpa_billing",      // TPA billing — access billing queue, invoices
+  "client_admin",     // Client contact — read-only portal to their own orders
+]);
+
 export const orderStatusEnum = pgEnum("order_status", [
   "new",
   "needs_site",
   "scheduled",
   "in_progress",
-  "results_uploaded",  // Provider uploaded results, not yet submitted
-  "pending_review",    // Results submitted, awaiting employer review
-  "needs_correction",  // Employer rejected, needs provider correction
+  "results_uploaded",
+  "pending_review",
+  "needs_correction",
   "complete",
-  "cancelled"
+  "cancelled",
 ]);
+
 export const appointmentStatusEnum = pgEnum("appointment_status", [
   "proposed",
   "confirmed",
   "completed",
   "no_show",
-  "cancelled"
+  "cancelled",
 ]);
+
 export const documentKindEnum = pgEnum("document_kind", [
   "result",
   "chain_of_custody",
   "consent",
   "authorization",
-  "other"
+  "other",
 ]);
+
 export const reviewActionEnum = pgEnum("review_action", [
   "approved",
-  "rejected"
+  "rejected",
 ]);
+
 export const notificationTypeEnum = pgEnum("notification_type", [
   "order_created",
   "order_assigned",
@@ -50,7 +62,41 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "results_approved",
   "results_rejected",
   "site_assigned",
-  "general"
+  "general",
+  // TPA-specific types
+  "collector_assigned",
+  "collection_complete",
+  "kit_reminder",
+  "collector_confirm_reminder",
+  "results_pending_followup",
+  "order_completed_client",
+  "billing_queued",
+]);
+
+export const eventStatusEnum = pgEnum("event_status", [
+  "scheduled",
+  "in_progress",
+  "partially_complete",
+  "complete",
+  "cancelled",
+]);
+
+export const invoiceStatusEnum = pgEnum("invoice_status", [
+  "pending",
+  "sent",
+  "paid",
+  "overdue",
+  "voided",
+]);
+
+export const leadStageEnum = pgEnum("lead_stage", [
+  "new_lead",
+  "outreach_sent",
+  "proposal_sent",
+  "follow_up",
+  "contract_sent",
+  "closed_won",
+  "closed_lost",
 ]);
 
 // ============================================================================
@@ -59,9 +105,10 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 
 export const organizations = pgTable("organizations", {
   id: uuid("id").defaultRandom().primaryKey(),
-  slug: varchar("slug", { length: 100 }).unique().notNull(), // Replaced clerkOrgId with slug
+  slug: varchar("slug", { length: 100 }).unique().notNull(),
   name: varchar("name", { length: 200 }).notNull(),
   type: organizationTypeEnum("type").notNull(),
+  tpaOrgId: uuid("tpa_org_id").references((): any => organizations.id, { onDelete: "cascade" }),
   billingTier: varchar("billing_tier", { length: 50 }),
   contactEmail: varchar("contact_email", { length: 320 }),
   contactPhone: varchar("contact_phone", { length: 30 }),
@@ -70,8 +117,8 @@ export const organizations = pgTable("organizations", {
   state: varchar("state", { length: 2 }),
   zip: varchar("zip", { length: 10 }),
   isActive: boolean("is_active").default(true).notNull(),
-  authExpiryDays: integer("auth_expiry_days").default(3).notNull(), // Days until authorization expires
-  authFormRecipients: text("auth_form_recipients").array(), // Email addresses to receive authorization forms
+  authExpiryDays: integer("auth_expiry_days").default(3).notNull(),
+  authFormRecipients: text("auth_form_recipients").array(),
   settings: jsonb("settings"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -84,9 +131,9 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 320 }).notNull().unique(),
   emailVerified: timestamp("email_verified", { mode: "date" }),
   image: text("image"),
-  password: varchar("password", { length: 255 }), // For credentials provider
-  orgId: uuid("org_id").references(() => organizations.id, { onDelete: "set null" }), // Current/active organization
-  role: userRoleEnum("role"), // Role in current organization
+  password: varchar("password", { length: 255 }),
+  orgId: uuid("org_id").references(() => organizations.id, { onDelete: "set null" }),
+  role: userRoleEnum("role"),
   phone: varchar("phone", { length: 30 }),
   isActive: boolean("is_active").default(true).notNull(),
   lastLoginAt: timestamp("last_login_at"),
@@ -138,7 +185,7 @@ export const verificationTokens = pgTable("verification_tokens", {
 export const organizationLocations = pgTable("organization_locations", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: uuid("org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
-  name: varchar("name", { length: 200 }).notNull(), // e.g., "Main Office", "Warehouse 3"
+  name: varchar("name", { length: 200 }).notNull(),
   address: text("address").notNull(),
   city: varchar("city", { length: 120 }).notNull(),
   state: varchar("state", { length: 2 }).notNull(),
@@ -153,12 +200,13 @@ export const organizationLocations = pgTable("organization_locations", {
 export const candidates = pgTable("candidates", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: uuid("org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
   firstName: varchar("first_name", { length: 120 }).notNull(),
   lastName: varchar("last_name", { length: 120 }).notNull(),
-  dob: varchar("dob", { length: 10 }).notNull(), // Required: MM/DD/YYYY
-  ssnLast4: varchar("ssn_last4", { length: 4 }).notNull(), // Required: Last 4 of SSN
-  phone: varchar("phone", { length: 30 }).notNull(), // Required
-  email: varchar("email", { length: 320 }).notNull(), // Required
+  dob: varchar("dob", { length: 10 }).notNull(),
+  ssnLast4: varchar("ssn_last4", { length: 4 }).notNull(),
+  phone: varchar("phone", { length: 30 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
   address: text("address"),
   city: varchar("city", { length: 120 }),
   state: varchar("state", { length: 2 }),
@@ -170,37 +218,64 @@ export const candidates = pgTable("candidates", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Collectors — mobile PRN collectors dispatched to job sites
+export const collectors = pgTable("collectors", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
+  firstName: varchar("first_name", { length: 120 }).notNull(),
+  lastName: varchar("last_name", { length: 120 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 30 }).notNull(),
+  certifications: jsonb("certifications").$type<string[]>(),
+  serviceArea: text("service_area"),
+  isAvailable: boolean("is_available").default(true).notNull(),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const orders = pgTable("orders", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: uuid("org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
   candidateId: uuid("candidate_id").references(() => candidates.id, { onDelete: "restrict" }).notNull(),
+  collectorId: uuid("collector_id").references(() => collectors.id),
+  eventId: uuid("event_id"),  // FK added after events table definition via relations
   orderNumber: varchar("order_number", { length: 50 }).unique().notNull(),
   testType: varchar("test_type", { length: 100 }).notNull(),
+  serviceType: varchar("service_type", { length: 50 }).notNull().default("drug_screen"),
+  isDOT: boolean("is_dot").default(false).notNull(),
+  priority: varchar("priority", { length: 20 }).default("standard"),
+  ccfNumber: varchar("ccf_number", { length: 50 }),
+  resultStatus: varchar("result_status", { length: 30 }).default("pending"),
   urgency: varchar("urgency", { length: 30 }).default("standard"),
-  jobsiteLocation: varchar("jobsite_location", { length: 255 }).notNull(), // Required: Jobsite/work location
+  jobsiteLocation: varchar("jobsite_location", { length: 255 }).notNull(),
   requestedBy: uuid("requested_by").references(() => users.id),
   notes: text("notes"),
   internalNotes: text("internal_notes"),
-  needsMask: boolean("needs_mask").default(false).notNull(), // Does the candidate need a mask?
-  maskSize: varchar("mask_size", { length: 20 }), // Mask size if needed (e.g., "Small", "Medium", "Large", "X-Large")
+  needsMask: boolean("needs_mask").default(false).notNull(),
+  maskSize: varchar("mask_size", { length: 20 }),
   status: orderStatusEnum("status").default("new").notNull(),
   externalRowId: varchar("external_row_id", { length: 40 }),
   scheduledFor: timestamp("scheduled_for"),
   completedAt: timestamp("completed_at"),
-  useConcentra: boolean("use_concentra").default(true).notNull(), // Whether to use Concentra network (provider choice based on distance)
-  authorizationMethod: varchar("authorization_method", { length: 20 }), // "concentra" | "custom" | null
-  authorizationFormUrl: text("authorization_form_url"), // URL to generated custom auth form PDF
-  authorizationFormSentAt: timestamp("authorization_form_sent_at"), // When custom auth form was sent via email
-  authCreatedAt: timestamp("auth_created_at"), // When provider created authorization in Concentra HUB
-  authExpiresAt: timestamp("auth_expires_at"), // Calculated expiration based on authCreatedAt + org.authExpiryDays
-  authConfirmationEmail: text("auth_confirmation_email"), // Email body/ID that started the timer
-  authNumber: varchar("auth_number", { length: 100 }), // Authorization number from provider system
-  autoTimerStarted: boolean("auto_timer_started").default(false), // Whether timer was started automatically via email
+  // Legacy Concentra fields — kept in DB, hidden in TPA UI
+  useConcentra: boolean("use_concentra").default(true).notNull(),
+  authorizationMethod: varchar("authorization_method", { length: 20 }),
+  authorizationFormUrl: text("authorization_form_url"),
+  authorizationFormSentAt: timestamp("authorization_form_sent_at"),
+  authCreatedAt: timestamp("auth_created_at"),
+  authExpiresAt: timestamp("auth_expires_at"),
+  authConfirmationEmail: text("auth_confirmation_email"),
+  authNumber: varchar("auth_number", { length: 100 }),
+  autoTimerStarted: boolean("auto_timer_started").default(false),
   meta: jsonb("meta"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Legacy table — kept but unused in TPA flow
 export const sites = pgTable("sites", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 200 }).notNull(),
@@ -226,6 +301,7 @@ export const sites = pgTable("sites", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Legacy table — kept but unused in TPA flow
 export const appointments = pgTable("appointments", {
   id: uuid("id").defaultRandom().primaryKey(),
   orderId: uuid("order_id").references(() => orders.id, { onDelete: "cascade" }).notNull(),
@@ -245,6 +321,7 @@ export const appointments = pgTable("appointments", {
 export const documents = pgTable("documents", {
   id: uuid("id").defaultRandom().primaryKey(),
   orderId: uuid("order_id").references(() => orders.id, { onDelete: "cascade" }).notNull(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id, { onDelete: "cascade" }),
   kind: documentKindEnum("kind").notNull(),
   fileName: varchar("file_name", { length: 255 }).notNull(),
   storageUrl: text("storage_url").notNull(),
@@ -258,6 +335,7 @@ export const documents = pgTable("documents", {
 
 export const auditLogs = pgTable("audit_logs", {
   id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id),
   actorUserId: uuid("actor_user_id").references(() => users.id),
   actorEmail: varchar("actor_email", { length: 320 }),
   entityType: varchar("entity_type", { length: 40 }).notNull(),
@@ -281,6 +359,7 @@ export const orderReviews = pgTable("order_reviews", {
 export const notifications = pgTable("notifications", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id),
   type: notificationTypeEnum("type").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
@@ -290,16 +369,109 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Events — batch/random pull tracking
+export const events = pgTable("events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id).notNull(),
+  clientOrgId: uuid("client_org_id").references(() => organizations.id).notNull(),
+  eventNumber: varchar("event_number", { length: 50 }).unique().notNull(),
+  serviceType: varchar("service_type", { length: 50 }).notNull(),
+  collectorId: uuid("collector_id").references(() => collectors.id),
+  location: text("location").notNull(),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  totalOrdered: integer("total_ordered").notNull(),
+  totalCompleted: integer("total_completed").default(0).notNull(),
+  totalPending: integer("total_pending").default(0).notNull(),
+  status: eventStatusEnum("status").default("scheduled").notNull(),
+  kitMailedAt: timestamp("kit_mailed_at"),
+  collectorConfirmedAt: timestamp("collector_confirmed_at"),
+  completionEmailSentAt: timestamp("completion_email_sent_at"),
+  pendingFollowUpUntil: timestamp("pending_follow_up_until"),
+  notes: text("notes"),
+  internalNotes: text("internal_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Invoices — billing queue
+export const invoices = pgTable("invoices", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id).notNull(),
+  invoiceNumber: varchar("invoice_number", { length: 50 }).unique().notNull(),
+  clientOrgId: uuid("client_org_id").references(() => organizations.id).notNull(),
+  orderId: uuid("order_id").references(() => orders.id),
+  eventId: uuid("event_id").references(() => events.id),
+  amount: integer("amount"),
+  status: invoiceStatusEnum("status").default("pending").notNull(),
+  invoicedAt: timestamp("invoiced_at"),
+  paidAt: timestamp("paid_at"),
+  dueDate: timestamp("due_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Leads — CRM pipeline
+export const leads = pgTable("leads", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id).notNull(),
+  companyName: varchar("company_name", { length: 200 }).notNull(),
+  contactName: varchar("contact_name", { length: 200 }),
+  contactEmail: varchar("contact_email", { length: 320 }),
+  contactPhone: varchar("contact_phone", { length: 30 }),
+  source: varchar("source", { length: 100 }),
+  serviceInterest: text("service_interest"),
+  stage: leadStageEnum("stage").default("new_lead").notNull(),
+  ownedBy: uuid("owned_by").references(() => users.id),
+  estimatedValue: integer("estimated_value"),
+  lastContactedAt: timestamp("last_contacted_at"),
+  nextFollowUpAt: timestamp("next_follow_up_at"),
+  notes: text("notes"),
+  convertedToOrgId: uuid("converted_to_org_id").references(() => organizations.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// TPA Settings — per-tenant configuration
+export const tpaSettings = pgTable("tpa_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id).notNull().unique(),
+  brandName: varchar("brand_name", { length: 200 }),
+  logoUrl: text("logo_url"),
+  primaryColor: varchar("primary_color", { length: 7 }),
+  replyToEmail: varchar("reply_to_email", { length: 320 }),
+  defaultCollectionWindowHours: integer("default_collection_window_hours").default(24),
+  dotCompanyName: varchar("dot_company_name", { length: 200 }),
+  dotConsortiumId: varchar("dot_consortium_id", { length: 100 }),
+  timezone: varchar("timezone", { length: 50 }).default("America/Chicago"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // ============================================================================
 // RELATIONS
 // ============================================================================
 
-export const organizationsRelations = relations(organizations, ({ many }) => ({
+export const organizationsRelations = relations(organizations, ({ one, many }) => ({
+  parentTpa: one(organizations, {
+    fields: [organizations.tpaOrgId],
+    references: [organizations.id],
+    relationName: "tpaClients",
+  }),
+  clientOrgs: many(organizations, { relationName: "tpaClients" }),
   users: many(users),
   candidates: many(candidates),
   orders: many(orders),
   members: many(organizationMembers),
   locations: many(organizationLocations),
+  collectors: many(collectors),
+  events: many(events, { relationName: "tpaEvents" }),
+  invoices: many(invoices, { relationName: "tpaInvoices" }),
+  leads: many(leads),
+  tpaSettingsRecord: one(tpaSettings, {
+    fields: [organizations.id],
+    references: [tpaSettings.tpaOrgId],
+  }),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -315,6 +487,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   documentsUploaded: many(documents, { relationName: "uploadedBy" }),
   auditLogs: many(auditLogs),
   notifications: many(notifications),
+  ownedLeads: many(leads),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -339,6 +512,15 @@ export const candidatesRelations = relations(candidates, ({ one, many }) => ({
   orders: many(orders),
 }));
 
+export const collectorsRelations = relations(collectors, ({ one, many }) => ({
+  tpaOrg: one(organizations, {
+    fields: [collectors.tpaOrgId],
+    references: [organizations.id],
+  }),
+  orders: many(orders),
+  events: many(events),
+}));
+
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   organization: one(organizations, {
     fields: [orders.orgId],
@@ -348,6 +530,14 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     fields: [orders.candidateId],
     references: [candidates.id],
   }),
+  collector: one(collectors, {
+    fields: [orders.collectorId],
+    references: [collectors.id],
+  }),
+  event: one(events, {
+    fields: [orders.eventId],
+    references: [events.id],
+  }),
   requestedByUser: one(users, {
     fields: [orders.requestedBy],
     references: [users.id],
@@ -356,6 +546,7 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   appointments: many(appointments),
   documents: many(documents),
   reviews: many(orderReviews),
+  invoices: many(invoices),
 }));
 
 export const sitesRelations = relations(sites, ({ many }) => ({
@@ -441,13 +632,77 @@ export const organizationLocationsRelations = relations(organizationLocations, (
   }),
 }));
 
-// Type exports for TypeScript
+export const eventsRelations = relations(events, ({ one, many }) => ({
+  tpaOrg: one(organizations, {
+    fields: [events.tpaOrgId],
+    references: [organizations.id],
+    relationName: "tpaEvents",
+  }),
+  clientOrg: one(organizations, {
+    fields: [events.clientOrgId],
+    references: [organizations.id],
+  }),
+  collector: one(collectors, {
+    fields: [events.collectorId],
+    references: [collectors.id],
+  }),
+  orders: many(orders),
+  invoices: many(invoices),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one }) => ({
+  tpaOrg: one(organizations, {
+    fields: [invoices.tpaOrgId],
+    references: [organizations.id],
+    relationName: "tpaInvoices",
+  }),
+  clientOrg: one(organizations, {
+    fields: [invoices.clientOrgId],
+    references: [organizations.id],
+  }),
+  order: one(orders, {
+    fields: [invoices.orderId],
+    references: [orders.id],
+  }),
+  event: one(events, {
+    fields: [invoices.eventId],
+    references: [events.id],
+  }),
+}));
+
+export const leadsRelations = relations(leads, ({ one }) => ({
+  tpaOrg: one(organizations, {
+    fields: [leads.tpaOrgId],
+    references: [organizations.id],
+  }),
+  owner: one(users, {
+    fields: [leads.ownedBy],
+    references: [users.id],
+  }),
+  convertedOrg: one(organizations, {
+    fields: [leads.convertedToOrgId],
+    references: [organizations.id],
+  }),
+}));
+
+export const tpaSettingsRelations = relations(tpaSettings, ({ one }) => ({
+  tpaOrg: one(organizations, {
+    fields: [tpaSettings.tpaOrgId],
+    references: [organizations.id],
+  }),
+}));
+
+// ============================================================================
+// TYPE EXPORTS
+// ============================================================================
+
 export type OrganizationType = typeof organizations.$inferSelect;
 export type UserType = typeof users.$inferSelect;
 export type AccountType = typeof accounts.$inferSelect;
 export type SessionType = typeof sessions.$inferSelect;
 export type VerificationTokenType = typeof verificationTokens.$inferSelect;
 export type CandidateType = typeof candidates.$inferSelect;
+export type CollectorType = typeof collectors.$inferSelect;
 export type OrderType = typeof orders.$inferSelect;
 export type SiteType = typeof sites.$inferSelect;
 export type AppointmentType = typeof appointments.$inferSelect;
@@ -457,3 +712,7 @@ export type OrganizationMemberType = typeof organizationMembers.$inferSelect;
 export type OrderReviewType = typeof orderReviews.$inferSelect;
 export type NotificationType = typeof notifications.$inferSelect;
 export type OrganizationLocationType = typeof organizationLocations.$inferSelect;
+export type EventType = typeof events.$inferSelect;
+export type InvoiceType = typeof invoices.$inferSelect;
+export type LeadType = typeof leads.$inferSelect;
+export type TpaSettingsType = typeof tpaSettings.$inferSelect;

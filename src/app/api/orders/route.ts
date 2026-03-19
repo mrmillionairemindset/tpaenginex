@@ -30,10 +30,15 @@ const createOrderSchema = z.object({
     zip: z.string().min(5, "ZIP code is required"),
   }).optional(),
   testType: z.string().min(1, "Test type is required"),
+  serviceType: z.enum(['pre_employment', 'random', 'post_accident', 'reasonable_suspicion', 'physical', 'other', 'drug_screen']).default('drug_screen'),
+  isDOT: z.boolean().default(false),
+  priority: z.enum(['standard', 'urgent']).default('standard'),
   urgency: z.enum(['standard', 'rush', 'urgent']).default('standard'),
   jobsiteLocation: z.string().min(1, "Jobsite location is required"),
   needsMask: z.boolean().default(false),
   maskSize: z.string().optional(),
+  collectorId: z.string().uuid().optional(),
+  eventId: z.string().uuid().optional(),
   notes: z.string().optional(),
   internalNotes: z.string().optional(),
   scheduledFor: z.string().datetime().optional(),
@@ -48,17 +53,23 @@ export const GET = withAuth(async (req, user) => {
   const status = searchParams.get('status');
   const candidateId = searchParams.get('candidateId');
 
-  // Build where clause based on user role
-  const isProvider = user.role?.startsWith('provider');
+  const isTpaUser = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
+  const tpaOrgId = user.tpaOrgId;
 
   let whereClause;
-  if (isProvider) {
-    // Providers see ALL orders (they coordinate for multiple employers)
-    whereClause = status
-      ? eq(orders.status, status as any)
-      : undefined;
+  if (user.role === 'platform_admin') {
+    // Platform admin sees all orders
+    whereClause = status ? eq(orders.status, status as any) : undefined;
+  } else if (isTpaUser && tpaOrgId) {
+    // TPA staff sees orders scoped to their TPA
+    const baseWhere = eq(orders.tpaOrgId, tpaOrgId);
+    if (status) {
+      whereClause = and(baseWhere, eq(orders.status, status as any));
+    } else {
+      whereClause = baseWhere;
+    }
   } else {
-    // Employers only see their own orders
+    // Client users see only their own org's orders
     const baseWhere = eq(orders.orgId, user.organization!.id);
     if (status) {
       whereClause = and(baseWhere, eq(orders.status, status as any));
@@ -80,16 +91,18 @@ export const GET = withAuth(async (req, user) => {
           type: true,
         },
       },
+      collector: {
+        columns: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
       requestedByUser: {
         columns: {
           id: true,
           name: true,
           email: true,
-        },
-      },
-      appointments: {
-        with: {
-          site: true,
         },
       },
       documents: true,
@@ -105,10 +118,13 @@ export const GET = withAuth(async (req, user) => {
 // ============================================================================
 
 export const POST = withAuth(async (req, user) => {
-  // Only employers can create orders
-  if (!user.role?.startsWith('employer')) {
+  // TPA staff and admins can create orders on behalf of clients
+  const canCreate = user.role?.startsWith('tpa_') && ['tpa_admin', 'tpa_staff'].includes(user.role!)
+    || user.role === 'platform_admin';
+
+  if (!canCreate) {
     return NextResponse.json(
-      { error: 'Only employers can create orders' },
+      { error: 'Insufficient permissions to create orders' },
       { status: 403 }
     );
   }
@@ -124,31 +140,40 @@ export const POST = withAuth(async (req, user) => {
   }
 
   const data = validation.data;
+  const tpaOrgId = user.tpaOrgId;
+
+  if (!tpaOrgId) {
+    return NextResponse.json(
+      { error: 'TPA organization context required' },
+      { status: 400 }
+    );
+  }
 
   // Determine or create candidate
   let candidateId: string;
 
   if (data.candidateId) {
-    // Use existing candidate - verify it belongs to this org
+    // Use existing candidate - verify it belongs to this TPA's scope
     const existingCandidate = await db.query.candidates.findFirst({
       where: and(
         eq(candidates.id, data.candidateId),
-        eq(candidates.orgId, user.organization!.id)
+        eq(candidates.tpaOrgId, tpaOrgId)
       ),
     });
 
     if (!existingCandidate) {
       return NextResponse.json(
-        { error: 'Candidate not found or does not belong to your organization' },
+        { error: 'Candidate not found' },
         { status: 404 }
       );
     }
 
     candidateId = existingCandidate.id;
   } else if (data.candidate) {
-    // Create new candidate
+    // Create new candidate scoped to TPA
     const [newCandidate] = await db.insert(candidates).values({
       orgId: user.organization!.id,
+      tpaOrgId,
       firstName: data.candidate.firstName,
       lastName: data.candidate.lastName,
       dob: data.candidate.dob,
@@ -172,16 +197,22 @@ export const POST = withAuth(async (req, user) => {
   // Generate order number
   const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-  // Create order (useConcentra defaults to true in database)
+  // Create order with TPA scope
   const [newOrder] = await db.insert(orders).values({
     orgId: user.organization!.id,
+    tpaOrgId,
     candidateId,
     orderNumber,
     testType: data.testType,
+    serviceType: data.serviceType,
+    isDOT: data.isDOT,
+    priority: data.priority,
     urgency: data.urgency,
     jobsiteLocation: data.jobsiteLocation,
     needsMask: data.needsMask,
     maskSize: data.maskSize,
+    collectorId: data.collectorId || null,
+    eventId: data.eventId || null,
     requestedBy: user.id,
     notes: data.notes,
     internalNotes: data.internalNotes,
@@ -201,6 +232,13 @@ export const POST = withAuth(async (req, user) => {
           type: true,
         },
       },
+      collector: {
+        columns: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
       requestedByUser: {
         columns: {
           id: true,
@@ -211,7 +249,7 @@ export const POST = withAuth(async (req, user) => {
     },
   });
 
-  // Send notification to providers
+  // Send notification
   await notifyOrderCreated(newOrder.id, orderNumber);
 
   // Sync to Google Sheets (async, don't block response)
@@ -239,7 +277,6 @@ export const POST = withAuth(async (req, user) => {
     })
       .then((rowId) => {
         if (rowId) {
-          // Update order with the external row ID for future syncing
           db.update(orders)
             .set({ externalRowId: rowId })
             .where(eq(orders.id, fullOrder.id))
@@ -248,7 +285,6 @@ export const POST = withAuth(async (req, user) => {
       })
       .catch((error) => {
         console.error('Failed to sync order to Google Sheets:', error);
-        // Don't fail the request if sheet sync fails
       });
   }
 

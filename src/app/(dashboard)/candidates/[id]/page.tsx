@@ -19,7 +19,7 @@ export default async function CandidatePage({ params }: CandidatePageProps) {
   }
 
   // Only employers can view candidates
-  if (!user.role?.startsWith('employer')) {
+  if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     redirect('/dashboard');
   }
 

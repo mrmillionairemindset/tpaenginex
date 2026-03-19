@@ -2,28 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import { StatCard } from '@/components/ui/stat-card';
-import { FileText, Users, CheckCircle, Clock, Building } from 'lucide-react';
+import { FileText, Users, CheckCircle, Clock, Building, CalendarDays, DollarSign, UserCheck, Target } from 'lucide-react';
 
 interface DashboardStatsProps {
   userRole: string;
 }
 
 interface Stats {
-  totalOrders: number;
-  completedOrders: number;
-  pendingOrders: number;
-  thisMonthOrders: number;
+  totalOrders?: number;
+  completedOrders?: number;
+  openOrders?: number;
+  thisMonthOrders?: number;
   activeCandidates?: number;
-  totalOrganizations?: number;
+  eventsThisWeek?: number;
+  pendingResults?: number;
+  billingQueue?: number;
+  activeCollectors?: number;
+  openLeads?: number;
+  totalClients?: number;
+  totalTpas?: number;
 }
 
 export function DashboardStats({ userRole }: DashboardStatsProps) {
-  const [stats, setStats] = useState<Stats>({
-    totalOrders: 0,
-    completedOrders: 0,
-    pendingOrders: 0,
-    thisMonthOrders: 0,
-  });
+  const [stats, setStats] = useState<Stats>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +45,8 @@ export function DashboardStats({ userRole }: DashboardStatsProps) {
     fetchStats();
   }, []);
 
-  const isEmployer = userRole.startsWith('employer');
+  const isClient = userRole === 'client_admin';
+  const isPlatform = userRole === 'platform_admin';
 
   if (loading) {
     return (
@@ -56,46 +58,36 @@ export function DashboardStats({ userRole }: DashboardStatsProps) {
     );
   }
 
+  if (isPlatform) {
+    return (
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard title="Total Orders" value={String(stats.totalOrders || 0)} icon={FileText} />
+        <StatCard title="TPA Tenants" value={String(stats.totalTpas || 0)} icon={Building} />
+        <StatCard title="Client Orgs" value={String(stats.totalClients || 0)} icon={Users} />
+      </div>
+    );
+  }
+
+  if (isClient) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Total Orders" value={String(stats.totalOrders || 0)} icon={FileText} />
+        <StatCard title="Active Candidates" value={String(stats.activeCandidates || 0)} icon={Users} />
+        <StatCard title="Completed" value={String(stats.completedOrders || 0)} icon={CheckCircle} />
+        <StatCard title="This Month" value={String(stats.thisMonthOrders || 0)} icon={FileText} />
+      </div>
+    );
+  }
+
+  // TPA dashboard
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        title="Total Orders"
-        value={stats.totalOrders.toString()}
-        icon={FileText}
-      />
-
-      {isEmployer ? (
-        <StatCard
-          title="Active Candidates"
-          value={stats.activeCandidates?.toString() || '0'}
-          icon={Users}
-        />
-      ) : (
-        <>
-          <StatCard
-            title="Pending Orders"
-            value={stats.pendingOrders.toString()}
-            icon={Clock}
-          />
-          <StatCard
-            title="Employers"
-            value={stats.totalOrganizations?.toString() || '0'}
-            icon={Building}
-          />
-        </>
-      )}
-
-      <StatCard
-        title="Completed"
-        value={stats.completedOrders.toString()}
-        icon={CheckCircle}
-      />
-
-      <StatCard
-        title="This Month"
-        value={stats.thisMonthOrders.toString()}
-        icon={FileText}
-      />
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <StatCard title="Open Orders" value={String(stats.openOrders || 0)} icon={FileText} />
+      <StatCard title="Events This Week" value={String(stats.eventsThisWeek || 0)} icon={CalendarDays} />
+      <StatCard title="Pending Results" value={String(stats.pendingResults || 0)} icon={Clock} />
+      <StatCard title="Billing Queue" value={String(stats.billingQueue || 0)} icon={DollarSign} />
+      <StatCard title="Active Collectors" value={String(stats.activeCollectors || 0)} icon={UserCheck} />
+      <StatCard title="Open Leads" value={String(stats.openLeads || 0)} icon={Target} />
     </div>
   );
 }

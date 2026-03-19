@@ -9,16 +9,16 @@ async function seed() {
   console.log('🌱 Seeding database...');
 
   try {
-    // Seed a test provider organization
-    const [providerOrg] = await db.insert(organizations).values({
-      clerkOrgId: 'org_test_provider_seed',
-      name: 'RapidScreen Provider Network',
-      type: 'provider',
+    // Seed a test TPA organization
+    const [tpaOrg] = await db.insert(organizations).values({
+      slug: 'rapidscreen-tpa',
+      name: 'RapidScreen TPA Network',
+      type: 'tpa',
       contactEmail: 'admin@rapidscreen.com',
       isActive: true,
     }).returning();
 
-    console.log('✅ Created provider organization:', providerOrg.name);
+    console.log('Created TPA organization:', tpaOrg.name);
 
     // Seed test sites
     const testSites = [

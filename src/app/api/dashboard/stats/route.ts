@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/auth/get-user';
 import { db } from '@/db';
-import { orders, candidates, organizations } from '@/db/schema';
-import { eq, and, gte, count } from 'drizzle-orm';
+import { orders, candidates, organizations, events, invoices, collectors, leads } from '@/db/schema';
+import { eq, and, gte, ne, count } from 'drizzle-orm';
 
-// Mark this route as dynamic to prevent static rendering
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -15,122 +14,106 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const isEmployer = user.role?.startsWith('employer');
+    const isClient = user.role === 'client_admin';
+    const tpaOrgId = user.tpaOrgId;
     const orgId = user.orgId;
 
-    // Get start of current month
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    if (isEmployer) {
-      // Employer stats
+    const now = new Date();
+
+    if (isClient) {
+      const [totalResult, completedResult, monthResult, candidateResult] = await Promise.all([
+        db.select({ count: count() }).from(orders).where(eq(orders.orgId, orgId!)),
+        db.select({ count: count() }).from(orders).where(and(eq(orders.orgId, orgId!), eq(orders.status, 'complete'))),
+        db.select({ count: count() }).from(orders).where(and(eq(orders.orgId, orgId!), gte(orders.createdAt, startOfMonth))),
+        db.select({ count: count() }).from(candidates).where(eq(candidates.orgId, orgId!)),
+      ]);
+
+      return NextResponse.json({
+        stats: {
+          totalOrders: totalResult[0]?.count || 0,
+          completedOrders: completedResult[0]?.count || 0,
+          thisMonthOrders: monthResult[0]?.count || 0,
+          activeCandidates: candidateResult[0]?.count || 0,
+        },
+      });
+    } else if (tpaOrgId) {
       const [
+        openOrdersResult,
+        eventsThisWeekResult,
+        pendingResultsResult,
+        billingQueueResult,
+        activeCollectorsResult,
+        openLeadsResult,
         totalOrdersResult,
         completedOrdersResult,
         thisMonthOrdersResult,
-        activeCandidatesResult,
+        totalClientsResult,
       ] = await Promise.all([
-        // Total orders
-        db
-          .select({ count: count() })
-          .from(orders)
-          .where(eq(orders.orgId, orgId)),
-
-        // Completed orders
-        db
-          .select({ count: count() })
-          .from(orders)
-          .where(
-            and(
-              eq(orders.orgId, orgId),
-              eq(orders.status, 'complete')
-            )
-          ),
-
-        // This month orders
-        db
-          .select({ count: count() })
-          .from(orders)
-          .where(
-            and(
-              eq(orders.orgId, orgId),
-              gte(orders.createdAt, startOfMonth)
-            )
-          ),
-
-        // Active candidates (candidates with at least one order)
-        db
-          .select({ count: count() })
-          .from(candidates)
-          .where(eq(candidates.orgId, orgId)),
+        db.select({ count: count() }).from(orders).where(
+          and(eq(orders.tpaOrgId, tpaOrgId), ne(orders.status, 'complete'), ne(orders.status, 'cancelled'))
+        ),
+        db.select({ count: count() }).from(events).where(
+          and(eq(events.tpaOrgId, tpaOrgId), gte(events.scheduledDate, now))
+        ),
+        db.select({ count: count() }).from(orders).where(
+          and(eq(orders.tpaOrgId, tpaOrgId), eq(orders.resultStatus, 'pending'), eq(orders.status, 'in_progress'))
+        ),
+        db.select({ count: count() }).from(invoices).where(
+          and(eq(invoices.tpaOrgId, tpaOrgId), eq(invoices.status, 'pending'))
+        ),
+        db.select({ count: count() }).from(collectors).where(
+          and(eq(collectors.tpaOrgId, tpaOrgId), eq(collectors.isAvailable, true), eq(collectors.isActive, true))
+        ),
+        db.select({ count: count() }).from(leads).where(
+          and(eq(leads.tpaOrgId, tpaOrgId), ne(leads.stage, 'closed_won'), ne(leads.stage, 'closed_lost'))
+        ),
+        db.select({ count: count() }).from(orders).where(eq(orders.tpaOrgId, tpaOrgId)),
+        db.select({ count: count() }).from(orders).where(
+          and(eq(orders.tpaOrgId, tpaOrgId), eq(orders.status, 'complete'))
+        ),
+        db.select({ count: count() }).from(orders).where(
+          and(eq(orders.tpaOrgId, tpaOrgId), gte(orders.createdAt, startOfMonth))
+        ),
+        db.select({ count: count() }).from(organizations).where(
+          and(eq(organizations.type, 'client'), eq(organizations.tpaOrgId, tpaOrgId))
+        ),
       ]);
 
       return NextResponse.json({
         stats: {
           totalOrders: totalOrdersResult[0]?.count || 0,
           completedOrders: completedOrdersResult[0]?.count || 0,
-          pendingOrders: 0, // Not used for employers
+          openOrders: openOrdersResult[0]?.count || 0,
           thisMonthOrders: thisMonthOrdersResult[0]?.count || 0,
-          activeCandidates: activeCandidatesResult[0]?.count || 0,
+          eventsThisWeek: eventsThisWeekResult[0]?.count || 0,
+          pendingResults: pendingResultsResult[0]?.count || 0,
+          billingQueue: billingQueueResult[0]?.count || 0,
+          activeCollectors: activeCollectorsResult[0]?.count || 0,
+          openLeads: openLeadsResult[0]?.count || 0,
+          totalClients: totalClientsResult[0]?.count || 0,
         },
       });
     } else {
-      // Provider stats - see all orders across all organizations
-      const [
-        totalOrdersResult,
-        completedOrdersResult,
-        pendingOrdersResult,
-        thisMonthOrdersResult,
-        totalOrganizationsResult,
-      ] = await Promise.all([
-        // Total orders
+      const [totalOrders, totalTpas, totalClients] = await Promise.all([
         db.select({ count: count() }).from(orders),
-
-        // Completed orders
-        db
-          .select({ count: count() })
-          .from(orders)
-          .where(eq(orders.status, 'complete')),
-
-        // Pending orders (not complete or cancelled)
-        db
-          .select({ count: count() })
-          .from(orders)
-          .where(
-            and(
-              eq(orders.status, 'new'),
-            )
-          ),
-
-        // This month orders
-        db
-          .select({ count: count() })
-          .from(orders)
-          .where(gte(orders.createdAt, startOfMonth)),
-
-        // Total employer organizations
-        db
-          .select({ count: count() })
-          .from(organizations)
-          .where(eq(organizations.type, 'employer')),
+        db.select({ count: count() }).from(organizations).where(eq(organizations.type, 'tpa')),
+        db.select({ count: count() }).from(organizations).where(eq(organizations.type, 'client')),
       ]);
 
       return NextResponse.json({
         stats: {
-          totalOrders: totalOrdersResult[0]?.count || 0,
-          completedOrders: completedOrdersResult[0]?.count || 0,
-          pendingOrders: pendingOrdersResult[0]?.count || 0,
-          thisMonthOrders: thisMonthOrdersResult[0]?.count || 0,
-          totalOrganizations: totalOrganizationsResult[0]?.count || 0,
+          totalOrders: totalOrders[0]?.count || 0,
+          totalTpas: totalTpas[0]?.count || 0,
+          totalClients: totalClients[0]?.count || 0,
         },
       });
     }
   } catch (error) {
     console.error('Failed to fetch dashboard stats:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch stats' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
   }
 }

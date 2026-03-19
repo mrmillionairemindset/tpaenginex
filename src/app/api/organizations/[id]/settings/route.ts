@@ -23,9 +23,9 @@ export const GET = withAuth(async (req, context) => {
   const user = req.user;
 
   // Only providers can manage organization settings
-  if (!user.role?.startsWith('provider')) {
+  if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     return NextResponse.json(
-      { error: 'Only providers can access organization settings' },
+      { error: 'Only TPA users can access organization settings' },
       { status: 403 }
     );
   }
@@ -59,9 +59,9 @@ export const PATCH = withAuth(async (req, context) => {
   const user = req.user;
 
   // Only providers can manage organization settings
-  if (!user.role?.startsWith('provider')) {
+  if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     return NextResponse.json(
-      { error: 'Only providers can update organization settings' },
+      { error: 'Only TPA users can update organization settings' },
       { status: 403 }
     );
   }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { sites } from '@/db/schema';
-import { withProviderAuth } from '@/auth/api-middleware';
+import { withTpaAuth } from '@/auth/api-middleware';
 import { eq, and, or, ilike, desc } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -34,7 +34,7 @@ const createSiteSchema = z.object({
 // GET /api/sites - List sites
 // ============================================================================
 
-export const GET = withProviderAuth(async (req, user) => {
+export const GET = withTpaAuth(async (req, user) => {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('search');
   const testType = searchParams.get('testType');
@@ -103,7 +103,7 @@ export const GET = withProviderAuth(async (req, user) => {
 // POST /api/sites - Create site
 // ============================================================================
 
-export const POST = withProviderAuth(async (req, user) => {
+export const POST = withTpaAuth(async (req, user) => {
   const body = await req.json();
   const validation = createSiteSchema.safeParse(body);
 

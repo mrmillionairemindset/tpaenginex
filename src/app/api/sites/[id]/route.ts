@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { sites } from '@/db/schema';
-import { withProviderAuth } from '@/auth/api-middleware';
+import { withTpaAuth } from '@/auth/api-middleware';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -35,7 +35,7 @@ const updateSiteSchema = z.object({
 // GET /api/sites/[id] - Get single site
 // ============================================================================
 
-export const GET = withProviderAuth(async (req, user, context) => {
+export const GET = withTpaAuth(async (req, user, context) => {
   const { id } = context.params;
 
   const site = await db.query.sites.findFirst({
@@ -75,7 +75,7 @@ export const GET = withProviderAuth(async (req, user, context) => {
 // PATCH /api/sites/[id] - Update site
 // ============================================================================
 
-export const PATCH = withProviderAuth(async (req, user, context) => {
+export const PATCH = withTpaAuth(async (req, user, context) => {
   const { id } = context.params;
   const body = await req.json();
   const validation = updateSiteSchema.safeParse(body);
@@ -158,7 +158,7 @@ export const PATCH = withProviderAuth(async (req, user, context) => {
 // DELETE /api/sites/[id] - Deactivate site
 // ============================================================================
 
-export const DELETE = withProviderAuth(async (req, user, context) => {
+export const DELETE = withTpaAuth(async (req, user, context) => {
   const { id } = context.params;
 
   // Verify site exists

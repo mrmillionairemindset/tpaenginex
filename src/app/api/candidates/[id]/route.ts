@@ -34,9 +34,9 @@ export const GET = withAuth(async (req, user, context) => {
   const { id } = context.params;
 
   // Only employers can access candidates
-  if (!user.role?.startsWith('employer')) {
+  if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     return NextResponse.json(
-      { error: 'Only employers can access candidates' },
+      { error: 'Insufficient permissions' },
       { status: 403 }
     );
   }
@@ -89,7 +89,7 @@ export const PATCH = withAuth(async (req, user, context) => {
   const data = validation.data;
 
   // Only employer admins can update candidates
-  if (user.role !== 'employer_admin') {
+  if (user.role !== 'tpa_admin' && user.role !== 'tpa_staff' && user.role !== 'platform_admin') {
     return NextResponse.json(
       { error: 'Only employer admins can update candidates' },
       { status: 403 }

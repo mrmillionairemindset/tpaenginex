@@ -48,7 +48,7 @@ export async function GET(
 
     // Check access control
     // Employers can only see documents from their own orders
-    if (user.role?.startsWith('employer')) {
+    if (user.role === 'client_admin') {
       if (doc.order.orgId !== user.orgId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }

@@ -60,47 +60,47 @@ export function OrganizationDetails({ organizationId }: OrganizationDetailsProps
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">{organization.name}</h1>
-        <p className="text-gray-500 mt-1 capitalize">{organization.type} Organization</p>
+        <p className="text-muted-foreground mt-1 capitalize">{organization.type} Organization</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Organization Information */}
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Building2 className="h-5 w-5 text-gray-500" />
+            <Building2 className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Organization Information</h2>
           </div>
           <dl className="space-y-2">
             <div>
-              <dt className="text-sm text-gray-500">Organization Name</dt>
+              <dt className="text-sm text-muted-foreground">Organization Name</dt>
               <dd className="font-medium">{organization.name}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Type</dt>
+              <dt className="text-sm text-muted-foreground">Type</dt>
               <dd className="font-medium capitalize">{organization.type}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Slug</dt>
+              <dt className="text-sm text-muted-foreground">Slug</dt>
               <dd className="font-medium">{organization.slug}</dd>
             </div>
             {organization.contactEmail && (
               <div>
-                <dt className="text-sm text-gray-500">Contact Email</dt>
+                <dt className="text-sm text-muted-foreground">Contact Email</dt>
                 <dd className="font-medium">{organization.contactEmail}</dd>
               </div>
             )}
             {organization.contactPhone && (
               <div>
-                <dt className="text-sm text-gray-500">Contact Phone</dt>
+                <dt className="text-sm text-muted-foreground">Contact Phone</dt>
                 <dd className="font-medium">{organization.contactPhone}</dd>
               </div>
             )}
             <div>
-              <dt className="text-sm text-gray-500">Status</dt>
+              <dt className="text-sm text-muted-foreground">Status</dt>
               <dd className="font-medium">{organization.isActive ? 'Active' : 'Inactive'}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Member Since</dt>
+              <dt className="text-sm text-muted-foreground">Member Since</dt>
               <dd className="font-medium">{format(new Date(organization.createdAt), 'PPP')}</dd>
             </div>
           </dl>
@@ -109,20 +109,20 @@ export function OrganizationDetails({ organizationId }: OrganizationDetailsProps
         {/* Statistics */}
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <FileText className="h-5 w-5 text-gray-500" />
+            <FileText className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Statistics</h2>
           </div>
           <dl className="space-y-2">
             <div>
-              <dt className="text-sm text-gray-500">Total Orders</dt>
+              <dt className="text-sm text-muted-foreground">Total Orders</dt>
               <dd className="font-medium text-2xl">{organization._count?.orders || 0}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Total Candidates</dt>
+              <dt className="text-sm text-muted-foreground">Total Candidates</dt>
               <dd className="font-medium text-2xl">{organization._count?.candidates || 0}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Total Users</dt>
+              <dt className="text-sm text-muted-foreground">Total Users</dt>
               <dd className="font-medium text-2xl">{organization._count?.users || 0}</dd>
             </div>
           </dl>
@@ -133,10 +133,10 @@ export function OrganizationDetails({ organizationId }: OrganizationDetailsProps
       {organization.address && (
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <MapPin className="h-5 w-5 text-gray-500" />
+            <MapPin className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Address</h2>
           </div>
-          <p className="text-gray-900">
+          <p className="text-foreground">
             {organization.address}
             {organization.city && `, ${organization.city}`}
             {organization.state && `, ${organization.state}`}

@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from './get-user';
-import { hasPermission } from './rbac';
+import { hasPermission, roleHasPermission, type Permission, type UserRole } from './rbac';
 
-export type AuthenticatedUser = Awaited<ReturnType<typeof getCurrentUser>>;
+export type AuthenticatedUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
 /**
  * Protect API routes with authentication
- *
- * Usage:
- * ```ts
- * export const GET = withAuth(async (req, user) => {
- *   return NextResponse.json({ message: `Hello ${user.email}` });
- * });
- * ```
  */
 export function withAuth(
-  handler: (req: NextRequest, user: NonNullable<AuthenticatedUser>, context?: any) => Promise<Response>
+  handler: (req: NextRequest, user: AuthenticatedUser, context?: any) => Promise<Response>
 ) {
   return async (req: NextRequest, context?: any) => {
     const user = await getCurrentUser();
@@ -33,18 +26,10 @@ export function withAuth(
 
 /**
  * Protect API routes with role-based permission
- *
- * Usage:
- * ```ts
- * export const POST = withPermission('create_orders', async (req, user) => {
- *   // Only users with create_orders permission can access this
- *   return NextResponse.json({ success: true });
- * });
- * ```
  */
 export function withPermission(
-  permission: Parameters<typeof hasPermission>[0],
-  handler: (req: NextRequest, user: NonNullable<AuthenticatedUser>) => Promise<Response>
+  permission: Permission,
+  handler: (req: NextRequest, user: AuthenticatedUser) => Promise<Response>
 ) {
   return async (req: NextRequest, context?: any) => {
     const user = await getCurrentUser();
@@ -73,18 +58,10 @@ export function withPermission(
 }
 
 /**
- * Protect API routes - require user to be from an employer organization
- *
- * Usage:
- * ```ts
- * export const GET = withEmployerAuth(async (req, user) => {
- *   // Only employer users can access this
- *   return NextResponse.json({ orders: [...] });
- * });
- * ```
+ * Protect API routes — require TPA staff (any tpa_* role)
  */
-export function withEmployerAuth(
-  handler: (req: NextRequest, user: NonNullable<AuthenticatedUser>) => Promise<Response>
+export function withTpaAuth(
+  handler: (req: NextRequest, user: AuthenticatedUser) => Promise<Response>
 ) {
   return async (req: NextRequest, context?: any) => {
     const user = await getCurrentUser();
@@ -96,9 +73,12 @@ export function withEmployerAuth(
       );
     }
 
-    if (user.organization.type !== 'employer') {
+    const role = user.role as UserRole;
+    const isTpa = role?.startsWith('tpa_') || role === 'platform_admin';
+
+    if (!isTpa) {
       return NextResponse.json(
-        { error: 'Forbidden: Employer access only' },
+        { error: 'Forbidden: TPA access only' },
         { status: 403 }
       );
     }
@@ -108,18 +88,10 @@ export function withEmployerAuth(
 }
 
 /**
- * Protect API routes - require user to be from a provider organization
- *
- * Usage:
- * ```ts
- * export const POST = withProviderAuth(async (req, user) => {
- *   // Only provider users can access this
- *   return NextResponse.json({ sites: [...] });
- * });
- * ```
+ * Protect API routes — require client portal user
  */
-export function withProviderAuth(
-  handler: (req: NextRequest, user: NonNullable<AuthenticatedUser>) => Promise<Response>
+export function withClientAuth(
+  handler: (req: NextRequest, user: AuthenticatedUser) => Promise<Response>
 ) {
   return async (req: NextRequest, context?: any) => {
     const user = await getCurrentUser();
@@ -131,9 +103,9 @@ export function withProviderAuth(
       );
     }
 
-    if (user.organization.type !== 'provider') {
+    if (user.role !== 'client_admin' && user.role !== 'platform_admin') {
       return NextResponse.json(
-        { error: 'Forbidden: Provider access only' },
+        { error: 'Forbidden: Client access only' },
         { status: 403 }
       );
     }
@@ -143,18 +115,10 @@ export function withProviderAuth(
 }
 
 /**
- * Protect API routes - require user to be an admin (employer_admin or provider_admin)
- *
- * Usage:
- * ```ts
- * export const DELETE = withAdminAuth(async (req, user) => {
- *   // Only admins can access this
- *   return NextResponse.json({ success: true });
- * });
- * ```
+ * Protect API routes — require admin (tpa_admin or platform_admin)
  */
 export function withAdminAuth(
-  handler: (req: NextRequest, user: NonNullable<AuthenticatedUser>) => Promise<Response>
+  handler: (req: NextRequest, user: AuthenticatedUser) => Promise<Response>
 ) {
   return async (req: NextRequest, context?: any) => {
     const user = await getCurrentUser();
@@ -166,7 +130,7 @@ export function withAdminAuth(
       );
     }
 
-    const isAdmin = user.role === 'employer_admin' || user.role === 'provider_admin';
+    const isAdmin = user.role === 'tpa_admin' || user.role === 'platform_admin';
 
     if (!isAdmin) {
       return NextResponse.json(
@@ -174,6 +138,33 @@ export function withAdminAuth(
           error: 'Forbidden: Admin access only',
           userRole: user.role
         },
+        { status: 403 }
+      );
+    }
+
+    return handler(req, user);
+  };
+}
+
+/**
+ * Protect API routes — require platform admin only
+ */
+export function withPlatformAuth(
+  handler: (req: NextRequest, user: AuthenticatedUser) => Promise<Response>
+) {
+  return async (req: NextRequest, context?: any) => {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    if (user.role !== 'platform_admin') {
+      return NextResponse.json(
+        { error: 'Forbidden: Platform admin access only' },
         { status: 403 }
       );
     }

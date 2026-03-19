@@ -272,7 +272,7 @@ export function ResultsUpload({ orderId }: ResultsUploadProps) {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Upload Results</h1>
-        <p className="text-gray-500 mt-1">Order {order.orderNumber}</p>
+        <p className="text-muted-foreground mt-1">Order {order.orderNumber}</p>
       </div>
 
       {/* Status Alert */}
@@ -287,11 +287,11 @@ export function ResultsUpload({ orderId }: ResultsUploadProps) {
       )}
 
       {isPendingReview && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 text-blue-600" />
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-primary" />
           <div>
-            <p className="font-medium text-blue-900">Awaiting Employer Approval</p>
-            <p className="text-sm text-blue-700">
+            <p className="font-medium text-primary">Awaiting Employer Approval</p>
+            <p className="text-sm text-primary">
               Results have been submitted and are currently being reviewed by the employer.
             </p>
           </div>
@@ -308,10 +308,10 @@ export function ResultsUpload({ orderId }: ResultsUploadProps) {
                 The employer has reviewed the results and requested corrections.
               </p>
               {latestReview.feedback && (
-                <div className="mt-3 p-3 bg-white border border-red-200 rounded">
+                <div className="mt-3 p-3 bg-card border border-red-200 rounded">
                   <p className="text-xs font-medium text-red-900 mb-1">Employer Feedback:</p>
-                  <p className="text-sm text-gray-700">{latestReview.feedback}</p>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-sm text-foreground">{latestReview.feedback}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
                     Reviewed by {latestReview.reviewer?.name || latestReview.reviewer?.email || 'Employer'} on{' '}
                     {format(new Date(latestReview.createdAt), 'PPp')}
                   </p>
@@ -341,33 +341,33 @@ export function ResultsUpload({ orderId }: ResultsUploadProps) {
         {/* Order Information */}
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <User className="h-5 w-5 text-gray-500" />
+            <User className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Order Information</h2>
           </div>
           <dl className="space-y-2">
             <div>
-              <dt className="text-sm text-gray-500">Candidate</dt>
+              <dt className="text-sm text-muted-foreground">Candidate</dt>
               <dd className="font-medium">
                 {order.candidate.firstName} {order.candidate.lastName}
               </dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Employer</dt>
+              <dt className="text-sm text-muted-foreground">Employer</dt>
               <dd className="font-medium">{order.organization.name}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Test Type</dt>
+              <dt className="text-sm text-muted-foreground">Test Type</dt>
               <dd className="font-medium">{order.testType}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500">Status</dt>
+              <dt className="text-sm text-muted-foreground">Status</dt>
               <dd>
                 <StatusBadge status={order.status} />
               </dd>
             </div>
             {order.appointments && order.appointments.length > 0 && (
               <div>
-                <dt className="text-sm text-gray-500">Site</dt>
+                <dt className="text-sm text-muted-foreground">Site</dt>
                 <dd className="font-medium">{order.appointments[0].site.name}</dd>
               </div>
             )}
@@ -378,7 +378,7 @@ export function ResultsUpload({ orderId }: ResultsUploadProps) {
         {!isComplete && !isPendingReview && (
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Upload className="h-5 w-5 text-gray-500" />
+              <Upload className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-lg font-semibold">Upload Results</h2>
             </div>
             <form onSubmit={handleUpload} className="space-y-4">
@@ -393,7 +393,7 @@ export function ResultsUpload({ orderId }: ResultsUploadProps) {
                   accept=".pdf,.jpg,.jpeg,.png"
                   required
                 />
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   PDF, JPG, or PNG files accepted
                 </p>
               </div>
@@ -422,11 +422,11 @@ export function ResultsUpload({ orderId }: ResultsUploadProps) {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-gray-500" />
+              <FileText className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-lg font-semibold">Uploaded Results</h2>
             </div>
             {!isComplete && resultDocuments.length > 0 && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted-foreground">
                 {resultDocuments.length} document{resultDocuments.length !== 1 ? 's' : ''}
               </span>
             )}
@@ -440,11 +440,11 @@ export function ResultsUpload({ orderId }: ResultsUploadProps) {
               >
                 <div>
                   <p className="font-medium">{doc.fileName}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Uploaded {doc.uploadedAt ? format(new Date(doc.uploadedAt), 'PPP') : 'Recently'}
                   </p>
                   {doc.notes && (
-                    <p className="text-sm text-gray-600 mt-1">{doc.notes}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{doc.notes}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -489,7 +489,7 @@ export function ResultsUpload({ orderId }: ResultsUploadProps) {
                 />
                 <label htmlFor="verify" className="text-sm">
                   <span className="font-medium">I verify that:</span>
-                  <ul className="list-disc list-inside mt-1 text-gray-600">
+                  <ul className="list-disc list-inside mt-1 text-muted-foreground">
                     <li>All uploaded documents are correct and complete</li>
                     <li>The results match the candidate and test type</li>
                     <li>I have reviewed all information for accuracy</li>
@@ -506,7 +506,7 @@ export function ResultsUpload({ orderId }: ResultsUploadProps) {
                 {submitting ? 'Submitting...' : 'Submit Results to Employer'}
               </Button>
 
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-muted-foreground text-center">
                 Once submitted, these results will be sent to the employer and cannot be modified.
               </p>
             </div>

@@ -7,7 +7,7 @@ import { Building2, Check, ChevronsUpDown, Plus } from "lucide-react";
 interface Organization {
   id: string;
   name: string;
-  type: "employer" | "provider";
+  type: "platform" | "tpa" | "client";
   slug: string;
 }
 
@@ -69,7 +69,7 @@ export function OrganizationSwitcher({ currentOrg }: OrganizationSwitcherProps) 
 
   if (!currentOrg) {
     return (
-      <div className="flex items-center gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
         <Building2 className="h-4 w-4" />
         <span>No organization</span>
       </div>
@@ -80,12 +80,12 @@ export function OrganizationSwitcher({ currentOrg }: OrganizationSwitcherProps) 
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+        className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         disabled={loading}
       >
-        <Building2 className="h-4 w-4 text-gray-500" />
+        <Building2 className="h-4 w-4 text-muted-foreground" />
         <span className="max-w-[150px] truncate">{currentOrg.name}</span>
-        <ChevronsUpDown className="h-4 w-4 text-gray-400" />
+        <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
       </button>
 
       {open && (
@@ -94,9 +94,9 @@ export function OrganizationSwitcher({ currentOrg }: OrganizationSwitcherProps) 
             className="fixed inset-0 z-10"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 z-20 mt-2 w-64 rounded-md border border-gray-200 bg-white shadow-lg">
-            <div className="border-b border-gray-100 p-2">
-              <p className="px-2 text-xs font-medium text-gray-500">
+          <div className="absolute right-0 z-20 mt-2 w-64 rounded-md border border-border bg-card shadow-lg">
+            <div className="border-b border-border p-2">
+              <p className="px-2 text-xs font-medium text-muted-foreground">
                 Organizations
               </p>
             </div>
@@ -105,30 +105,30 @@ export function OrganizationSwitcher({ currentOrg }: OrganizationSwitcherProps) 
                 <button
                   key={org.id}
                   onClick={() => handleSwitch(org.id)}
-                  className="flex w-full items-center justify-between px-4 py-2 text-sm hover:bg-gray-50"
+                  className="flex w-full items-center justify-between px-4 py-2 text-sm hover:bg-muted"
                 >
                   <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-gray-400" />
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
                     <div className="text-left">
-                      <p className="font-medium text-gray-900">{org.name}</p>
-                      <p className="text-xs text-gray-500 capitalize">
+                      <p className="font-medium text-foreground">{org.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">
                         {org.type}
                       </p>
                     </div>
                   </div>
                   {org.id === currentOrg.id && (
-                    <Check className="h-4 w-4 text-blue-600" />
+                    <Check className="h-4 w-4 text-primary" />
                   )}
                 </button>
               ))}
             </div>
-            <div className="border-t border-gray-100 p-2">
+            <div className="border-t border-border p-2">
               <button
                 onClick={() => {
                   setOpen(false);
                   router.push("/organizations/new");
                 }}
-                className="flex w-full items-center gap-2 rounded px-2 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                className="flex w-full items-center gap-2 rounded px-2 py-2 text-sm font-medium text-primary hover:bg-primary/5"
               >
                 <Plus className="h-4 w-4" />
                 Create organization

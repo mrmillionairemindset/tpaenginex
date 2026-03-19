@@ -17,7 +17,7 @@ import {
 interface Organization {
   id: string;
   name: string;
-  type: "employer" | "provider";
+  type: "platform" | "tpa" | "client";
   slug: string;
 }
 
@@ -314,27 +314,28 @@ export function OrganizationSettings({ organization, currentUser }: Organization
     fetchLocations();
   }, []);
 
-  const roleOptions = organization.type === "employer"
+  const roleOptions = organization.type === "tpa"
     ? [
-        { value: "employer_admin", label: "Admin" },
-        { value: "employer_user", label: "User" },
+        { value: "tpa_admin", label: "Admin" },
+        { value: "tpa_staff", label: "Staff" },
+        { value: "tpa_records", label: "Records" },
+        { value: "tpa_billing", label: "Billing" },
       ]
     : [
-        { value: "provider_admin", label: "Admin" },
-        { value: "provider_agent", label: "Agent" },
+        { value: "client_admin", label: "Client Admin" },
       ];
 
   return (
     <div className="space-y-6">
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-border">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab("general")}
             className={`flex items-center gap-2 border-b-2 py-4 px-1 text-sm font-medium ${
               activeTab === "general"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
             }`}
           >
             <Building2 className="h-5 w-5" />
@@ -344,8 +345,8 @@ export function OrganizationSettings({ organization, currentUser }: Organization
             onClick={() => setActiveTab("members")}
             className={`flex items-center gap-2 border-b-2 py-4 px-1 text-sm font-medium ${
               activeTab === "members"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
             }`}
           >
             <Users className="h-5 w-5" />
@@ -355,8 +356,8 @@ export function OrganizationSettings({ organization, currentUser }: Organization
             onClick={() => setActiveTab("invitations")}
             className={`flex items-center gap-2 border-b-2 py-4 px-1 text-sm font-medium ${
               activeTab === "invitations"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
             }`}
           >
             <Mail className="h-5 w-5" />
@@ -366,8 +367,8 @@ export function OrganizationSettings({ organization, currentUser }: Organization
             onClick={() => setActiveTab("locations")}
             className={`flex items-center gap-2 border-b-2 py-4 px-1 text-sm font-medium ${
               activeTab === "locations"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
             }`}
           >
             <MapPin className="h-5 w-5" />
@@ -395,44 +396,44 @@ export function OrganizationSettings({ organization, currentUser }: Organization
 
       {/* General Settings */}
       {activeTab === "general" && (
-        <div className="rounded-lg border bg-white p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="rounded-lg border bg-card p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
             Organization Information
           </h2>
           <form onSubmit={handleUpdateOrg} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Organization Name
               </label>
               <input
                 type="text"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                className="w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                 disabled={loading}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Organization Type
               </label>
               <input
                 type="text"
                 value={organization.type}
-                className="w-full rounded-md border-0 px-3 py-2 text-gray-500 ring-1 ring-inset ring-gray-300 bg-gray-50 sm:text-sm capitalize"
+                className="w-full rounded-md border-0 px-3 py-2 text-muted-foreground ring-1 ring-inset ring-input bg-muted sm:text-sm capitalize"
                 disabled
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Slug
               </label>
               <input
                 type="text"
                 value={organization.slug}
-                className="w-full rounded-md border-0 px-3 py-2 text-gray-500 ring-1 ring-inset ring-gray-300 bg-gray-50 sm:text-sm"
+                className="w-full rounded-md border-0 px-3 py-2 text-muted-foreground ring-1 ring-inset ring-input bg-muted sm:text-sm"
                 disabled
               />
             </div>
@@ -440,19 +441,19 @@ export function OrganizationSettings({ organization, currentUser }: Organization
             <button
               type="submit"
               disabled={loading}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
             >
               {loading ? "Saving..." : "Save Changes"}
             </button>
           </form>
 
           {/* Danger Zone */}
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+          <div className="mt-8 pt-8 border-t border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
               Danger Zone
             </h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Once you delete an organization, there is no going back. This action cannot be undone.
             </p>
             <button
@@ -469,17 +470,17 @@ export function OrganizationSettings({ organization, currentUser }: Organization
 
       {/* Members */}
       {activeTab === "members" && (
-        <div className="rounded-lg border bg-white p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="rounded-lg border bg-card p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
             Organization Members ({members.length})
           </h2>
 
           {membersLoading ? (
             <div className="text-center py-8">
-              <p className="text-sm text-gray-500">Loading members...</p>
+              <p className="text-sm text-muted-foreground">Loading members...</p>
             </div>
           ) : members.length === 0 ? (
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               No members found. Invite users via the Invitations tab.
             </p>
           ) : (
@@ -487,30 +488,30 @@ export function OrganizationSettings({ organization, currentUser }: Organization
               {members.map((member) => (
                 <div
                   key={member.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted"
                 >
                   <div className="flex items-start gap-3 flex-1">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
                       {member.user.name?.[0]?.toUpperCase() || member.user.email[0].toUpperCase()}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-foreground">
                           {member.user.name || "No name"}
                         </p>
                         {member.userId === currentUser.id && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
                             You
                           </span>
                         )}
-                        {(member.role === "employer_admin" || member.role === "provider_admin") && (
-                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
+                        {(member.role === "tpa_admin" || member.role === "platform_admin") && (
+                          <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded">
                             Admin
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">{member.user.email}</p>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                      <p className="text-sm text-muted-foreground">{member.user.email}</p>
+                      <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                         <span>
                           Joined {new Date(member.joinedAt).toLocaleDateString()}
                         </span>
@@ -544,13 +545,13 @@ export function OrganizationSettings({ organization, currentUser }: Organization
 
       {/* Invitations */}
       {activeTab === "invitations" && (
-        <div className="rounded-lg border bg-white p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="rounded-lg border bg-card p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
             Invite New Member
           </h2>
           <form onSubmit={handleInviteUser} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Email Address
               </label>
               <input
@@ -559,20 +560,20 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="colleague@example.com"
                 required
-                className="w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                 disabled={loading}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Role
               </label>
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value)}
                 required
-                className="w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                 disabled={loading}
               >
                 <option value="">Select a role...</option>
@@ -587,7 +588,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
             <button
               type="submit"
               disabled={loading}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
             >
               {loading ? "Sending..." : "Send Invitation"}
             </button>
@@ -597,9 +598,9 @@ export function OrganizationSettings({ organization, currentUser }: Organization
 
       {/* Locations */}
       {activeTab === "locations" && (
-        <div className="rounded-lg border bg-white p-6">
+        <div className="rounded-lg border bg-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-foreground">
               Locations ({locations.length})
             </h2>
             {!showLocationForm && (
@@ -609,7 +610,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                   setEditingLocation(null);
                   setLocationForm({ name: "", address: "", city: "", state: "", zip: "", phone: "", notes: "" });
                 }}
-                className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4" />
                 Add Location
@@ -618,13 +619,13 @@ export function OrganizationSettings({ organization, currentUser }: Organization
           </div>
 
           {showLocationForm && (
-            <form onSubmit={handleLocationSubmit} className="mb-6 space-y-4 rounded-lg border p-4 bg-gray-50">
-              <h3 className="font-medium text-gray-900">
+            <form onSubmit={handleLocationSubmit} className="mb-6 space-y-4 rounded-lg border p-4 bg-muted">
+              <h3 className="font-medium text-foreground">
                 {editingLocation ? "Edit Location" : "Add New Location"}
               </h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Location Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -633,11 +634,11 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                     value={locationForm.name}
                     onChange={(e) => setLocationForm({ ...locationForm, name: e.target.value })}
                     placeholder="e.g., Main Office, Warehouse 3"
-                    className="w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                    className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Address <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -646,11 +647,11 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                     value={locationForm.address}
                     onChange={(e) => setLocationForm({ ...locationForm, address: e.target.value })}
                     placeholder="123 Main Street"
-                    className="w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                    className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     City <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -658,18 +659,18 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                     required
                     value={locationForm.city}
                     onChange={(e) => setLocationForm({ ...locationForm, city: e.target.value })}
-                    className="w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                    className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     State <span className="text-red-500">*</span>
                   </label>
                   <select
                     required
                     value={locationForm.state}
                     onChange={(e) => setLocationForm({ ...locationForm, state: e.target.value })}
-                    className="w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                    className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                   >
                     <option value="">Select state</option>
                     <option value="AL">AL - Alabama</option>
@@ -726,7 +727,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     ZIP Code <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -737,11 +738,11 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                     maxLength={5}
                     value={locationForm.zip}
                     onChange={(e) => setLocationForm({ ...locationForm, zip: e.target.value.replace(/\D/g, '').slice(0, 5) })}
-                    className="w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                    className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Phone
                   </label>
                   <input
@@ -760,11 +761,11 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                       }
                       setLocationForm({ ...locationForm, phone: formatted });
                     }}
-                    className="w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                    className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Notes
                   </label>
                   <textarea
@@ -772,7 +773,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                     onChange={(e) => setLocationForm({ ...locationForm, notes: e.target.value })}
                     rows={2}
                     placeholder="Additional notes about this location..."
-                    className="w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm"
+                    className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                   />
                 </div>
               </div>
@@ -780,7 +781,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                 <button
                   type="submit"
                   disabled={loading}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
                 >
                   {loading ? "Saving..." : editingLocation ? "Update Location" : "Add Location"}
                 </button>
@@ -791,7 +792,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                     setEditingLocation(null);
                     setLocationForm({ name: "", address: "", city: "", state: "", zip: "", phone: "", notes: "" });
                   }}
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  className="rounded-md border border-input px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
                 >
                   Cancel
                 </button>
@@ -801,10 +802,10 @@ export function OrganizationSettings({ organization, currentUser }: Organization
 
           {locationsLoading ? (
             <div className="text-center py-8">
-              <p className="text-sm text-gray-500">Loading locations...</p>
+              <p className="text-sm text-muted-foreground">Loading locations...</p>
             </div>
           ) : locations.length === 0 ? (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               No locations added yet. Click "Add Location" to add your first location.
             </p>
           ) : (
@@ -812,27 +813,27 @@ export function OrganizationSettings({ organization, currentUser }: Organization
               {locations.map((location) => (
                 <div
                   key={location.id}
-                  className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                  className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted"
                 >
                   <div className="flex items-start gap-3 flex-1">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
                       <MapPin className="h-5 w-5" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{location.name}</h4>
-                      <p className="text-sm text-gray-600 mt-0.5">
+                      <h4 className="font-medium text-foreground">{location.name}</h4>
+                      <p className="text-sm text-muted-foreground mt-0.5">
                         {location.address}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {location.city}, {location.state} {location.zip}
                       </p>
                       {location.phone && (
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           Phone: {location.phone}
                         </p>
                       )}
                       {location.notes && (
-                        <p className="text-sm text-gray-500 mt-1 italic">
+                        <p className="text-sm text-muted-foreground mt-1 italic">
                           {location.notes}
                         </p>
                       )}
@@ -841,7 +842,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
                   <div className="flex gap-2 ml-4">
                     <button
                       onClick={() => handleEditLocation(location)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      className="p-2 text-primary hover:bg-primary/5 rounded transition-colors"
                       title="Edit location"
                     >
                       <Pencil className="h-4 w-4" />
@@ -874,7 +875,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
               <br /><br />
               This action cannot be undone. This will permanently delete the organization
               and remove all associated data.
-              {organization.type === "employer" && (
+              {organization.type === "client" && (
                 <>
                   <br /><br />
                   <strong className="text-red-600">Warning:</strong> This will only work if the organization has no orders or candidates.

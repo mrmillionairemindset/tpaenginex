@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { appointments, orders, sites } from '@/db/schema';
-import { withProviderAuth } from '@/auth/api-middleware';
+import { withTpaAuth } from '@/auth/api-middleware';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
-import { notifySiteAssigned } from '@/lib/notifications';
+// Legacy: notifySiteAssigned removed — appointments are unused in TPA flow
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -25,7 +25,7 @@ const createAppointmentSchema = z.object({
 // POST /api/appointments - Create appointment (assign site to order)
 // ============================================================================
 
-export const POST = withProviderAuth(async (req, user) => {
+export const POST = withTpaAuth(async (req, user) => {
   const body = await req.json();
   const validation = createAppointmentSchema.safeParse(body);
 
@@ -131,8 +131,7 @@ export const POST = withProviderAuth(async (req, user) => {
     },
   });
 
-  // Send notification to employers
-  await notifySiteAssigned(data.orderId, order.orderNumber, site.name);
+  // Legacy: notification removed — appointments unused in TPA flow
 
   return NextResponse.json(
     { appointment: fullAppointment, message: 'Appointment created successfully' },

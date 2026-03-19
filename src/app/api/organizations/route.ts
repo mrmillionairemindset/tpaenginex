@@ -12,12 +12,12 @@ export const dynamic = 'force-dynamic';
 // For employers: returns their own organization memberships
 export const GET = withAuth(async (req, user) => {
   try {
-    const isProvider = user.role?.startsWith('provider');
+    const isTpaUser = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
 
-    if (isProvider) {
+    if (isTpaUser) {
       // Providers see all employer organizations with stats
       const employerOrgs = await db.query.organizations.findMany({
-        where: eq(organizations.type, 'employer'),
+        where: eq(organizations.type, 'client'),
         with: {
           orders: {
             columns: {
@@ -86,9 +86,9 @@ export const POST = withAuth(async (request, user) => {
       );
     }
 
-    if (!["employer", "provider"].includes(type)) {
+    if (!["tpa", "client"].includes(type)) {
       return NextResponse.json(
-        { error: "Type must be employer or provider" },
+        { error: "Type must be tpa or client" },
         { status: 400 }
       );
     }
@@ -111,7 +111,7 @@ export const POST = withAuth(async (request, user) => {
       .returning();
 
     // Assign creator as admin to the new organization
-    const adminRole = type === "employer" ? "employer_admin" : "provider_admin";
+    const adminRole = type === "tpa" ? "tpa_admin" : "client_admin";
 
     await db.insert(organizationMembers).values({
       userId: user.id,

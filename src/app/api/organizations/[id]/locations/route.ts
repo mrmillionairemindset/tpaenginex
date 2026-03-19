@@ -73,7 +73,7 @@ export async function POST(
     // Only admins can add locations
     const isAdmin =
       user.orgId === orgId &&
-      (user.role === "employer_admin" || user.role === "provider_admin");
+      (user.role === "tpa_admin" || user.role === "platform_admin");
 
     if (!isAdmin) {
       return NextResponse.json(
@@ -132,7 +132,7 @@ export async function PATCH(
     // Only admins can update locations
     const isAdmin =
       user.orgId === orgId &&
-      (user.role === "employer_admin" || user.role === "provider_admin");
+      (user.role === "tpa_admin" || user.role === "platform_admin");
 
     if (!isAdmin) {
       return NextResponse.json(
@@ -211,7 +211,7 @@ export async function DELETE(
     // Only admins can delete locations
     const isAdmin =
       user.orgId === orgId &&
-      (user.role === "employer_admin" || user.role === "provider_admin");
+      (user.role === "tpa_admin" || user.role === "platform_admin");
 
     if (!isAdmin) {
       return NextResponse.json(

@@ -1,8 +1,8 @@
 import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
-  title: 'HIPAA Compliance | Worksafe Now Platform',
-  description: 'HIPAA compliance information for Worksafe Now healthcare screening platform',
+  title: 'HIPAA Compliance | TPAEngineX',
+  description: 'HIPAA compliance information for TPAEngineX healthcare screening platform',
 };
 
 export default function HIPAACompliancePage() {
@@ -15,7 +15,7 @@ export default function HIPAACompliancePage() {
       <section>
         <h2>1. Overview</h2>
         <p>
-          Worksafe Now Platform is committed to full compliance with the Health Insurance
+          TPAEngineX is committed to full compliance with the Health Insurance
           Portability and Accountability Act (HIPAA) of 1996 and its implementing regulations,
           including the Privacy Rule, Security Rule, and Breach Notification Rule.
         </p>
@@ -31,7 +31,7 @@ export default function HIPAACompliancePage() {
 
         <h3>2.1 Business Associate Status</h3>
         <p>
-          Worksafe Now operates as a Business Associate when:
+          TPAEngineX operates as a Business Associate when:
         </p>
         <ul>
           <li>Processing screening orders containing PHI on behalf of covered entities</li>
@@ -293,7 +293,7 @@ export default function HIPAACompliancePage() {
         <h2>10. User Responsibilities</h2>
 
         <p>
-          As a Worksafe Now user, you are responsible for:
+          As a TPAEngineX user, you are responsible for:
         </p>
         <ul>
           <li><strong>Password Security:</strong> Using strong, unique passwords and enabling MFA</li>
@@ -308,13 +308,13 @@ export default function HIPAACompliancePage() {
       <section>
         <h2>11. Frequently Asked Questions</h2>
 
-        <h3>Is Worksafe Now HIPAA compliant?</h3>
+        <h3>Is TPAEngineX HIPAA compliant?</h3>
         <p>
           Yes. We implement all required administrative, physical, and technical safeguards
           and execute Business Associate Agreements with our clients.
         </p>
 
-        <h3>Do I need a BAA to use Worksafe Now?</h3>
+        <h3>Do I need a BAA to use TPAEngineX?</h3>
         <p>
           If you are a covered entity or business associate handling PHI through our
           platform, yes. Contact us at <a href="mailto:compliance@rapidscreen.com">compliance@rapidscreen.com</a> to
@@ -353,7 +353,7 @@ export default function HIPAACompliancePage() {
 
         <p><strong>Mailing Address:</strong></p>
         <p>
-          Worksafe Now Platform<br />
+          TPAEngineX<br />
           Attn: Privacy Officer<br />
           [Address Line 1]<br />
           [City, State ZIP]

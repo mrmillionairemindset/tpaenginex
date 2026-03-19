@@ -2,8 +2,8 @@ import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 import { Mail, Phone, MapPin } from 'lucide-react';
 
 export const metadata = {
-  title: 'Contact Us | Worksafe Now Platform',
-  description: 'Get in touch with Worksafe Now support team',
+  title: 'Contact Us | TPAEngineX',
+  description: 'Get in touch with TPAEngineX support team',
 };
 
 export default function ContactPage() {
@@ -16,7 +16,7 @@ export default function ContactPage() {
       <section>
         <h2>Get in Touch</h2>
         <p>
-          Have questions about Worksafe Now? Need support? Want to learn more about our
+          Have questions about TPAEngineX? Need support? Want to learn more about our
           platform? We're here to help.
         </p>
       </section>
@@ -30,13 +30,13 @@ export default function ContactPage() {
               <Mail className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Email</h3>
-              <p className="text-gray-600 mt-1">
+              <h3 className="font-semibold text-foreground">Email</h3>
+              <p className="text-muted-foreground mt-1">
                 <a href="mailto:support@rapidscreen.com" className="text-primary hover:underline">
                   support@rapidscreen.com
                 </a>
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 We typically respond within 24 hours
               </p>
             </div>
@@ -47,13 +47,13 @@ export default function ContactPage() {
               <Phone className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Phone</h3>
-              <p className="text-gray-600 mt-1">
+              <h3 className="font-semibold text-foreground">Phone</h3>
+              <p className="text-muted-foreground mt-1">
                 <a href="tel:+18885550100" className="text-primary hover:underline">
                   (888) 555-0100
                 </a>
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Monday - Friday, 8:00 AM - 6:00 PM EST
               </p>
             </div>
@@ -64,9 +64,9 @@ export default function ContactPage() {
               <MapPin className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Address</h3>
-              <p className="text-gray-600 mt-1">
-                Worksafe Now Platform, Inc.<br />
+              <h3 className="font-semibold text-foreground">Address</h3>
+              <p className="text-muted-foreground mt-1">
+                TPAEngineX, Inc.<br />
                 [Address Line 1]<br />
                 [City, State ZIP]
               </p>

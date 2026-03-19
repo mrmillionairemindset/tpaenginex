@@ -19,7 +19,9 @@ const updateOrderSchema = z.object({
   internalNotes: z.string().optional(),
   scheduledFor: z.string().datetime().optional(),
   completedAt: z.string().datetime().optional(),
-  useConcentra: z.boolean().optional(), // Provider can override
+  ccfNumber: z.string().optional(),
+  collectorId: z.string().uuid().optional(),
+  resultStatus: z.enum(['pending', 'received', 'delivered']).optional(),
 });
 
 // ============================================================================
@@ -48,23 +50,20 @@ export async function GET(
           type: true,
         },
       },
+      collector: {
+        columns: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+        },
+      },
       requestedByUser: {
         columns: {
           id: true,
           name: true,
           email: true,
-        },
-      },
-      appointments: {
-        with: {
-          site: true,
-          assignedByUser: {
-            columns: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
         },
       },
       documents: {
@@ -97,15 +96,30 @@ export async function GET(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
-  // Check permissions
-  const isProvider = user.role?.startsWith('provider');
+  // Check permissions — TPA users can see orders in their TPA scope, clients see own orders
+  const isTpaUser = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
   const isOwner = order.orgId === user.organization?.id;
+  const isTpaScoped = user.tpaOrgId && order.tpaOrgId === user.tpaOrgId;
 
-  if (!isProvider && !isOwner) {
+  if (!isTpaUser && !isOwner) {
     return NextResponse.json(
       { error: 'You do not have permission to view this order' },
       { status: 403 }
     );
+  }
+
+  if (isTpaUser && !isTpaScoped && user.role !== 'platform_admin') {
+    return NextResponse.json(
+      { error: 'Order not found in your TPA scope' },
+      { status: 403 }
+    );
+  }
+
+  // Strip internal notes for client_admin users
+  if (user.role === 'client_admin') {
+    return NextResponse.json({
+      order: { ...order, internalNotes: undefined },
+    });
   }
 
   return NextResponse.json({ order });
@@ -147,11 +161,10 @@ export async function PATCH(
   }
 
   // Check permissions
-  const isProvider = user.role?.startsWith('provider');
-  const isEmployerAdmin = user.role === 'employer_admin';
+  const isTpaUser = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
   const isOwner = existingOrder.orgId === user.organization?.id;
 
-  if (!isProvider && (!isOwner || !isEmployerAdmin)) {
+  if (!isTpaUser && !isOwner) {
     return NextResponse.json(
       { error: 'You do not have permission to update this order' },
       { status: 403 }
@@ -166,22 +179,9 @@ export async function PATCH(
   if (data.internalNotes !== undefined) updateData.internalNotes = data.internalNotes;
   if (data.scheduledFor) updateData.scheduledFor = new Date(data.scheduledFor);
   if (data.completedAt) updateData.completedAt = new Date(data.completedAt);
-
-  // Provider can override Concentra vs Custom authorization
-  if (data.useConcentra !== undefined) {
-    // Only providers can change this
-    if (!isProvider) {
-      return NextResponse.json(
-        { error: 'Only providers can change authorization method' },
-        { status: 403 }
-      );
-    }
-    updateData.useConcentra = data.useConcentra;
-    // Reset authorization method when switching back to Concentra
-    if (data.useConcentra === true) {
-      updateData.authorizationMethod = null;
-    }
-  }
+  if (data.ccfNumber !== undefined) updateData.ccfNumber = data.ccfNumber;
+  if (data.collectorId) updateData.collectorId = data.collectorId;
+  if (data.resultStatus) updateData.resultStatus = data.resultStatus;
 
   // Auto-set completedAt if status changes to complete
   if (data.status === 'complete' && !existingOrder.completedAt) {
@@ -208,16 +208,18 @@ export async function PATCH(
           type: true,
         },
       },
+      collector: {
+        columns: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
       requestedByUser: {
         columns: {
           id: true,
           name: true,
           email: true,
-        },
-      },
-      appointments: {
-        with: {
-          site: true,
         },
       },
     },
@@ -250,12 +252,11 @@ export async function DELETE(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
-  // Check permissions
-  const isProvider = user.role?.startsWith('provider');
-  const isEmployerAdmin = user.role === 'employer_admin';
-  const isOwner = existingOrder.orgId === user.organization?.id;
+  // Check permissions — TPA admin/staff or the client who owns it
+  const isTpaUser = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
+  const isClientAdmin = user.role === 'client_admin' && existingOrder.orgId === user.organization?.id;
 
-  if (!isProvider && (!isOwner || !isEmployerAdmin)) {
+  if (!isTpaUser && !isClientAdmin) {
     return NextResponse.json(
       { error: 'You do not have permission to cancel this order' },
       { status: 403 }

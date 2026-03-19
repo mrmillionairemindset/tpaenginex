@@ -13,11 +13,11 @@ export default async function SitesPage() {
   }
 
   // Only providers can manage sites
-  if (!user.role?.startsWith('provider')) {
+  if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     redirect('/dashboard');
   }
 
-  const isAdmin = user.role === 'provider_admin';
+  const isAdmin = user.role === 'tpa_admin' || user.role === 'platform_admin';
 
   return (
     <div>

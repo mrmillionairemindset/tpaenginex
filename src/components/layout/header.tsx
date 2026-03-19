@@ -28,7 +28,7 @@ interface HeaderProps {
     organization: {
       id: string;
       name: string;
-      type: 'employer' | 'provider';
+      type: 'platform' | 'tpa' | 'client';
       slug: string;
     } | null;
   };
@@ -51,7 +51,7 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isAdmin = user.role === 'employer_admin' || user.role === 'provider_admin';
+  const isAdmin = user.role === 'tpa_admin' || user.role === 'platform_admin';
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   useEffect(() => {
@@ -141,11 +141,9 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
 
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-primary text-white font-bold text-sm">
-            WS
-          </div>
+          <img src="/tpa-engine-x-logo.png" alt="TPAEngineX" className="h-8" />
           <span className="hidden font-semibold sm:inline-block">
-            Worksafe Now
+            TPAEngineX
           </span>
         </Link>
 
@@ -183,11 +181,11 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
                 )}
               </div>
               {loading ? (
-                <div className="p-4 text-center text-sm text-gray-500">
+                <div className="p-4 text-center text-sm text-muted-foreground">
                   Loading...
                 </div>
               ) : notifications.length === 0 ? (
-                <div className="p-4 text-center text-sm text-gray-500">
+                <div className="p-4 text-center text-sm text-muted-foreground">
                   No notifications
                 </div>
               ) : (
@@ -201,8 +199,8 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
                           markAsRead(notification.id);
                         }
                       }}
-                      className={`block p-3 hover:bg-gray-50 transition-colors ${
-                        !notification.isRead ? 'bg-blue-50' : ''
+                      className={`block p-3 hover:bg-muted transition-colors ${
+                        !notification.isRead ? 'bg-primary/5' : ''
                       }`}
                     >
                       <div className="flex items-start gap-2">
@@ -210,15 +208,15 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
                           <p className={`text-sm ${!notification.isRead ? 'font-semibold' : 'font-medium'}`}>
                             {notification.title}
                           </p>
-                          <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                             {notification.message}
                           </p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                           </p>
                         </div>
                         {!notification.isRead && (
-                          <div className="h-2 w-2 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />
+                          <div className="h-2 w-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                         )}
                       </div>
                     </Link>
@@ -245,7 +243,7 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
                   {user.name && (
                     <p className="text-sm font-medium">{user.name}</p>
                   )}
-                  <p className="text-xs text-gray-500">{user.email}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
               </div>
               <DropdownMenuSeparator />

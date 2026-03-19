@@ -1,8 +1,8 @@
 import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
-  title: 'Terms of Service | Worksafe Now Platform',
-  description: 'Terms of Service for Worksafe Now healthcare screening platform',
+  title: 'Terms of Service | TPAEngineX',
+  description: 'Terms of Service for TPAEngineX healthcare screening platform',
 };
 
 export default function TermsOfServicePage() {
@@ -10,25 +10,25 @@ export default function TermsOfServicePage() {
     <ComplianceLayout
       title="Terms of Service"
       lastUpdated="January 2025"
-      description="Legal terms governing your use of the Worksafe Now Platform"
+      description="Legal terms governing your use of the TPAEngineX"
     >
       <section>
         <h2>1. Acceptance of Terms</h2>
         <p>
-          By accessing or using the Worksafe Now Platform ("Platform"), you agree to be bound
+          By accessing or using the TPAEngineX ("Platform"), you agree to be bound
           by these Terms of Service ("Terms"). If you do not agree to these Terms, you may
           not use the Platform.
         </p>
         <p>
-          These Terms constitute a legally binding agreement between you and Worksafe Now
-          Platform ("Worksafe Now," "we," "our," or "us").
+          These Terms constitute a legally binding agreement between you and TPAEngineX
+          Platform ("TPAEngineX," "we," "our," or "us").
         </p>
       </section>
 
       <section>
         <h2>2. Description of Service</h2>
         <p>
-          Worksafe Now provides a healthcare screening coordination platform that:
+          TPAEngineX provides a healthcare screening coordination platform that:
         </p>
         <ul>
           <li>Enables employers to order pre-employment and employee screening services</li>
@@ -37,7 +37,7 @@ export default function TermsOfServicePage() {
           <li>Manages multi-party workflows between employers, providers, and candidates</li>
         </ul>
         <p>
-          Worksafe Now acts as a technology platform and coordinator. We do not directly
+          TPAEngineX acts as a technology platform and coordinator. We do not directly
           perform medical examinations, drug tests, or other screening procedures.
         </p>
       </section>
@@ -154,10 +154,10 @@ export default function TermsOfServicePage() {
       <section>
         <h2>8. Intellectual Property</h2>
 
-        <h3>8.1 Worksafe Now IP</h3>
+        <h3>8.1 TPAEngineX IP</h3>
         <p>
           The Platform, including all content, features, and functionality, is owned by
-          Worksafe Now and protected by copyright, trademark, and other intellectual
+          TPAEngineX and protected by copyright, trademark, and other intellectual
           property laws.
         </p>
 
@@ -170,7 +170,7 @@ export default function TermsOfServicePage() {
 
         <h3>8.3 Feedback</h3>
         <p>
-          Any feedback, suggestions, or ideas you provide may be used by Worksafe Now
+          Any feedback, suggestions, or ideas you provide may be used by TPAEngineX
           without compensation or attribution.
         </p>
       </section>
@@ -188,7 +188,7 @@ export default function TermsOfServicePage() {
           <li>Warranties of uninterrupted or error-free operation</li>
         </ul>
         <p>
-          Worksafe Now does not warrant that the Platform will meet your requirements or
+          TPAEngineX does not warrant that the Platform will meet your requirements or
           that defects will be corrected.
         </p>
       </section>
@@ -215,7 +215,7 @@ export default function TermsOfServicePage() {
         <h2>11. Indemnification</h2>
 
         <p>
-          You agree to indemnify and hold harmless Worksafe Now from any claims, damages,
+          You agree to indemnify and hold harmless TPAEngineX from any claims, damages,
           losses, or expenses (including legal fees) arising from:
         </p>
         <ul>
@@ -290,7 +290,7 @@ export default function TermsOfServicePage() {
           not relieve you of payment obligations for services already rendered.
         </p>
 
-        <h3>15.2 By Worksafe Now</h3>
+        <h3>15.2 By TPAEngineX</h3>
         <p>
           We may suspend or terminate your access immediately for:
         </p>
@@ -321,7 +321,7 @@ export default function TermsOfServicePage() {
         <h3>16.2 Entire Agreement</h3>
         <p>
           These Terms, together with the Privacy Policy and any service agreements,
-          constitute the entire agreement between you and Worksafe Now.
+          constitute the entire agreement between you and TPAEngineX.
         </p>
 
         <h3>16.3 Severability</h3>
@@ -350,7 +350,7 @@ export default function TermsOfServicePage() {
         <ul>
           <li><strong>Email:</strong> <a href="mailto:legal@rapidscreen.com">legal@rapidscreen.com</a></li>
           <li><strong>Phone:</strong> (888) 555-0100</li>
-          <li><strong>Mail:</strong> Worksafe Now Platform, Legal Department, [Address]</li>
+          <li><strong>Mail:</strong> TPAEngineX, Legal Department, [Address]</li>
         </ul>
       </section>
     </ComplianceLayout>

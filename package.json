@@ -13,8 +13,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
-    "worker:notifications": "tsx src/jobs/notifications.worker.ts",
-    "worker:geocode": "tsx src/jobs/geocode.worker.ts",
+    "worker": "tsx src/jobs/worker.ts",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

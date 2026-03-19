@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only providers can upload documents
-    if (!user.role?.startsWith('provider')) {
+    if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

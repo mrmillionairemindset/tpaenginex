@@ -1,0 +1,71 @@
+import { Job } from 'bullmq';
+import { db } from '@/db/client';
+import { events, users } from '@/db/schema';
+import { eq, and, gt, or, lte } from 'drizzle-orm';
+import { createNotification } from '@/lib/notifications';
+import { sendPendingResultsReminder } from '@/lib/email';
+
+/**
+ * Runs daily at 9am. For each event with totalPending > 0 and
+ * pendingFollowUpUntil not yet passed, sends reminder to TPA records staff.
+ * Auto-cancels when totalPending hits 0.
+ */
+export async function handleResultsPendingDaily(job: Job) {
+  const now = new Date();
+
+  // Find events with pending results that still need follow-up
+  const pendingEvents = await db.query.events.findMany({
+    where: and(
+      gt(events.totalPending, 0),
+      // pendingFollowUpUntil is either null (always follow up) or in the future
+    ),
+    with: {
+      clientOrg: { columns: { id: true, name: true } },
+    },
+  });
+
+  const activeEvents = pendingEvents.filter(e => {
+    if (!e.pendingFollowUpUntil) return true;
+    return new Date(e.pendingFollowUpUntil) > now;
+  });
+
+  if (activeEvents.length === 0) {
+    console.log('[results-pending-daily] No pending events to follow up on');
+    return;
+  }
+
+  // Find TPA records staff
+  const recordsStaff = await db.query.users.findMany({
+    where: or(eq(users.role, 'tpa_records'), eq(users.role, 'tpa_admin')),
+  });
+
+  for (const event of activeEvents) {
+    const daysSinceEvent = Math.floor(
+      (now.getTime() - new Date(event.scheduledDate).getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // In-app notification
+    for (const user of recordsStaff) {
+      await createNotification({
+        userId: user.id,
+        type: 'results_pending_followup',
+        title: `${event.totalPending} Results Pending — ${event.eventNumber}`,
+        message: `${event.totalPending} results still pending for ${event.clientOrg.name} (${daysSinceEvent} days since collection)`,
+        tpaOrgId: event.tpaOrgId,
+      });
+    }
+
+    // Email to first records staff
+    const recipient = recordsStaff.find(u => u.email);
+    if (recipient) {
+      await sendPendingResultsReminder({
+        to: recipient.email,
+        eventNumber: event.eventNumber,
+        pendingCount: event.totalPending,
+        daysSinceEvent,
+      }).catch(err => console.error('[results-pending-daily] Email failed:', err));
+    }
+  }
+
+  console.log(`[results-pending-daily] Processed ${activeEvents.length} events`);
+}

@@ -49,11 +49,11 @@ export function RecentActivity({ userRole }: RecentActivityProps) {
     fetchRecentOrders();
   }, []);
 
-  const isProvider = userRole.startsWith('provider');
+  const isTpaUser = userRole.startsWith('tpa_') || userRole === 'platform_admin';
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12 rounded-lg border bg-white">
+      <div className="flex items-center justify-center py-12 rounded-lg border bg-card">
         <LoadingSpinner />
       </div>
     );
@@ -61,7 +61,7 @@ export function RecentActivity({ userRole }: RecentActivityProps) {
 
   if (orders.length === 0) {
     return (
-      <div className="rounded-lg border bg-white p-8 text-center text-gray-500">
+      <div className="rounded-lg border bg-card p-8 text-center text-muted-foreground">
         No recent activity to display
       </div>
     );
@@ -72,7 +72,7 @@ export function RecentActivity({ userRole }: RecentActivityProps) {
       {orders.map((order) => (
         <Card
           key={order.id}
-          className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+          className="p-4 cursor-pointer hover:bg-muted transition-colors"
           onClick={() => router.push(`/orders/${order.id}`)}
         >
           <div className="flex items-center justify-between">
@@ -82,19 +82,19 @@ export function RecentActivity({ userRole }: RecentActivityProps) {
                 <StatusBadge status={order.status} />
               </div>
               <div className="mt-1 space-y-1">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {order.candidate.firstName} {order.candidate.lastName}
                 </p>
-                {isProvider && (
-                  <p className="text-sm text-gray-500">
+                {isTpaUser && (
+                  <p className="text-sm text-muted-foreground">
                     {order.organization.name}
                   </p>
                 )}
-                <p className="text-sm text-gray-500">{order.testType}</p>
+                <p className="text-sm text-muted-foreground">{order.testType}</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {formatDistanceToNow(new Date(order.createdAt), {
                   addSuffix: true,
                 })}

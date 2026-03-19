@@ -32,9 +32,9 @@ const createCandidateSchema = z.object({
 
 export const GET = withAuth(async (req, user) => {
   // Only employers can access candidates (their own)
-  if (!user.role?.startsWith('employer')) {
+  if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     return NextResponse.json(
-      { error: 'Only employers can access candidates' },
+      { error: 'Insufficient permissions' },
       { status: 403 }
     );
   }
@@ -93,9 +93,9 @@ export const GET = withAuth(async (req, user) => {
 
 export const POST = withAuth(async (req, user) => {
   // Only employers can create candidates
-  if (!user.role?.startsWith('employer')) {
+  if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     return NextResponse.json(
-      { error: 'Only employers can create candidates' },
+      { error: 'Insufficient permissions' },
       { status: 403 }
     );
   }

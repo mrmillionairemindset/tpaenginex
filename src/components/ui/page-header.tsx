@@ -16,9 +16,9 @@ export function PageHeader({ title, description, action, children }: PageHeaderP
   return (
     <div className="mb-8 flex items-center justify-between">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">{title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
         {description && (
-          <p className="mt-2 text-sm text-gray-500">{description}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{description}</p>
         )}
       </div>
       <div>

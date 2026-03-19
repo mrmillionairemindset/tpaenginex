@@ -20,7 +20,7 @@ export async function sendAuthorizationFormEmail(options: SendAuthorizationFormE
   try {
     const msg = {
       to,
-      from: 'WorkSafe Now <noreply@wsnportal.com>',
+      from: 'TPAEngineX <noreply@tpaenginex.com>',
       subject: `Authorization Form for ${candidateName} - Order ${orderNumber}`,
       html: `
         <!DOCTYPE html>
@@ -65,7 +65,7 @@ export async function sendAuthorizationFormEmail(options: SendAuthorizationFormE
               </div>
 
               <div class="footer">
-                <p>This is an automated message from WorkSafe Now Portal.</p>
+                <p>This is an automated message from TPAEngineX.</p>
                 <p>If you have questions, please contact your provider administrator.</p>
               </div>
             </div>
@@ -91,6 +91,187 @@ export async function sendAuthorizationFormEmail(options: SendAuthorizationFormE
   }
 }
 
+// ============================================================================
+// TPA Email Templates
+// ============================================================================
+
+// TODO: Pull brandName from tpa_settings per tpaOrgId for white-label emails
+const DEFAULT_FROM = 'TPAEngineX <noreply@tpaenginex.com>';
+
+/**
+ * Collector assignment confirmation email to client contact
+ */
+export async function sendCollectorAssignedEmail(options: {
+  to: string;
+  orderNumber: string;
+  clientName: string;
+  collectorName: string;
+  scheduledDate: string;
+  location: string;
+}) {
+  const { to, orderNumber, clientName, collectorName, scheduledDate, location } = options;
+
+  const msg = {
+    to,
+    from: DEFAULT_FROM,
+    subject: `Collector Confirmed for Order ${orderNumber} — ${clientName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Collector Confirmed</h2>
+        <p>A collector has been assigned to your order.</p>
+        <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+          <tr><td style="padding: 8px; color: #666;">Order</td><td style="padding: 8px; font-weight: bold;">${orderNumber}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Collector</td><td style="padding: 8px; font-weight: bold;">${collectorName}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Scheduled</td><td style="padding: 8px; font-weight: bold;">${scheduledDate}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Location</td><td style="padding: 8px; font-weight: bold;">${location}</td></tr>
+        </table>
+        <p>If you have questions, please contact your TPA administrator.</p>
+      </div>
+    `,
+  };
+
+  const response = await sgMail.send(msg);
+  return { success: true, emailId: response[0].headers['x-message-id'] };
+}
+
+/**
+ * Order completion + review request email to client
+ */
+export async function sendOrderCompletionEmail(options: {
+  to: string;
+  orderNumber: string;
+  clientName: string;
+  donorName: string;
+  serviceType: string;
+  reviewLink: string;
+}) {
+  const { to, orderNumber, clientName, donorName, serviceType, reviewLink } = options;
+
+  const msg = {
+    to,
+    from: DEFAULT_FROM,
+    subject: `Collection Complete — Order ${orderNumber} | ${clientName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Collection Complete</h2>
+        <p>Thank you for choosing our services. The collection for the following order has been completed:</p>
+        <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+          <tr><td style="padding: 8px; color: #666;">Order</td><td style="padding: 8px; font-weight: bold;">${orderNumber}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Donor</td><td style="padding: 8px; font-weight: bold;">${donorName}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Service</td><td style="padding: 8px; font-weight: bold;">${serviceType}</td></tr>
+        </table>
+        <p><strong>Next Steps:</strong> Results will be delivered within the standard turnaround time for the service type ordered.</p>
+        ${reviewLink ? `<p>We'd appreciate your feedback! <a href="${reviewLink}">Leave a review</a></p>` : ''}
+        <p>Thank you for your business.</p>
+      </div>
+    `,
+  };
+
+  const response = await sgMail.send(msg);
+  return { success: true, emailId: response[0].headers['x-message-id'] };
+}
+
+/**
+ * Event completion summary email to client
+ */
+export async function sendEventCompletionEmail(options: {
+  to: string;
+  eventNumber: string;
+  clientName: string;
+  totalDone: number;
+  totalPending: number;
+  eventDate: string;
+}) {
+  const { to, eventNumber, clientName, totalDone, totalPending, eventDate } = options;
+
+  const msg = {
+    to,
+    from: DEFAULT_FROM,
+    subject: `Collection Event Summary — ${clientName} | ${eventDate}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Event Summary — ${eventNumber}</h2>
+        <p>The collection event for ${clientName} has been completed.</p>
+        <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+          <tr><td style="padding: 8px; color: #666;">Event</td><td style="padding: 8px; font-weight: bold;">${eventNumber}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Date</td><td style="padding: 8px; font-weight: bold;">${eventDate}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Completed</td><td style="padding: 8px; font-weight: bold; color: #16a34a;">${totalDone}</td></tr>
+          ${totalPending > 0 ? `<tr><td style="padding: 8px; color: #666;">Pending Results</td><td style="padding: 8px; font-weight: bold; color: #d97706;">${totalPending}</td></tr>` : ''}
+        </table>
+        ${totalPending > 0 ? '<p>Pending results will be delivered as they are received from the laboratory.</p>' : ''}
+        <p>Thank you for your business.</p>
+      </div>
+    `,
+  };
+
+  const response = await sgMail.send(msg);
+  return { success: true, emailId: response[0].headers['x-message-id'] };
+}
+
+/**
+ * Pending results follow-up email to TPA records staff
+ */
+export async function sendPendingResultsReminder(options: {
+  to: string;
+  eventNumber: string;
+  pendingCount: number;
+  daysSinceEvent: number;
+}) {
+  const { to, eventNumber, pendingCount, daysSinceEvent } = options;
+
+  const msg = {
+    to,
+    from: DEFAULT_FROM,
+    subject: `${pendingCount} Results Still Pending — ${eventNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #d97706;">Results Pending Action</h2>
+        <p><strong>${pendingCount}</strong> result(s) are still pending for event <strong>${eventNumber}</strong>.</p>
+        <p>It has been <strong>${daysSinceEvent} day(s)</strong> since the collection date.</p>
+        <p>Please follow up with the laboratory or MRO to obtain the outstanding results.</p>
+      </div>
+    `,
+  };
+
+  const response = await sgMail.send(msg);
+  return { success: true, emailId: response[0].headers['x-message-id'] };
+}
+
+/**
+ * Kit mailing reminder email to TPA scheduler
+ */
+export async function sendKitMailingReminder(options: {
+  to: string;
+  eventNumber: string;
+  clientName: string;
+  scheduledDate: string;
+  location: string;
+}) {
+  const { to, eventNumber, clientName, scheduledDate, location } = options;
+
+  const msg = {
+    to,
+    from: DEFAULT_FROM,
+    subject: `Action Required — Mail Collection Kits for ${clientName} Event ${eventNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #dc2626;">Mail Collection Kits Today</h2>
+        <p>Collection kits need to be mailed for the following event to ensure they arrive on time:</p>
+        <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+          <tr><td style="padding: 8px; color: #666;">Event</td><td style="padding: 8px; font-weight: bold;">${eventNumber}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Client</td><td style="padding: 8px; font-weight: bold;">${clientName}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Scheduled</td><td style="padding: 8px; font-weight: bold;">${scheduledDate}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Ship To</td><td style="padding: 8px; font-weight: bold;">${location}</td></tr>
+        </table>
+        <p>Please ship the kits today to ensure timely arrival.</p>
+      </div>
+    `,
+  };
+
+  const response = await sgMail.send(msg);
+  return { success: true, emailId: response[0].headers['x-message-id'] };
+}
+
 /**
  * Send test email to verify configuration
  */
@@ -98,9 +279,9 @@ export async function sendTestEmail(to: string) {
   try {
     const msg = {
       to,
-      from: 'WorkSafe Now <noreply@wsnportal.com>',
-      subject: 'Test Email from WorkSafe Now',
-      html: '<p>This is a test email from WorkSafe Now Portal. Email configuration is working correctly!</p>',
+      from: 'TPAEngineX <noreply@tpaenginex.com>',
+      subject: 'Test Email from TPAEngineX',
+      html: '<p>This is a test email from TPAEngineX. Email configuration is working correctly!</p>',
     };
 
     const response = await sgMail.send(msg);

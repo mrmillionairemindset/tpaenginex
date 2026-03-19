@@ -24,7 +24,7 @@ export async function POST(
     }
 
     // Only employers can review orders
-    if (!user.role?.startsWith('employer')) {
+    if (user.role !== 'client_admin' && user.role !== 'tpa_admin' && user.role !== 'platform_admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

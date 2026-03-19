@@ -20,7 +20,7 @@ interface OrganizationSettingsModalProps {
     organization: {
       id: string;
       name: string;
-      type: 'employer' | 'provider';
+      type: 'platform' | 'tpa' | 'client';
       slug: string;
     } | null;
   };

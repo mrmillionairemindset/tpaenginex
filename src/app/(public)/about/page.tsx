@@ -1,21 +1,21 @@
 import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
-  title: 'About Us | Worksafe Now Platform',
-  description: 'Learn about Worksafe Now healthcare screening platform',
+  title: 'About Us | TPAEngineX',
+  description: 'Learn about TPAEngineX healthcare screening platform',
 };
 
 export default function AboutPage() {
   return (
     <ComplianceLayout
-      title="About Worksafe Now"
+      title="About TPAEngineX"
       lastUpdated="January 2025"
       description="Streamlining healthcare screening for employers and providers"
     >
       <section>
         <h2>Our Mission</h2>
         <p>
-          Worksafe Now Platform was founded to modernize and streamline the pre-employment
+          TPAEngineX was founded to modernize and streamline the pre-employment
           and employee health screening process. We connect employers, screening providers,
           and testing facilities through a secure, HIPAA-compliant platform that makes
           coordination simple and efficient.
@@ -25,7 +25,7 @@ export default function AboutPage() {
       <section>
         <h2>What We Do</h2>
         <p>
-          Worksafe Now provides a comprehensive platform for managing healthcare screenings:
+          TPAEngineX provides a comprehensive platform for managing healthcare screenings:
         </p>
         <ul>
           <li>Pre-employment drug testing and physical examinations</li>

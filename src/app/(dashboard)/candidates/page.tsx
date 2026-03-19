@@ -10,8 +10,9 @@ export default async function CandidatesPage() {
     redirect('/auth/signin');
   }
 
-  // Only employers can view candidates
-  if (!user.role?.startsWith('employer')) {
+  // Only TPA users and platform admins can view candidates
+  const canView = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
+  if (!canView) {
     redirect('/dashboard');
   }
 

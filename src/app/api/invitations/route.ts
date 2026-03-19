@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     // Check if user is an admin
     const isAdmin =
-      currentUser.role === "employer_admin" || currentUser.role === "provider_admin";
+      currentUser.role === "tpa_admin" || currentUser.role === "platform_admin";
 
     if (!isAdmin) {
       return NextResponse.json(

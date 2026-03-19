@@ -1,8 +1,8 @@
 import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
-  title: 'Business Associate Agreement | Worksafe Now Platform',
-  description: 'HIPAA Business Associate Agreement for Worksafe Now healthcare screening platform',
+  title: 'Business Associate Agreement | TPAEngineX',
+  description: 'HIPAA Business Associate Agreement for TPAEngineX healthcare screening platform',
 };
 
 export default function BAAPage() {
@@ -13,7 +13,7 @@ export default function BAAPage() {
       description="HIPAA-compliant Business Associate Agreement template"
     >
       <section>
-        <p className="text-sm italic text-gray-600 mb-6">
+        <p className="text-sm italic text-muted-foreground mb-6">
           This is a template Business Associate Agreement. To execute a formal BAA for your
           organization, please contact us at{' '}
           <a href="mailto:compliance@rapidscreen.com">compliance@rapidscreen.com</a>.
@@ -27,7 +27,7 @@ export default function BAAPage() {
         </p>
         <ul>
           <li><strong>Covered Entity</strong> ("CE"): [Organization Name]</li>
-          <li><strong>Business Associate</strong> ("BA"): Worksafe Now Platform, Inc.</li>
+          <li><strong>Business Associate</strong> ("BA"): TPAEngineX, Inc.</li>
         </ul>
         <p>
           Effective Date: [Date]
@@ -331,8 +331,8 @@ export default function BAAPage() {
           To execute this Business Associate Agreement, please contact:
         </p>
 
-        <div className="mt-6 rounded-lg border bg-gray-50 p-6">
-          <p className="font-semibold mb-4">Worksafe Now Platform, Inc.</p>
+        <div className="mt-6 rounded-lg border bg-muted p-6">
+          <p className="font-semibold mb-4">TPAEngineX, Inc.</p>
           <ul className="space-y-2 text-sm">
             <li><strong>Email:</strong> <a href="mailto:compliance@rapidscreen.com">compliance@rapidscreen.com</a></li>
             <li><strong>Phone:</strong> (888) 555-0100</li>
@@ -340,7 +340,7 @@ export default function BAAPage() {
           </ul>
         </div>
 
-        <p className="mt-6 text-sm text-gray-600">
+        <p className="mt-6 text-sm text-muted-foreground">
           We will provide a customized BAA with your organization details, signature blocks,
           and any addenda required for your specific use case.
         </p>
@@ -358,17 +358,17 @@ export default function BAAPage() {
         </ul>
       </section>
 
-      <section className="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-6">
-        <h3 className="text-blue-900 font-semibold mb-2">Need a Signed BAA?</h3>
-        <p className="text-blue-800 mb-4">
+      <section className="mt-8 rounded-lg border border-primary/20 bg-primary/5 p-6">
+        <h3 className="text-primary font-semibold mb-2">Need a Signed BAA?</h3>
+        <p className="text-primary mb-4">
           If you are a covered entity or business associate requiring a formal Business
           Associate Agreement, please contact our compliance team:
         </p>
-        <ul className="text-blue-800 space-y-1">
+        <ul className="text-primary space-y-1">
           <li>Email: <a href="mailto:compliance@rapidscreen.com" className="underline">compliance@rapidscreen.com</a></li>
           <li>Phone: (888) 555-0100</li>
         </ul>
-        <p className="text-sm text-blue-700 mt-4">
+        <p className="text-sm text-primary mt-4">
           We typically execute BAAs within 3-5 business days of receiving your request.
         </p>
       </section>

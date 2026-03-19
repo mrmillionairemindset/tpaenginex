@@ -154,7 +154,7 @@ export default function SettingsPage() {
   if (organizations.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">No organizations found</p>
+        <p className="text-muted-foreground">No organizations found</p>
       </div>
     );
   }
@@ -163,7 +163,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-muted-foreground mt-2">
           Manage email recipients for authorization forms per organization
         </p>
       </div>
@@ -183,7 +183,7 @@ export default function SettingsPage() {
                 className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                   selectedOrgId === org.id
                     ? 'bg-primary text-white'
-                    : 'hover:bg-gray-100'
+                    : 'hover:bg-muted'
                 }`}
               >
                 <div className="font-medium text-sm">{org.name}</div>
@@ -201,7 +201,7 @@ export default function SettingsPage() {
             <>
               <div className="mb-6">
                 <h2 className="text-xl font-semibold mb-2">{selectedOrg.name}</h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Configure email recipients who will receive authorization forms for this organization's orders
                 </p>
               </div>
@@ -229,7 +229,7 @@ export default function SettingsPage() {
                     Add
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   These recipients will automatically receive authorization form emails (along with the candidate)
                 </p>
               </div>
@@ -242,10 +242,10 @@ export default function SettingsPage() {
                     {selectedOrg.authFormRecipients.map((email) => (
                       <div
                         key={email}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                        className="flex items-center justify-between p-3 bg-muted rounded-lg border"
                       >
                         <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-gray-400" />
+                          <Mail className="h-4 w-4 text-muted-foreground" />
                           <span className="font-mono text-sm">{email}</span>
                         </div>
                         <Button
@@ -260,7 +260,7 @@ export default function SettingsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">
+                  <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                     <Mail className="h-12 w-12 mx-auto mb-3 opacity-30" />
                     <p>No email recipients configured</p>
                     <p className="text-sm">Add email addresses above to receive authorization forms</p>
@@ -269,9 +269,9 @@ export default function SettingsPage() {
               </div>
 
               {/* Info Box */}
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="font-medium text-blue-900 mb-2">How it works</h3>
-                <ul className="text-sm text-blue-800 space-y-1">
+              <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <h3 className="font-medium text-primary mb-2">How it works</h3>
+                <ul className="text-sm text-primary space-y-1">
                   <li>• When a provider generates a custom authorization form, it will be automatically emailed</li>
                   <li>• Recipients include: the candidate + all emails configured here</li>
                   <li>• If no emails are configured, the form will be sent to the candidate and the order requester</li>

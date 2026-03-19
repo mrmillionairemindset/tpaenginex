@@ -25,7 +25,7 @@ interface ProfileModalProps {
     organization: {
       id: string;
       name: string;
-      type: 'employer' | 'provider';
+      type: 'platform' | 'tpa' | 'client';
       slug: string;
     } | null;
   };
@@ -65,10 +65,12 @@ export function ProfileModal({ open, onOpenChange, user }: ProfileModalProps) {
   const getRoleLabel = (role: string | null) => {
     if (!role) return 'No role assigned';
     const roleMap: Record<string, string> = {
-      employer_admin: 'Employer Admin',
-      employer_user: 'Employer User',
-      provider_admin: 'Provider Admin',
-      provider_agent: 'Provider Agent',
+      platform_admin: 'Platform Admin',
+      tpa_admin: 'TPA Admin',
+      tpa_staff: 'TPA Staff',
+      tpa_records: 'TPA Records',
+      tpa_billing: 'TPA Billing',
+      client_admin: 'Client Admin',
     };
     return roleMap[role] || role;
   };
@@ -126,9 +128,9 @@ export function ProfileModal({ open, onOpenChange, user }: ProfileModalProps) {
                   type="email"
                   value={user.email}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Email cannot be changed
                 </p>
               </div>
@@ -139,7 +141,7 @@ export function ProfileModal({ open, onOpenChange, user }: ProfileModalProps) {
                   id="role"
                   value={getRoleLabel(user.role)}
                   disabled
-                  className="bg-gray-50"
+                  className="bg-muted"
                 />
               </div>
 
@@ -157,16 +159,16 @@ export function ProfileModal({ open, onOpenChange, user }: ProfileModalProps) {
                   <Input
                     value={user.organization.name}
                     disabled
-                    className="bg-gray-50"
+                    className="bg-muted"
                   />
                 </div>
 
                 <div>
                   <Label>Organization Type</Label>
                   <Input
-                    value={user.organization.type === 'employer' ? 'Employer' : 'Provider'}
+                    value={user.organization.type === 'tpa' ? 'TPA' : user.organization.type === 'client' ? 'Client' : 'Platform'}
                     disabled
-                    className="bg-gray-50 capitalize"
+                    className="bg-muted capitalize"
                   />
                 </div>
 
@@ -175,16 +177,16 @@ export function ProfileModal({ open, onOpenChange, user }: ProfileModalProps) {
                   <Input
                     value={user.organization.slug}
                     disabled
-                    className="bg-gray-50"
+                    className="bg-muted"
                   />
                 </div>
 
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Organization settings can only be changed by administrators
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 You are not currently associated with an organization
               </p>
             )}

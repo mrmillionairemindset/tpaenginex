@@ -54,6 +54,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.id = user.id;
         token.orgId = user.orgId;
+        token.tpaOrgId = user.tpaOrgId;
         token.role = user.role;
       }
       return token;
@@ -64,6 +65,7 @@ export const authConfig: NextAuthConfig = {
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.orgId = token.orgId as string | null;
+        session.user.tpaOrgId = token.tpaOrgId as string | null;
         session.user.role = token.role as string | null;
       }
       return session;

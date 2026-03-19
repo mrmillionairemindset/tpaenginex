@@ -2,8 +2,8 @@ import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'FAQ | Worksafe Now Platform',
-  description: 'Frequently asked questions about Worksafe Now',
+  title: 'FAQ | TPAEngineX',
+  description: 'Frequently asked questions about TPAEngineX',
 };
 
 export default function FAQPage() {
@@ -16,21 +16,21 @@ export default function FAQPage() {
       <section>
         <h2>General Questions</h2>
 
-        <h3>What is Worksafe Now?</h3>
+        <h3>What is TPAEngineX?</h3>
         <p>
-          Worksafe Now is a healthcare screening coordination platform that connects employers,
+          TPAEngineX is a healthcare screening coordination platform that connects employers,
           screening providers, and testing facilities. We streamline the entire pre-employment
           and employee screening process from order creation to result delivery.
         </p>
 
-        <h3>Who uses Worksafe Now?</h3>
+        <h3>Who uses TPAEngineX?</h3>
         <ul>
           <li><strong>Employers:</strong> Companies requiring pre-employment or employee health screenings</li>
           <li><strong>Screening Providers:</strong> Organizations that coordinate drug tests, physicals, and other screenings</li>
           <li><strong>Testing Facilities:</strong> Clinics and labs (like Concentra) where appointments take place</li>
         </ul>
 
-        <h3>How much does Worksafe Now cost?</h3>
+        <h3>How much does TPAEngineX cost?</h3>
         <p>
           Pricing varies based on order volume and service level. Contact{' '}
           <a href="mailto:sales@rapidscreen.com">sales@rapidscreen.com</a> for a custom quote.

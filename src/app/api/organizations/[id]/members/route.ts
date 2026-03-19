@@ -22,7 +22,7 @@ export async function GET(
     const orgId = params.id;
 
     // Verify user is a member of this organization or is a provider
-    const isProvider = user.role?.startsWith("provider");
+    const isProvider = user.role?.startsWith("tpa_") || user.role === "platform_admin";
     const isMember = user.orgId === orgId;
 
     if (!isProvider && !isMember) {
@@ -102,7 +102,7 @@ export async function DELETE(
     // Verify current user is an admin of this organization
     const isAdmin =
       user.orgId === orgId &&
-      (user.role === "employer_admin" || user.role === "provider_admin");
+      (user.role === "tpa_admin" || user.role === "platform_admin");
 
     if (!isAdmin) {
       return NextResponse.json(
@@ -128,15 +128,15 @@ export async function DELETE(
     });
 
     const activeAdmins = admins.filter(
-      (m) => m.role === "employer_admin" || m.role === "provider_admin"
+      (m) => m.role === "tpa_admin" || m.role === "platform_admin"
     );
 
     const targetMember = admins.find((m) => m.userId === userId);
 
     if (
       targetMember &&
-      (targetMember.role === "employer_admin" ||
-        targetMember.role === "provider_admin") &&
+      (targetMember.role === "tpa_admin" ||
+        targetMember.role === "platform_admin") &&
       activeAdmins.length === 1
     ) {
       return NextResponse.json(

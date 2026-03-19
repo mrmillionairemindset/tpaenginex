@@ -49,7 +49,7 @@ export function OrdersTable({ userRole }: OrdersTableProps) {
     fetchOrders();
   }, []);
 
-  const isProvider = userRole.startsWith('provider');
+  const isTpaUser = userRole.startsWith('tpa_') || userRole === 'platform_admin';
 
   const columns = [
     {
@@ -61,10 +61,10 @@ export function OrdersTable({ userRole }: OrdersTableProps) {
       accessor: (order: Order) =>
         `${order.candidate.firstName} ${order.candidate.lastName}`,
     },
-    ...(isProvider
+    ...(isTpaUser
       ? [
           {
-            header: 'Employer',
+            header: 'Client',
             accessor: (order: Order) => order.organization.name,
           },
         ]

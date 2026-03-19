@@ -66,7 +66,7 @@ export function DataTable<T extends { id: string }>({
             <TableRow
               key={item.id}
               onClick={() => onRowClick?.(item)}
-              className={onRowClick ? 'cursor-pointer hover:bg-gray-50' : ''}
+              className={onRowClick ? 'cursor-pointer hover:bg-muted' : ''}
             >
               {columns.map((col, idx) => (
                 <TableCell key={idx} className={col.className}>

@@ -4,9 +4,9 @@ import { cn } from '@/lib/utils';
 type OrderStatus = 'new' | 'needs_site' | 'scheduled' | 'in_progress' | 'results_uploaded' | 'pending_review' | 'needs_correction' | 'complete' | 'cancelled';
 
 const statusStyles: Record<OrderStatus, { variant: string; label: string }> = {
-  new: { variant: 'bg-blue-100 text-blue-800', label: 'New' },
+  new: { variant: 'bg-primary/10 text-primary', label: 'New' },
   needs_site: { variant: 'bg-amber-100 text-amber-800', label: 'Needs Site' },
-  scheduled: { variant: 'bg-purple-100 text-purple-800', label: 'Scheduled' },
+  scheduled: { variant: 'bg-accent/10 text-accent', label: 'Scheduled' },
   in_progress: { variant: 'bg-yellow-100 text-yellow-800', label: 'In Progress' },
   results_uploaded: { variant: 'bg-cyan-100 text-cyan-800', label: 'Results Uploaded' },
   pending_review: { variant: 'bg-indigo-100 text-indigo-800', label: 'Pending Review' },

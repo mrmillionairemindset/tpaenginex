@@ -21,17 +21,27 @@ interface Location {
   zip: string;
 }
 
-interface NewOrderFormProps {
-  orgId: string | null;
+interface Collector {
+  id: string;
+  firstName: string;
+  lastName: string;
 }
 
-export function NewOrderForm({ orgId }: NewOrderFormProps) {
+interface NewOrderFormProps {
+  orgId: string | null;
+  userRole: string;
+}
+
+export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [locations, setLocations] = useState<Location[]>([]);
+  const [collectors, setCollectors] = useState<Collector[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>('');
   const [useCustomLocation, setUseCustomLocation] = useState(false);
+  const isTpaUser = userRole.startsWith('tpa_') || userRole === 'platform_admin';
+  const canAssignCollector = userRole === 'tpa_admin' || userRole === 'tpa_staff' || userRole === 'platform_admin';
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -44,10 +54,14 @@ export function NewOrderForm({ orgId }: NewOrderFormProps) {
     state: '',
     zip: '',
     testType: 'Pre-Employment Drug Screen',
+    serviceType: 'pre_employment' as string,
+    isDOT: false,
+    priority: 'standard' as string,
     urgency: 'standard',
     jobsiteLocation: '',
     needsMask: 'no',
     maskSize: '',
+    collectorId: '',
     notes: '',
   });
 
@@ -68,7 +82,23 @@ export function NewOrderForm({ orgId }: NewOrderFormProps) {
     };
 
     fetchLocations();
-  }, [orgId]);
+
+    // Fetch collectors for TPA users
+    if (isTpaUser) {
+      const fetchCollectors = async () => {
+        try {
+          const response = await fetch('/api/collectors');
+          if (response.ok) {
+            const data = await response.json();
+            setCollectors(data.collectors || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch collectors:', error);
+        }
+      };
+      fetchCollectors();
+    }
+  }, [orgId, isTpaUser]);
 
   const handleLocationSelect = (locationId: string) => {
     if (locationId === 'custom') {
@@ -125,10 +155,14 @@ export function NewOrderForm({ orgId }: NewOrderFormProps) {
             zip: formData.zip,
           },
           testType: formData.testType,
+          serviceType: formData.serviceType,
+          isDOT: formData.isDOT,
+          priority: formData.priority,
           urgency: formData.urgency,
           jobsiteLocation: formData.jobsiteLocation,
           needsMask: formData.needsMask === 'yes',
           maskSize: formData.needsMask === 'yes' ? formData.maskSize : undefined,
+          collectorId: formData.collectorId || undefined,
           notes: formData.notes || undefined,
         }),
       });
@@ -350,36 +384,116 @@ export function NewOrderForm({ orgId }: NewOrderFormProps) {
         <div>
           <h3 className="text-lg font-semibold mb-4">Order Details</h3>
           <div className="grid gap-4">
-            <div>
-              <Label htmlFor="testType">Test Type <span className="text-red-500">*</span></Label>
-              <select
-                id="testType"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                required
-                value={formData.testType}
-                onChange={(e) => setFormData({ ...formData, testType: e.target.value })}
-              >
-                <option>Pre-Employment Drug Screen</option>
-                <option>DOT Drug Test</option>
-                <option>Physical Examination</option>
-                <option>TB Test</option>
-                <option>Respirator Fit Test</option>
-              </select>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="serviceType">Service Type <span className="text-red-500">*</span></Label>
+                <select
+                  id="serviceType"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  required
+                  value={formData.serviceType}
+                  onChange={(e) => {
+                    const serviceType = e.target.value;
+                    const autoUrgent = serviceType === 'post_accident' || serviceType === 'reasonable_suspicion';
+                    setFormData({
+                      ...formData,
+                      serviceType,
+                      priority: autoUrgent ? 'urgent' : formData.priority,
+                    });
+                  }}
+                >
+                  <option value="pre_employment">Pre-Employment</option>
+                  <option value="random">Random</option>
+                  <option value="post_accident">Post-Accident</option>
+                  <option value="reasonable_suspicion">Reasonable Suspicion</option>
+                  <option value="physical">Physical</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="isDOT">DOT or Non-DOT <span className="text-red-500">*</span></Label>
+                <div className="flex items-center gap-4 h-10">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isDOT"
+                      checked={!formData.isDOT}
+                      onChange={() => setFormData({ ...formData, isDOT: false })}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm font-medium">Non-DOT</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="isDOT"
+                      checked={formData.isDOT}
+                      onChange={() => setFormData({ ...formData, isDOT: true })}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm font-medium">DOT</span>
+                  </label>
+                </div>
+                {formData.isDOT && (
+                  <p className="text-xs text-amber-600 mt-1">MRO notification step required for DOT orders</p>
+                )}
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="urgency">Urgency</Label>
-              <select
-                id="urgency"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                value={formData.urgency}
-                onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
-              >
-                <option value="standard">Standard</option>
-                <option value="rush">Rush</option>
-                <option value="urgent">Urgent</option>
-              </select>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <select
+                  id="priority"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                >
+                  <option value="standard">Standard</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+                {formData.priority === 'urgent' && (
+                  <span className="inline-block mt-1 text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded">URGENT</span>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="testType">Test Type <span className="text-red-500">*</span></Label>
+                <select
+                  id="testType"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  required
+                  value={formData.testType}
+                  onChange={(e) => setFormData({ ...formData, testType: e.target.value })}
+                >
+                  <option>Pre-Employment Drug Screen</option>
+                  <option>DOT Drug Test</option>
+                  <option>Physical Examination</option>
+                  <option>TB Test</option>
+                  <option>Respirator Fit Test</option>
+                </select>
+              </div>
             </div>
+
+            {canAssignCollector && collectors.length > 0 && (
+              <div>
+                <Label htmlFor="collectorId">Assigned Collector</Label>
+                <select
+                  id="collectorId"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  value={formData.collectorId}
+                  onChange={(e) => setFormData({ ...formData, collectorId: e.target.value })}
+                >
+                  <option value="">Select a collector...</option>
+                  {collectors.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.firstName} {c.lastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="needsMask">Do you need a mask? <span className="text-red-500">*</span></Label>

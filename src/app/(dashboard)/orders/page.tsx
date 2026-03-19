@@ -13,20 +13,20 @@ export default async function OrdersPage() {
     redirect('/auth/signin');
   }
 
-  const isEmployer = user.role?.startsWith('employer');
-  const isProvider = user.role?.startsWith('provider');
+  const isClient = user.role === 'client_admin';
+  const isTpaUser = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
 
   return (
     <div>
       <PageHeader
         title="Orders"
         description={
-          isEmployer
-            ? 'Manage your screening orders'
+          isClient
+            ? 'View your screening orders'
             : 'View and manage all screening orders'
         }
       >
-        {isEmployer && (
+        {isTpaUser && (
           <Link href="/orders/new">
             <Button>
               <Plus className="mr-2 h-4 w-4" />

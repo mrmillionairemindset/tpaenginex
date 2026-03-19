@@ -23,7 +23,7 @@ export async function DELETE(
     }
 
     // Only providers can delete documents
-    if (!user.role?.startsWith('provider')) {
+    if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

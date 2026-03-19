@@ -19,7 +19,7 @@ export default async function ResultsUploadPage({ params }: ResultsPageProps) {
   }
 
   // Only providers can upload results
-  if (!user.role?.startsWith('provider')) {
+  if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     redirect('/dashboard');
   }
 

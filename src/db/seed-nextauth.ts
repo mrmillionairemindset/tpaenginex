@@ -3,145 +3,201 @@ import { users, organizations, organizationMembers } from "./schema";
 import bcrypt from "bcryptjs";
 
 async function seed() {
-  console.log("🌱 Seeding database with test users...");
+  console.log("Seeding database with test users...");
 
   try {
     // Create test organizations
     console.log("Creating organizations...");
 
-    const [employerOrg] = await db
+    // Platform org (super-admin)
+    const [platformOrg] = await db
       .insert(organizations)
       .values({
-        name: "Acme Corp",
-        slug: "acme-corp",
-        type: "employer",
+        name: "TPAEngineX",
+        slug: "tpa-engine-x",
+        type: "platform",
         isActive: true,
       })
       .returning();
 
-    const [providerOrg] = await db
+    // TPA org (paying tenant)
+    const [tpaOrg] = await db
       .insert(organizations)
       .values({
-        name: "HealthTest Solutions",
-        slug: "healthtest-solutions",
-        type: "provider",
+        name: "USA Mobile Drug Testing",
+        slug: "usa-mobile-drug-testing",
+        type: "tpa",
         isActive: true,
       })
       .returning();
 
-    console.log("✅ Organizations created");
+    // Client org (employer served by TPA)
+    const [clientOrg] = await db
+      .insert(organizations)
+      .values({
+        name: "Acme Construction",
+        slug: "acme-construction",
+        type: "client",
+        tpaOrgId: tpaOrg.id,
+        isActive: true,
+      })
+      .returning();
+
+    console.log("Organizations created");
 
     // Create test users
     console.log("Creating users...");
 
     const password = await bcrypt.hash("password123", 10);
 
-    // Employer Admin
-    const [employerAdmin] = await db.insert(users).values({
-      email: "employer-admin@example.com",
-      name: "John Employer",
+    // Platform Admin
+    const [platformAdmin] = await db.insert(users).values({
+      email: "platform-admin@example.com",
+      name: "Platform Admin",
       password,
-      role: "employer_admin",
-      orgId: employerOrg.id,
+      role: "platform_admin",
+      orgId: platformOrg.id,
       emailVerified: new Date(),
       isActive: true,
     }).returning();
 
-    // Employer User
-    const [employerUser] = await db.insert(users).values({
-      email: "employer-user@example.com",
-      name: "Jane Employee",
+    // TPA Admin
+    const [tpaAdmin] = await db.insert(users).values({
+      email: "tpa-admin@example.com",
+      name: "Sarah TPA Admin",
       password,
-      role: "employer_user",
-      orgId: employerOrg.id,
+      role: "tpa_admin",
+      orgId: tpaOrg.id,
       emailVerified: new Date(),
       isActive: true,
     }).returning();
 
-    // Provider Admin
-    const [providerAdmin] = await db.insert(users).values({
-      email: "provider-admin@example.com",
-      name: "Dr. Sarah Provider",
+    // TPA Staff
+    const [tpaStaff] = await db.insert(users).values({
+      email: "tpa-staff@example.com",
+      name: "Mike Scheduler",
       password,
-      role: "provider_admin",
-      orgId: providerOrg.id,
+      role: "tpa_staff",
+      orgId: tpaOrg.id,
       emailVerified: new Date(),
       isActive: true,
     }).returning();
 
-    // Provider Agent
-    const [providerAgent] = await db.insert(users).values({
-      email: "provider-agent@example.com",
-      name: "Mike Agent",
+    // TPA Records
+    const [tpaRecords] = await db.insert(users).values({
+      email: "tpa-records@example.com",
+      name: "Lisa Records",
       password,
-      role: "provider_agent",
-      orgId: providerOrg.id,
+      role: "tpa_records",
+      orgId: tpaOrg.id,
       emailVerified: new Date(),
       isActive: true,
     }).returning();
 
-    console.log("✅ Users created");
+    // TPA Billing
+    const [tpaBilling] = await db.insert(users).values({
+      email: "tpa-billing@example.com",
+      name: "Tom Billing",
+      password,
+      role: "tpa_billing",
+      orgId: tpaOrg.id,
+      emailVerified: new Date(),
+      isActive: true,
+    }).returning();
+
+    // Client Admin
+    const [clientAdmin] = await db.insert(users).values({
+      email: "client-admin@example.com",
+      name: "John Client",
+      password,
+      role: "client_admin",
+      orgId: clientOrg.id,
+      emailVerified: new Date(),
+      isActive: true,
+    }).returning();
+
+    console.log("Users created");
 
     // Create organization memberships
     console.log("Creating organization memberships...");
 
     await db.insert(organizationMembers).values([
       {
-        userId: employerAdmin.id,
-        organizationId: employerOrg.id,
-        role: "employer_admin",
-        invitedBy: employerAdmin.id,
+        userId: platformAdmin.id,
+        organizationId: platformOrg.id,
+        role: "platform_admin",
+        invitedBy: platformAdmin.id,
         isActive: true,
       },
       {
-        userId: employerUser.id,
-        organizationId: employerOrg.id,
-        role: "employer_user",
-        invitedBy: employerAdmin.id,
+        userId: tpaAdmin.id,
+        organizationId: tpaOrg.id,
+        role: "tpa_admin",
+        invitedBy: tpaAdmin.id,
         isActive: true,
       },
       {
-        userId: providerAdmin.id,
-        organizationId: providerOrg.id,
-        role: "provider_admin",
-        invitedBy: providerAdmin.id,
+        userId: tpaStaff.id,
+        organizationId: tpaOrg.id,
+        role: "tpa_staff",
+        invitedBy: tpaAdmin.id,
         isActive: true,
       },
       {
-        userId: providerAgent.id,
-        organizationId: providerOrg.id,
-        role: "provider_agent",
-        invitedBy: providerAdmin.id,
+        userId: tpaRecords.id,
+        organizationId: tpaOrg.id,
+        role: "tpa_records",
+        invitedBy: tpaAdmin.id,
+        isActive: true,
+      },
+      {
+        userId: tpaBilling.id,
+        organizationId: tpaOrg.id,
+        role: "tpa_billing",
+        invitedBy: tpaAdmin.id,
+        isActive: true,
+      },
+      {
+        userId: clientAdmin.id,
+        organizationId: clientOrg.id,
+        role: "client_admin",
+        invitedBy: tpaAdmin.id,
         isActive: true,
       },
     ]);
 
-    console.log("✅ Organization memberships created");
-    console.log("\n📋 Test Accounts:");
+    console.log("Organization memberships created");
+    console.log("\nTest Accounts:");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("Employer Admin:");
-    console.log("  Email: employer-admin@example.com");
+    console.log("Platform Admin:");
+    console.log("  Email: platform-admin@example.com");
     console.log("  Password: password123");
-    console.log("  Org: Acme Corp");
     console.log("");
-    console.log("Employer User:");
-    console.log("  Email: employer-user@example.com");
+    console.log("TPA Admin:");
+    console.log("  Email: tpa-admin@example.com");
     console.log("  Password: password123");
-    console.log("  Org: Acme Corp");
+    console.log("  Org: USA Mobile Drug Testing");
     console.log("");
-    console.log("Provider Admin:");
-    console.log("  Email: provider-admin@example.com");
+    console.log("TPA Staff:");
+    console.log("  Email: tpa-staff@example.com");
     console.log("  Password: password123");
-    console.log("  Org: HealthTest Solutions");
     console.log("");
-    console.log("Provider Agent:");
-    console.log("  Email: provider-agent@example.com");
+    console.log("TPA Records:");
+    console.log("  Email: tpa-records@example.com");
     console.log("  Password: password123");
-    console.log("  Org: HealthTest Solutions");
+    console.log("");
+    console.log("TPA Billing:");
+    console.log("  Email: tpa-billing@example.com");
+    console.log("  Password: password123");
+    console.log("");
+    console.log("Client Admin:");
+    console.log("  Email: client-admin@example.com");
+    console.log("  Password: password123");
+    console.log("  Org: Acme Construction");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("\n✨ Seeding complete!");
+    console.log("\nSeeding complete!");
   } catch (error) {
-    console.error("❌ Seeding failed:", error);
+    console.error("Seeding failed:", error);
     throw error;
   }
 }

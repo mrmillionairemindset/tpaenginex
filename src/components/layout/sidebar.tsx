@@ -8,13 +8,15 @@ import {
   LayoutDashboard,
   FileText,
   Users,
-  MapPin,
   Settings,
-  FileCheck,
   Building2,
   Plus,
   ChevronDown,
   ChevronRight,
+  UserCheck,
+  CalendarDays,
+  DollarSign,
+  Target,
 } from 'lucide-react';
 
 interface NavItem {
@@ -25,71 +27,85 @@ interface NavItem {
   children?: NavItem[]; // Nested items
 }
 
-const employerNav: NavItem[] = [
+// TPA staff navigation (tpa_admin, tpa_staff, tpa_records, tpa_billing)
+const tpaNav: NavItem[] = [
   {
     label: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['employer_admin', 'employer_user'],
+    roles: ['tpa_admin', 'tpa_staff', 'tpa_records', 'tpa_billing'],
   },
   {
     label: 'Orders',
     href: '/orders',
     icon: FileText,
-    roles: ['employer_admin', 'employer_user'],
+    roles: ['tpa_admin', 'tpa_staff', 'tpa_records', 'tpa_billing'],
     children: [
       {
         label: 'New Order',
         href: '/orders/new',
         icon: Plus,
-        roles: ['employer_admin', 'employer_user'],
+        roles: ['tpa_admin', 'tpa_staff'],
       },
     ],
+  },
+  {
+    label: 'Events',
+    href: '/events',
+    icon: CalendarDays,
+    roles: ['tpa_admin', 'tpa_staff'],
   },
   {
     label: 'Candidates',
     href: '/candidates',
     icon: Users,
-    roles: ['employer_admin', 'employer_user'],
-  },
-];
-
-const providerNav: NavItem[] = [
-  {
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    roles: ['provider_admin', 'provider_agent'],
+    roles: ['tpa_admin', 'tpa_staff', 'tpa_records'],
   },
   {
-    label: 'Orders',
-    href: '/orders',
-    icon: FileText,
-    roles: ['provider_admin', 'provider_agent'],
+    label: 'Collectors',
+    href: '/collectors',
+    icon: UserCheck,
+    roles: ['tpa_admin', 'tpa_staff'],
   },
   {
-    label: 'Sites',
-    href: '/sites',
-    icon: MapPin,
-    roles: ['provider_admin'],
-  },
-  {
-    label: 'Organizations',
-    href: '/organizations',
+    label: 'Clients',
+    href: '/clients',
     icon: Building2,
-    roles: ['provider_admin'],
+    roles: ['tpa_admin', 'tpa_staff'],
   },
   {
-    label: 'Results',
-    href: '/results',
-    icon: FileCheck,
-    roles: ['provider_admin', 'provider_agent'],
+    label: 'Billing',
+    href: '/billing',
+    icon: DollarSign,
+    roles: ['tpa_admin', 'tpa_billing'],
+  },
+  {
+    label: 'Leads & Pipeline',
+    href: '/leads',
+    icon: Target,
+    roles: ['tpa_admin'],
   },
   {
     label: 'Settings',
     href: '/settings',
     icon: Settings,
-    roles: ['provider_admin'],
+    roles: ['tpa_admin'],
+  },
+];
+
+// Client portal navigation (client_admin)
+const clientNav: NavItem[] = [
+  {
+    label: 'My Orders',
+    href: '/client-portal/orders',
+    icon: FileText,
+    roles: ['client_admin'],
+  },
+  {
+    label: 'Results',
+    href: '/client-portal/results',
+    icon: FileText,
+    roles: ['client_admin'],
   },
 ];
 
@@ -100,8 +116,8 @@ interface SidebarProps {
 
 export function Sidebar({ userRole, className }: SidebarProps) {
   const pathname = usePathname();
-  const isProvider = userRole.startsWith('provider');
-  const navItems = isProvider ? providerNav : employerNav;
+  const isTpaUser = userRole.startsWith('tpa_') || userRole === 'platform_admin';
+  const navItems = isTpaUser ? tpaNav : clientNav;
 
   const filteredNav = navItems.filter((item) => item.roles.includes(userRole));
 
@@ -128,7 +144,7 @@ export function Sidebar({ userRole, className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'flex w-64 flex-col border-r bg-gray-50/40',
+        'flex w-64 flex-col border-r bg-muted/40',
         className
       )}
     >
@@ -152,7 +168,7 @@ export function Sidebar({ userRole, className }: SidebarProps) {
                     'flex flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                     isActive && !hasActiveChild
                       ? 'bg-primary text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      : 'text-foreground hover:bg-muted'
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -161,12 +177,12 @@ export function Sidebar({ userRole, className }: SidebarProps) {
                 {filteredChildren.length > 0 && (
                   <button
                     onClick={() => toggleExpand(item.href)}
-                    className="p-2 hover:bg-gray-100 rounded transition-colors"
+                    className="p-2 hover:bg-muted rounded transition-colors"
                   >
                     {isExpanded ? (
-                      <ChevronDown className="h-4 w-4 text-gray-600" />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <ChevronRight className="h-4 w-4 text-gray-600" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     )}
                   </button>
                 )}
@@ -185,7 +201,7 @@ export function Sidebar({ userRole, className }: SidebarProps) {
                           'flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors',
                           isChildActive
                             ? 'bg-primary text-white'
-                            : 'text-gray-600 hover:bg-gray-100'
+                            : 'text-muted-foreground hover:bg-muted'
                         )}
                       >
                         <ChildIcon className="h-4 w-4" />

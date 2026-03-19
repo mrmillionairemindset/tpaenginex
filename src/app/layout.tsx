@@ -6,8 +6,8 @@ import { ThemeProvider } from '@/components/theme-provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Worksafe Now Portal',
-  description: 'Worksafe Now Portal - Healthcare screening coordination platform',
+  title: 'TPAEngineX',
+  description: 'TPAEngineX - Healthcare screening coordination platform',
 };
 
 export default function RootLayout({

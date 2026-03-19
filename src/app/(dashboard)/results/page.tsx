@@ -11,7 +11,7 @@ export default async function ResultsPage() {
   }
 
   // Only providers can access results
-  if (!user.role?.startsWith('provider')) {
+  if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     redirect('/dashboard');
   }
 

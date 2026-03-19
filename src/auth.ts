@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db/client";
-import { users, accounts, sessions, verificationTokens } from "@/db/schema";
+import { users, accounts, sessions, verificationTokens, organizations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import type { DefaultSession } from "next-auth";
@@ -14,12 +14,14 @@ declare module "next-auth" {
     user: {
       id: string;
       orgId: string | null;
+      tpaOrgId: string | null;
       role: string | null;
     } & DefaultSession["user"];
   }
 
   interface User {
     orgId?: string | null;
+    tpaOrgId?: string | null;
     role?: string | null;
   }
 }
@@ -62,12 +64,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // Resolve tpaOrgId based on org type
+        let tpaOrgId: string | null = null;
+        if (user.orgId) {
+          const org = await db.query.organizations.findFirst({
+            where: eq(organizations.id, user.orgId),
+          });
+          if (org) {
+            tpaOrgId = org.type === "tpa" ? org.id : org.tpaOrgId;
+          }
+        }
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
           orgId: user.orgId,
+          tpaOrgId,
           role: user.role,
         };
       },

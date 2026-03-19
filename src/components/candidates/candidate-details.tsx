@@ -66,7 +66,7 @@ export function CandidateDetails({ candidateId }: CandidateDetailsProps) {
           <h1 className="text-2xl font-bold">
             {candidate.firstName} {candidate.lastName}
           </h1>
-          <p className="text-gray-500 mt-1">
+          <p className="text-muted-foreground mt-1">
             Added {format(new Date(candidate.createdAt), 'PPP')}
           </p>
         </div>
@@ -76,25 +76,25 @@ export function CandidateDetails({ candidateId }: CandidateDetailsProps) {
         {/* Candidate Information */}
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <User className="h-5 w-5 text-gray-500" />
+            <User className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Contact Information</h2>
           </div>
           <dl className="space-y-2">
             <div>
-              <dt className="text-sm text-gray-500">Name</dt>
+              <dt className="text-sm text-muted-foreground">Name</dt>
               <dd className="font-medium">
                 {candidate.firstName} {candidate.lastName}
               </dd>
             </div>
             {candidate.email && (
               <div>
-                <dt className="text-sm text-gray-500">Email</dt>
+                <dt className="text-sm text-muted-foreground">Email</dt>
                 <dd className="font-medium">{candidate.email}</dd>
               </div>
             )}
             {candidate.phone && (
               <div>
-                <dt className="text-sm text-gray-500">Phone</dt>
+                <dt className="text-sm text-muted-foreground">Phone</dt>
                 <dd className="font-medium">{candidate.phone}</dd>
               </div>
             )}
@@ -104,31 +104,31 @@ export function CandidateDetails({ candidateId }: CandidateDetailsProps) {
         {/* Address Information */}
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <MapPin className="h-5 w-5 text-gray-500" />
+            <MapPin className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Address</h2>
           </div>
           <dl className="space-y-2">
             {candidate.address && (
               <div>
-                <dt className="text-sm text-gray-500">Street Address</dt>
+                <dt className="text-sm text-muted-foreground">Street Address</dt>
                 <dd className="font-medium">{candidate.address}</dd>
               </div>
             )}
             {candidate.city && (
               <div>
-                <dt className="text-sm text-gray-500">City</dt>
+                <dt className="text-sm text-muted-foreground">City</dt>
                 <dd className="font-medium">{candidate.city}</dd>
               </div>
             )}
             {candidate.state && (
               <div>
-                <dt className="text-sm text-gray-500">State</dt>
+                <dt className="text-sm text-muted-foreground">State</dt>
                 <dd className="font-medium">{candidate.state}</dd>
               </div>
             )}
             {candidate.zip && (
               <div>
-                <dt className="text-sm text-gray-500">ZIP Code</dt>
+                <dt className="text-sm text-muted-foreground">ZIP Code</dt>
                 <dd className="font-medium">{candidate.zip}</dd>
               </div>
             )}
@@ -136,7 +136,7 @@ export function CandidateDetails({ candidateId }: CandidateDetailsProps) {
               !candidate.city &&
               !candidate.state &&
               !candidate.zip && (
-                <p className="text-sm text-gray-500">No address on file</p>
+                <p className="text-sm text-muted-foreground">No address on file</p>
               )}
           </dl>
         </Card>
@@ -146,10 +146,10 @@ export function CandidateDetails({ candidateId }: CandidateDetailsProps) {
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <ClipboardList className="h-5 w-5 text-gray-500" />
+            <ClipboardList className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Order History</h2>
           </div>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-muted-foreground">
             {candidate.orders.length}{' '}
             {candidate.orders.length === 1 ? 'order' : 'orders'}
           </span>
@@ -160,7 +160,7 @@ export function CandidateDetails({ candidateId }: CandidateDetailsProps) {
             {candidate.orders.map((order: any) => (
               <div
                 key={order.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
                 onClick={() => router.push(`/orders/${order.id}`)}
               >
                 <div className="flex-1">
@@ -168,8 +168,8 @@ export function CandidateDetails({ candidateId }: CandidateDetailsProps) {
                     <p className="font-medium">{order.orderNumber}</p>
                     <StatusBadge status={order.status} />
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">{order.testType}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground mt-1">{order.testType}</p>
+                  <p className="text-sm text-muted-foreground">
                     {format(new Date(order.createdAt), 'PPP')}
                   </p>
                 </div>

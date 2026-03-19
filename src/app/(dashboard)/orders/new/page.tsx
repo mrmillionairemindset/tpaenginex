@@ -10,8 +10,9 @@ export default async function NewOrderPage() {
     redirect('/auth/signin');
   }
 
-  // Only employers can create orders
-  if (!user.role?.startsWith('employer')) {
+  // Only TPA staff and admins can create orders
+  const canCreate = user.role === 'tpa_admin' || user.role === 'tpa_staff' || user.role === 'platform_admin';
+  if (!canCreate) {
     redirect('/dashboard');
   }
 
@@ -23,7 +24,7 @@ export default async function NewOrderPage() {
       />
 
       <div className="mt-6 max-w-2xl">
-        <NewOrderForm orgId={user.orgId} />
+        <NewOrderForm orgId={user.orgId} userRole={user.role || ''} />
       </div>
     </div>
   );

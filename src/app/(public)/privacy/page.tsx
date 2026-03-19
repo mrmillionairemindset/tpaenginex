@@ -1,8 +1,8 @@
 import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
-  title: 'Privacy Policy | Worksafe Now Platform',
-  description: 'Privacy Policy for Worksafe Now healthcare screening platform',
+  title: 'Privacy Policy | TPAEngineX',
+  description: 'Privacy Policy for TPAEngineX healthcare screening platform',
 };
 
 export default function PrivacyPolicyPage() {
@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
       <section>
         <h2>1. Introduction</h2>
         <p>
-          Worksafe Now Platform ("we," "our," or "us") is committed to protecting your privacy
+          TPAEngineX ("we," "our," or "us") is committed to protecting your privacy
           and maintaining the confidentiality of your personal information and Protected Health
           Information (PHI). This Privacy Policy explains how we collect, use, disclose, and
           safeguard your information when you use our healthcare screening platform.
@@ -200,7 +200,7 @@ export default function PrivacyPolicyPage() {
         <ul>
           <li><strong>Email:</strong> <a href="mailto:privacy@rapidscreen.com">privacy@rapidscreen.com</a></li>
           <li><strong>Phone:</strong> (888) 555-0100</li>
-          <li><strong>Mail:</strong> Worksafe Now Platform, Privacy Officer, [Address]</li>
+          <li><strong>Mail:</strong> TPAEngineX, Privacy Officer, [Address]</li>
         </ul>
 
         <p>

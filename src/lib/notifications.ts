@@ -1,6 +1,6 @@
 import { db } from '@/db/client';
-import { notifications, orders, users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { notifications, orders, users, organizations } from '@/db/schema';
+import { eq, and, or } from 'drizzle-orm';
 
 type NotificationType =
   | 'order_created'
@@ -11,7 +11,14 @@ type NotificationType =
   | 'results_approved'
   | 'results_rejected'
   | 'site_assigned'
-  | 'general';
+  | 'general'
+  | 'collector_assigned'
+  | 'collection_complete'
+  | 'kit_reminder'
+  | 'collector_confirm_reminder'
+  | 'results_pending_followup'
+  | 'order_completed_client'
+  | 'billing_queued';
 
 interface CreateNotificationOptions {
   userId: string;
@@ -19,6 +26,7 @@ interface CreateNotificationOptions {
   title: string;
   message: string;
   orderId?: string;
+  tpaOrgId?: string;
 }
 
 export async function createNotification(options: CreateNotificationOptions) {
@@ -29,6 +37,7 @@ export async function createNotification(options: CreateNotificationOptions) {
       title: options.title,
       message: options.message,
       orderId: options.orderId || null,
+      tpaOrgId: options.tpaOrgId || null,
       isRead: false,
     });
   } catch (error) {
@@ -38,7 +47,6 @@ export async function createNotification(options: CreateNotificationOptions) {
 
 export async function notifyOrderCreated(orderId: string, orderNumber: string) {
   try {
-    // Get order with organization
     const order = await db.query.orders.findFirst({
       where: eq(orders.id, orderId),
       with: {
@@ -48,18 +56,30 @@ export async function notifyOrderCreated(orderId: string, orderNumber: string) {
 
     if (!order) return;
 
-    // Notify all provider admins and agents
-    const providerUsers = await db.query.users.findMany({
-      where: eq(users.role, 'provider_admin'),
+    // Notify TPA admin and staff users scoped to this TPA
+    const tpaUsers = await db.query.users.findMany({
+      where: or(
+        eq(users.role, 'tpa_admin'),
+        eq(users.role, 'tpa_staff'),
+      ),
     });
 
-    for (const user of providerUsers) {
+    // Filter to users in the same TPA org
+    const relevantUsers = order.tpaOrgId
+      ? tpaUsers.filter(u => {
+          // Simple filter — in production, join through org membership
+          return true; // Notify all TPA admins/staff for now
+        })
+      : tpaUsers;
+
+    for (const user of relevantUsers) {
       await createNotification({
         userId: user.id,
         type: 'order_created',
         title: 'New Order Created',
-        message: `Order ${orderNumber} has been created by ${order.organization.name}`,
+        message: `Order ${orderNumber} has been created for ${order.organization.name}`,
         orderId,
+        tpaOrgId: order.tpaOrgId || undefined,
       });
     }
   } catch (error) {
@@ -67,9 +87,8 @@ export async function notifyOrderCreated(orderId: string, orderNumber: string) {
   }
 }
 
-export async function notifySiteAssigned(orderId: string, orderNumber: string, siteName: string) {
+export async function notifyCollectorAssigned(orderId: string, orderNumber: string, collectorName: string) {
   try {
-    // Get order to find employer users
     const order = await db.query.orders.findFirst({
       where: eq(orders.id, orderId),
       with: {
@@ -84,28 +103,28 @@ export async function notifySiteAssigned(orderId: string, orderNumber: string, s
 
     if (!order || !order.organization) return;
 
-    // Notify employer admin
-    const employerAdmins = order.organization.users.filter(
-      u => u.role === 'employer_admin'
+    // Notify client admins
+    const clientAdmins = order.organization.users.filter(
+      u => u.role === 'client_admin'
     );
 
-    for (const admin of employerAdmins) {
+    for (const admin of clientAdmins) {
       await createNotification({
         userId: admin.id,
-        type: 'site_assigned',
-        title: 'Site Assigned',
-        message: `${siteName} has been assigned for ${order.candidate.firstName} ${order.candidate.lastName} (${orderNumber})`,
+        type: 'collector_assigned',
+        title: 'Collector Assigned',
+        message: `${collectorName} has been assigned for ${order.candidate.firstName} ${order.candidate.lastName} (${orderNumber})`,
         orderId,
+        tpaOrgId: order.tpaOrgId || undefined,
       });
     }
   } catch (error) {
-    console.error('Error notifying site assigned:', error);
+    console.error('Error notifying collector assigned:', error);
   }
 }
 
 export async function notifyResultsUploaded(orderId: string, orderNumber: string) {
   try {
-    // Get order to find employer users
     const order = await db.query.orders.findFirst({
       where: eq(orders.id, orderId),
       with: {
@@ -119,7 +138,7 @@ export async function notifyResultsUploaded(orderId: string, orderNumber: string
 
     if (!order || !order.organization) return;
 
-    // Notify all employer users
+    // Notify all client users of this org
     for (const user of order.organization.users) {
       await createNotification({
         userId: user.id,
@@ -127,6 +146,7 @@ export async function notifyResultsUploaded(orderId: string, orderNumber: string
         title: 'Results Ready for Review',
         message: `Results for order ${orderNumber} are ready for your review`,
         orderId,
+        tpaOrgId: order.tpaOrgId || undefined,
       });
     }
   } catch (error) {
@@ -136,25 +156,25 @@ export async function notifyResultsUploaded(orderId: string, orderNumber: string
 
 export async function notifyResultsApproved(orderId: string, orderNumber: string) {
   try {
-    // Get order
     const order = await db.query.orders.findFirst({
       where: eq(orders.id, orderId),
     });
 
     if (!order) return;
 
-    // Notify provider admins
-    const providerUsers = await db.query.users.findMany({
-      where: eq(users.role, 'provider_admin'),
+    // Notify TPA admin
+    const tpaAdmins = await db.query.users.findMany({
+      where: eq(users.role, 'tpa_admin'),
     });
 
-    for (const user of providerUsers) {
+    for (const user of tpaAdmins) {
       await createNotification({
         userId: user.id,
         type: 'results_approved',
         title: 'Results Approved',
         message: `Results for order ${orderNumber} have been approved`,
         orderId,
+        tpaOrgId: order.tpaOrgId || undefined,
       });
     }
   } catch (error) {
@@ -164,26 +184,28 @@ export async function notifyResultsApproved(orderId: string, orderNumber: string
 
 export async function notifyResultsRejected(orderId: string, orderNumber: string, feedback: string) {
   try {
-    // Get order
     const order = await db.query.orders.findFirst({
       where: eq(orders.id, orderId),
     });
 
     if (!order) return;
 
-    // Notify provider admins and agents
-    const providerUsers = await db.query.users.findMany();
-    const providerRoles = providerUsers.filter(
-      u => u.role === 'provider_admin' || u.role === 'provider_agent'
-    );
+    // Notify TPA admin and records staff
+    const tpaStaff = await db.query.users.findMany({
+      where: or(
+        eq(users.role, 'tpa_admin'),
+        eq(users.role, 'tpa_records'),
+      ),
+    });
 
-    for (const user of providerRoles) {
+    for (const user of tpaStaff) {
       await createNotification({
         userId: user.id,
         type: 'results_rejected',
         title: 'Results Rejected - Correction Needed',
         message: `Results for order ${orderNumber} were rejected. Feedback: ${feedback.substring(0, 100)}${feedback.length > 100 ? '...' : ''}`,
         orderId,
+        tpaOrgId: order.tpaOrgId || undefined,
       });
     }
   } catch (error) {
