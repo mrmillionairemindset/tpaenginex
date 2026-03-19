@@ -1,7 +1,7 @@
 {
-  "name": "worksafe-now-portal",
+  "name": "tpaenginex",
   "version": "1.0.0",
-  "description": "Worksafe Now Portal - Healthcare screening platform with Google Sheets integration",
+  "description": "TPAEngineX - Multi-tenant SaaS platform for drug testing TPAs",
   "private": true,
   "scripts": {
     "dev": "next dev",
