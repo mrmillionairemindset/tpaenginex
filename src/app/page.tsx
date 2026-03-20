@@ -67,8 +67,8 @@ export default async function HomePage() {
                       Get Started
                     </button>
                   </Link>
-                  <Link href="/privacy" className="text-sm font-semibold text-foreground">
-                    Learn more <span aria-hidden="true">→</span>
+                  <Link href="/how-it-works" className="text-sm font-semibold text-foreground">
+                    See How It Works <span aria-hidden="true">→</span>
                   </Link>
                 </>
               ) : (
