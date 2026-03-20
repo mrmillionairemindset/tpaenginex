@@ -22,12 +22,6 @@ export default async function HomePage() {
           <div className="flex items-center gap-4">
             {!isAuthenticated ? (
               <>
-                <Link href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground hidden sm:block">
-                  How It Works
-                </Link>
-                <Link href="/hipaa" className="text-sm text-muted-foreground hover:text-foreground hidden sm:block">
-                  Compliance
-                </Link>
                 <Link href="/auth/signin">
                   <button className="rounded-md border border-input px-4 py-2 text-sm font-medium hover:bg-muted">
                     Sign In
