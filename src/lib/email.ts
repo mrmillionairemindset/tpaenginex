@@ -95,7 +95,6 @@ export async function sendAuthorizationFormEmail(options: SendAuthorizationFormE
 // TPA Email Templates
 // ============================================================================
 
-// TODO: Pull brandName from tpa_settings per tpaOrgId for white-label emails
 const DEFAULT_FROM = 'TPAEngineX <noreply@tpaenginex.com>';
 
 /**
@@ -264,6 +263,70 @@ export async function sendKitMailingReminder(options: {
           <tr><td style="padding: 8px; color: #666;">Ship To</td><td style="padding: 8px; font-weight: bold;">${location}</td></tr>
         </table>
         <p>Please ship the kits today to ensure timely arrival.</p>
+      </div>
+    `,
+  };
+
+  const response = await sgMail.send(msg);
+  return { success: true, emailId: response[0].headers['x-message-id'] };
+}
+
+/**
+ * User invitation email with login credentials
+ */
+export async function sendUserInviteEmail(options: {
+  to: string;
+  name: string;
+  role: string;
+  organizationName: string;
+  temporaryPassword: string;
+  loginUrl: string;
+}) {
+  const { to, name, role, organizationName, temporaryPassword, loginUrl } = options;
+
+  const roleLabel: Record<string, string> = {
+    tpa_admin: 'TPA Admin',
+    tpa_staff: 'TPA Staff',
+    tpa_records: 'TPA Records',
+    tpa_billing: 'TPA Billing',
+    client_admin: 'Client Admin',
+    platform_admin: 'Platform Admin',
+  };
+
+  const msg = {
+    to,
+    from: DEFAULT_FROM,
+    subject: `You've been invited to ${organizationName} on TPAEngineX`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0B0F14; color: #FFFFFF; border-radius: 8px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #3B82F6, #8B5CF6); padding: 32px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">Welcome to TPAEngineX</h1>
+        </div>
+        <div style="padding: 32px;">
+          <p style="color: #94A3B8; font-size: 16px;">Hi ${name},</p>
+          <p style="color: #94A3B8; font-size: 14px;">
+            You've been added to <strong style="color: #FFFFFF;">${organizationName}</strong> as a
+            <strong style="color: #FFFFFF;">${roleLabel[role] || role}</strong>.
+          </p>
+          <div style="background: #111827; border: 1px solid #1E293B; border-radius: 8px; padding: 20px; margin: 24px 0;">
+            <p style="margin: 0 0 8px; color: #64748B; font-size: 12px; text-transform: uppercase;">Your login credentials</p>
+            <p style="margin: 0 0 4px; color: #94A3B8; font-size: 14px;">Email: <strong style="color: #FFFFFF;">${to}</strong></p>
+            <p style="margin: 0; color: #94A3B8; font-size: 14px;">Temporary Password: <strong style="color: #FFFFFF;">${temporaryPassword}</strong></p>
+          </div>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #3B82F6, #8B5CF6); color: #FFFFFF; padding: 12px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">
+              Sign In Now
+            </a>
+          </div>
+          <p style="color: #64748B; font-size: 12px; text-align: center;">
+            We recommend changing your password after your first login.
+          </p>
+        </div>
+        <div style="border-top: 1px solid #1E293B; padding: 16px 32px; text-align: center;">
+          <p style="color: #64748B; font-size: 12px; margin: 0;">
+            TPAEngineX — Operations & compliance infrastructure for TPAs
+          </p>
+        </div>
       </div>
     `,
   };

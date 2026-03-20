@@ -4,6 +4,7 @@ import { users, organizationMembers } from "@/db/schema";
 import { getCurrentUser } from "@/auth/get-user";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { sendUserInviteEmail } from "@/lib/email";
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -88,8 +89,16 @@ export async function POST(request: Request) {
       isActive: true,
     });
 
-    // TODO: Send invitation email with login credentials via SendGrid
-    console.log(`User created: ${fullName} (${email}) with temporary password: ${temporaryPassword}`);
+    // Send invitation email
+    const loginUrl = `${process.env.NEXTAUTH_URL || 'https://tpaenginex.vercel.app'}/auth/signin`;
+    await sendUserInviteEmail({
+      to: email.toLowerCase(),
+      name: fullName,
+      role,
+      organizationName: currentUser.organization?.name || 'TPAEngineX',
+      temporaryPassword,
+      loginUrl,
+    }).catch(err => console.error('Failed to send invite email:', err));
 
     return NextResponse.json(
       {

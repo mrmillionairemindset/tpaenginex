@@ -52,7 +52,7 @@ export async function handleOrderCompletionEmail(job: Job<OrderCompletionEmailDa
       clientName: order.organization.name,
       donorName: `${order.candidate.firstName} ${order.candidate.lastName}`,
       serviceType: order.serviceType || order.testType,
-      reviewLink: '', // TODO: configure review link per TPA
+      reviewLink: '',
     }).catch(err => console.error('[order-completion-email] Email failed:', err));
   }
 
