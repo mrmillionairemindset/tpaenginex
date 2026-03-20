@@ -2,7 +2,7 @@ import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
   title: 'Business Associate Agreement | TPAEngineX',
-  description: 'HIPAA Business Associate Agreement for TPAEngineX healthcare screening platform',
+  description: 'HIPAA Business Associate Agreement for TPAEngineX operations and compliance platform',
 };
 
 export default function BAAPage() {
@@ -76,12 +76,29 @@ export default function BAAPage() {
           BA may use and disclose PHI only to perform the following services on behalf of CE:
         </p>
         <ul>
-          <li>Process and manage pre-employment and employee screening orders</li>
-          <li>Coordinate appointment scheduling with third-party testing facilities</li>
+          <li>Coordinate and orchestrate screening workflows between TPAs, employers, and third-party providers</li>
+          <li>Provide a technology platform for order routing, tracking, and status visibility</li>
+          <li>Process and manage screening-related operational workflows</li>
+          <li>Facilitate scheduling and communication with third-party service providers</li>
           <li>Transmit screening results to CE and authorized recipients</li>
           <li>Provide technical support and customer service</li>
           <li>Perform business analytics and quality improvement activities</li>
         </ul>
+
+        <h3>2.5 No Medical Services</h3>
+        <p>
+          TPAEngineX does not provide medical services, clinical evaluations, laboratory
+          testing, or healthcare treatment. All screening services are performed by independent
+          third-party providers. TPAEngineX acts solely as a technology platform and workflow
+          coordinator.
+        </p>
+
+        <h3>2.6 Data Ownership</h3>
+        <p>
+          All PHI remains the property of the Covered Entity. TPAEngineX does not claim
+          ownership of PHI and uses such information solely for purposes defined in this
+          Agreement.
+        </p>
 
         <h3>2.2 Minimum Necessary</h3>
         <p>
@@ -125,14 +142,16 @@ export default function BAAPage() {
           BA shall implement administrative, physical, and technical safeguards that
           reasonably and appropriately protect the confidentiality, integrity, and
           availability of PHI it creates, receives, maintains, or transmits on behalf of CE.
+          BA implements security controls aligned with industry standards including NIST,
+          SOC 2, and HIPAA Security Rule requirements.
         </p>
 
         <h3>3.2 Reporting</h3>
         <ul>
           <li>
             <strong>Breaches:</strong> BA shall report any Breach of Unsecured PHI to CE
-            without unreasonable delay and in no case later than 10 business days after
-            discovery of the Breach.
+            without unreasonable delay and in no case later than 5 business days after
+            discovery of the Breach, with initial notification within 48 hours where feasible.
           </li>
           <li>
             <strong>Security Incidents:</strong> BA shall report Security Incidents to CE
@@ -149,6 +168,8 @@ export default function BAAPage() {
           BA shall ensure that any subcontractors or agents to whom it provides PHI agree
           to the same restrictions and conditions that apply to BA with respect to such
           information, including execution of a compliant business associate agreement.
+          BA remains fully liable for the acts and omissions of its subcontractors with
+          respect to PHI.
         </p>
 
         <h3>3.4 Individual Rights</h3>
@@ -319,8 +340,8 @@ export default function BAAPage() {
 
         <h3>6.8 Governing Law</h3>
         <p>
-          This Agreement shall be governed by the laws of [State], without regard to
-          conflict of law principles, and by applicable federal law.
+          This Agreement shall be governed by the laws of the State of Arkansas, without
+          regard to conflict of law principles, and by applicable federal law.
         </p>
       </section>
 
@@ -335,14 +356,15 @@ export default function BAAPage() {
           <p className="font-semibold mb-4">TPAEngineX, Inc.</p>
           <ul className="space-y-2 text-sm">
             <li><strong>Email:</strong> <a href="mailto:compliance@tpaenginex.com">compliance@tpaenginex.com</a></li>
-            <li><strong>Phone:</strong> (888) 555-0100</li>
+            <li><strong>Attn:</strong> Little Rock, AR</li>
             <li><strong>Attn:</strong> Compliance Officer</li>
           </ul>
         </div>
 
         <p className="mt-6 text-sm text-muted-foreground">
-          We will provide a customized BAA with your organization details, signature blocks,
-          and any addenda required for your specific use case.
+          We will provide a customized BAA with your organization details, including
+          authorized signature blocks for both parties and any required legal addenda for
+          your specific use case.
         </p>
       </section>
 
@@ -366,7 +388,7 @@ export default function BAAPage() {
         </p>
         <ul className="text-primary space-y-1">
           <li>Email: <a href="mailto:compliance@tpaenginex.com" className="underline">compliance@tpaenginex.com</a></li>
-          <li>Phone: (888) 555-0100</li>
+          <li>Location: Little Rock, AR</li>
         </ul>
         <p className="text-sm text-primary mt-4">
           We typically execute BAAs within 3-5 business days of receiving your request.
