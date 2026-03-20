@@ -250,7 +250,7 @@ export const orders = pgTable("orders", {
   collectorId: uuid("collector_id").references(() => collectors.id),
   eventId: uuid("event_id"),  // FK added after events table definition via relations
   orderNumber: varchar("order_number", { length: 50 }).unique().notNull(),
-  testType: varchar("test_type", { length: 100 }).notNull(),
+  testType: varchar("test_type", { length: 500 }).notNull(),
   serviceType: varchar("service_type", { length: 50 }).notNull().default("drug_screen"),
   isDOT: boolean("is_dot").default(false).notNull(),
   priority: varchar("priority", { length: 20 }).default("standard"),

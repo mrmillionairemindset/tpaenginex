@@ -53,7 +53,7 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
     city: '',
     state: '',
     zip: '',
-    testType: 'Pre-Employment Drug Screen',
+    testTypes: [] as string[],
     serviceType: 'pre_employment' as string,
     isDOT: false,
     priority: 'standard' as string,
@@ -135,6 +135,10 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.testTypes.length === 0) {
+      toast({ title: 'Please select at least one test type', variant: 'destructive' });
+      return;
+    }
     setLoading(true);
 
     try {
@@ -154,7 +158,7 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
             state: formData.state,
             zip: formData.zip,
           },
-          testType: formData.testType,
+          testType: formData.testTypes.join(', '),
           serviceType: formData.serviceType,
           isDOT: formData.isDOT,
           priority: formData.priority,
@@ -459,20 +463,28 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
               </div>
 
               <div>
-                <Label htmlFor="testType">Test Type <span className="text-red-500">*</span></Label>
-                <select
-                  id="testType"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                  required
-                  value={formData.testType}
-                  onChange={(e) => setFormData({ ...formData, testType: e.target.value })}
-                >
-                  <option>Pre-Employment Drug Screen</option>
-                  <option>DOT Drug Test</option>
-                  <option>Physical Examination</option>
-                  <option>TB Test</option>
-                  <option>Respirator Fit Test</option>
-                </select>
+                <Label>Test Type(s) <span className="text-red-500">*</span></Label>
+                <div className="mt-2 space-y-2">
+                  {['Pre-Employment Drug Screen', 'DOT Drug Test', 'Physical Examination', 'PPE Exam', 'PFT', 'RFT', 'Audiogram', 'TB Test', 'TB Gold Blood Test', 'Chest X-Ray with B Read', '10 Panel Urine Drug Screen', 'OSHA Questionnaire', 'Respirator Fit Test'].map((type) => (
+                    <label key={type} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-input"
+                        checked={formData.testTypes.includes(type)}
+                        onChange={(e) => {
+                          const updated = e.target.checked
+                            ? [...formData.testTypes, type]
+                            : formData.testTypes.filter((t) => t !== type);
+                          setFormData({ ...formData, testTypes: updated });
+                        }}
+                      />
+                      <span className="text-sm">{type}</span>
+                    </label>
+                  ))}
+                </div>
+                {formData.testTypes.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">Select at least one test type</p>
+                )}
               </div>
             </div>
 
@@ -526,6 +538,7 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
                   <option value="Medium">Medium</option>
                   <option value="Large">Large</option>
                   <option value="X-Large">X-Large</option>
+                  <option value="Unknown">Unknown</option>
                 </select>
               </div>
             )}
