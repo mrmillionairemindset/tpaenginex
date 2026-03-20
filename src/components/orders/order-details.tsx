@@ -26,6 +26,9 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
   const [feedback, setFeedback] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [canceling, setCanceling] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
   const [checklist, setChecklist] = useState<any[]>([]);
   const [checklistLoading, setChecklistLoading] = useState(true);
   const [togglingItem, setTogglingItem] = useState<string | null>(null);
@@ -234,6 +237,7 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
   const isTpaUser = userRole.startsWith('tpa_') || userRole === 'platform_admin';
   const isClientAdmin = userRole === 'client_admin';
   const canCancel = (isClientAdmin || isTpaUser) && order.status !== 'complete' && order.status !== 'cancelled';
+  const canDelete = (userRole === 'tpa_admin') || (userRole === 'tpa_staff' && order.status === 'new');
 
   return (
     <div className="space-y-6">
@@ -261,6 +265,16 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
             >
               <XCircle className="mr-2 h-4 w-4" />
               Cancel Order
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              onClick={() => setShowDeleteConfirm(true)}
+              variant="outline"
+              size="sm"
+              className="border-destructive text-destructive hover:bg-destructive/10"
+            >
+              Delete
             </Button>
           )}
         </div>
@@ -676,12 +690,13 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
       )}
 
       {/* Cancel Order Confirmation Dialog */}
+      {/* Cancel Order Confirmation Dialog */}
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="p-6 max-w-md w-full mx-4">
             <h2 className="text-lg font-semibold mb-2">Cancel Order?</h2>
             <p className="text-sm text-muted-foreground mb-4">
-              Are you sure you want to cancel this order? This action cannot be undone.
+              Are you sure you want to cancel this order? The order will remain in the system with a cancelled status.
             </p>
             <div className="flex gap-3">
               <Button
@@ -699,6 +714,79 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                 className="flex-1"
               >
                 No, Keep Order
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Order Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="p-6 max-w-md w-full mx-4">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 mb-4">
+              <h2 className="text-lg font-semibold text-destructive mb-1">Permanently Delete Order?</h2>
+              <p className="text-sm text-muted-foreground">
+                This will permanently remove order <strong>{order.orderNumber}</strong> and all associated data (checklist, notifications). This cannot be undone.
+              </p>
+            </div>
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Reason for deletion <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  placeholder="e.g., Duplicate order, entered wrong candidate, test order..."
+                  rows={2}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={async () => {
+                  if (!deleteReason.trim()) {
+                    toast({ title: 'Required', description: 'Deletion reason is required', variant: 'destructive' });
+                    return;
+                  }
+                  setDeleting(true);
+                  try {
+                    const res = await fetch(`/api/orders/${orderId}?action=delete`, {
+                      method: 'DELETE',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ reason: deleteReason.trim() }),
+                    });
+                    if (res.ok) {
+                      toast({ title: 'Order Deleted', description: 'Order has been permanently removed' });
+                      window.location.href = '/orders';
+                    } else {
+                      const err = await res.json();
+                      toast({ title: 'Error', description: err.error, variant: 'destructive' });
+                    }
+                  } catch (err) {
+                    toast({ title: 'Error', description: 'Failed to delete order', variant: 'destructive' });
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                disabled={deleting || !deleteReason.trim()}
+                variant="destructive"
+                className="flex-1"
+              >
+                {deleting ? 'Deleting...' : 'Permanently Delete'}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteReason('');
+                }}
+                disabled={deleting}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
               </Button>
             </div>
           </Card>

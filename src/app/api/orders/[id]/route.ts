@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { orders, auditLogs } from '@/db/schema';
+import { orders, auditLogs, orderChecklists, documents, notifications } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -262,8 +262,15 @@ export async function PATCH(
 }
 
 // ============================================================================
-// DELETE /api/orders/[id] - Cancel order
+// DELETE /api/orders/[id] - Cancel or hard-delete order
 // ============================================================================
+// Query param: ?action=delete for hard delete, default is cancel
+// Hard delete rules:
+//   - tpa_staff: only 'new' orders
+//   - tpa_admin: any status
+//   - platform_admin: no delete (troubleshoot/setup only)
+//   - client_admin: no delete
+// All deletes require audit reason
 
 export async function DELETE(
   req: NextRequest,
@@ -275,8 +282,9 @@ export async function DELETE(
   }
 
   const { id } = params;
+  const { searchParams } = new URL(req.url);
+  const action = searchParams.get('action'); // 'delete' for hard delete
 
-  // Fetch existing order
   const existingOrder = await db.query.orders.findFirst({
     where: eq(orders.id, id),
   });
@@ -285,25 +293,105 @@ export async function DELETE(
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
-  // Check permissions — TPA admin/staff or the client who owns it
-  const isTpaUser = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
-  const isClientAdmin = user.role === 'client_admin' && existingOrder.orgId === user.organization?.id;
+  if (action === 'delete') {
+    // Hard delete flow
+    // Platform admin cannot delete — they're for troubleshooting only
+    if (user.role === 'platform_admin') {
+      return NextResponse.json(
+        { error: 'Platform admins cannot delete orders. Submit a support ticket to the TPA admin.' },
+        { status: 403 }
+      );
+    }
 
-  if (!isTpaUser && !isClientAdmin) {
-    return NextResponse.json(
-      { error: 'You do not have permission to cancel this order' },
-      { status: 403 }
-    );
+    // Client admin cannot delete
+    if (user.role === 'client_admin') {
+      return NextResponse.json(
+        { error: 'You do not have permission to delete orders' },
+        { status: 403 }
+      );
+    }
+
+    // tpa_staff can only delete 'new' orders
+    if (user.role === 'tpa_staff' && existingOrder.status !== 'new') {
+      return NextResponse.json(
+        { error: 'Staff can only delete orders in "new" status. Use cancel for orders already in progress.' },
+        { status: 403 }
+      );
+    }
+
+    // tpa_admin can delete any status
+    if (user.role !== 'tpa_admin' && user.role !== 'tpa_staff') {
+      return NextResponse.json(
+        { error: 'You do not have permission to delete orders' },
+        { status: 403 }
+      );
+    }
+
+    // Require audit reason
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      body = {};
+    }
+
+    if (!body.reason?.trim()) {
+      return NextResponse.json(
+        { error: 'Audit reason is required to delete an order' },
+        { status: 400 }
+      );
+    }
+
+    // Write audit log before deletion
+    await db.insert(auditLogs).values({
+      tpaOrgId: existingOrder.tpaOrgId,
+      actorUserId: user.id,
+      actorEmail: user.email,
+      entityType: 'order',
+      entityId: id,
+      action: 'order_deleted',
+      diffJson: {
+        orderNumber: existingOrder.orderNumber,
+        status: existingOrder.status,
+        reason: body.reason.trim(),
+        candidateId: existingOrder.candidateId,
+        serviceType: existingOrder.serviceType,
+      },
+    });
+
+    // Hard delete — cascade removes checklists, documents FK will be set null
+    await db.delete(orderChecklists).where(eq(orderChecklists.orderId, id));
+    await db.delete(notifications).where(eq(notifications.orderId, id));
+    await db.delete(orders).where(eq(orders.id, id));
+
+    return NextResponse.json({ message: 'Order permanently deleted', deleted: true });
+  } else {
+    // Cancel flow (soft delete)
+    const isTpaUser = user.role?.startsWith('tpa_');
+    const isClientAdmin = user.role === 'client_admin' && existingOrder.orgId === user.organization?.id;
+
+    if (!isTpaUser && !isClientAdmin && user.role !== 'platform_admin') {
+      return NextResponse.json(
+        { error: 'You do not have permission to cancel this order' },
+        { status: 403 }
+      );
+    }
+
+    if (existingOrder.status === 'complete' || existingOrder.status === 'cancelled') {
+      return NextResponse.json(
+        { error: 'Cannot cancel an order that is already complete or cancelled' },
+        { status: 400 }
+      );
+    }
+
+    await db
+      .update(orders)
+      .set({
+        status: 'cancelled',
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, id));
+
+    return NextResponse.json({ message: 'Order cancelled successfully' });
   }
-
-  // Soft delete - set status to cancelled
-  await db
-    .update(orders)
-    .set({
-      status: 'cancelled',
-      updatedAt: new Date(),
-    })
-    .where(eq(orders.id, id));
-
-  return NextResponse.json({ message: 'Order cancelled successfully' });
 }
