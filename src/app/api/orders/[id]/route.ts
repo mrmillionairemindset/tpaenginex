@@ -179,7 +179,16 @@ export async function PATCH(
   if (data.internalNotes !== undefined) updateData.internalNotes = data.internalNotes;
   if (data.scheduledFor) updateData.scheduledFor = new Date(data.scheduledFor);
   if (data.completedAt) updateData.completedAt = new Date(data.completedAt);
-  if (data.ccfNumber !== undefined) updateData.ccfNumber = data.ccfNumber;
+  if (data.ccfNumber !== undefined) {
+    // CCF is write-once — only admin can override after initial entry
+    if (existingOrder.ccfNumber && user.role !== 'tpa_admin' && user.role !== 'platform_admin') {
+      return NextResponse.json(
+        { error: 'CCF number cannot be modified after entry. Contact an admin.' },
+        { status: 403 }
+      );
+    }
+    updateData.ccfNumber = data.ccfNumber;
+  }
   if (data.collectorId) updateData.collectorId = data.collectorId;
   if (data.resultStatus) updateData.resultStatus = data.resultStatus;
 

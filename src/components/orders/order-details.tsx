@@ -343,45 +343,79 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
             )}
             <div>
               <dt className="text-sm text-muted-foreground">CCF #</dt>
-              {isTpaUser && order.status !== 'new' && order.status !== 'needs_site' && order.status !== 'complete' && order.status !== 'cancelled' ? (
-                <dd className="flex items-center gap-2 mt-1">
-                  <input
-                    type="text"
-                    value={ccfNumber || order.ccfNumber || ''}
-                    onChange={(e) => setCcfNumber(e.target.value)}
-                    placeholder="Enter CCF number..."
-                    className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <button
-                    onClick={async () => {
-                      if (!ccfNumber && !order.ccfNumber) return;
-                      setSavingCcf(true);
-                      try {
-                        const res = await fetch(`/api/orders/${orderId}`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ ccfNumber: ccfNumber || order.ccfNumber }),
-                        });
-                        if (res.ok) {
-                          const data = await res.json();
-                          setOrder(data.order);
-                          toast({ title: 'CCF # Saved', description: `CCF number updated to ${ccfNumber}` });
-                        }
-                      } catch (err) {
-                        toast({ title: 'Error', description: 'Failed to save CCF number', variant: 'destructive' });
-                      } finally {
-                        setSavingCcf(false);
-                      }
-                    }}
-                    disabled={savingCcf}
-                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    {savingCcf ? 'Saving...' : 'Save'}
-                  </button>
-                </dd>
-              ) : (
-                <dd className="font-medium">{order.ccfNumber || <span className="text-muted-foreground">Not yet assigned</span>}</dd>
-              )}
+              {(() => {
+                const canEdit = isTpaUser && !order.ccfNumber && order.status !== 'new' && order.status !== 'needs_site' && order.status !== 'cancelled';
+                const isAdmin = userRole === 'tpa_admin' || userRole === 'platform_admin';
+                const canAdminOverride = isTpaUser && order.ccfNumber && isAdmin;
+
+                if (canEdit) {
+                  // First entry — staff can set CCF once
+                  return (
+                    <dd className="flex items-center gap-2 mt-1">
+                      <input
+                        type="text"
+                        value={ccfNumber}
+                        onChange={(e) => setCcfNumber(e.target.value)}
+                        placeholder="Enter CCF number..."
+                        className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!ccfNumber.trim()) return;
+                          setSavingCcf(true);
+                          try {
+                            const res = await fetch(`/api/orders/${orderId}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ ccfNumber: ccfNumber.trim() }),
+                            });
+                            if (res.ok) {
+                              const data = await res.json();
+                              setOrder(data.order);
+                              setCcfNumber('');
+                              toast({ title: 'CCF # Saved', description: `Chain of Custody number recorded` });
+                            }
+                          } catch (err) {
+                            toast({ title: 'Error', description: 'Failed to save CCF number', variant: 'destructive' });
+                          } finally {
+                            setSavingCcf(false);
+                          }
+                        }}
+                        disabled={savingCcf || !ccfNumber.trim()}
+                        className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        {savingCcf ? 'Saving...' : 'Save'}
+                      </button>
+                    </dd>
+                  );
+                } else if (order.ccfNumber) {
+                  // Locked — show value with admin override option
+                  return (
+                    <dd>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{order.ccfNumber}</span>
+                        <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded">Locked</span>
+                      </div>
+                      {canAdminOverride && (
+                        <button
+                          onClick={() => {
+                            if (confirm('CCF numbers should not be changed after entry. This will be logged in the audit trail. Continue?')) {
+                              setCcfNumber(order.ccfNumber);
+                              // Temporarily unlock by clearing the ccfNumber on the order object
+                              setOrder({ ...order, ccfNumber: null });
+                            }
+                          }}
+                          className="mt-1 text-xs text-muted-foreground hover:text-foreground underline"
+                        >
+                          Admin: Correct CCF #
+                        </button>
+                      )}
+                    </dd>
+                  );
+                } else {
+                  return <dd className="font-medium"><span className="text-muted-foreground">Not yet assigned</span></dd>;
+                }
+              })()}
             </div>
             {order.resultStatus && (
               <div>
