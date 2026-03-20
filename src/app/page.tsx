@@ -52,13 +52,12 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 py-16">
           <div className="text-center">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
-              Healthcare Screening,
+              Power Your TPA
               <br />
-              <span className="text-primary">Simplified</span>
+              <span className="text-primary">Operations</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-              Coordinate drug tests, physicals, and screening appointments with testing facilities.
-              HIPAA-compliant platform for employers and providers.
+              TPAEngineX is the platform that powers remote operations, workflow coordination, and compliance infrastructure for TPAs.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               {!isAuthenticated ? (
