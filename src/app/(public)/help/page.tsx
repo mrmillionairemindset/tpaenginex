@@ -10,7 +10,7 @@ export default function HelpPage() {
   return (
     <ComplianceLayout
       title="Help Center"
-      lastUpdated="January 2025"
+      lastUpdated="March 2026"
       description="Answers to common questions and guides"
     >
       <section>

@@ -9,7 +9,7 @@ export default function BAAPage() {
   return (
     <ComplianceLayout
       title="Business Associate Agreement"
-      lastUpdated="January 2025"
+      lastUpdated="March 2026"
       description="HIPAA-compliant Business Associate Agreement template"
     >
       <section>

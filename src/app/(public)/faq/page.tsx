@@ -10,7 +10,7 @@ export default function FAQPage() {
   return (
     <ComplianceLayout
       title="Frequently Asked Questions"
-      lastUpdated="January 2025"
+      lastUpdated="March 2026"
       description="Quick answers to common questions"
     >
       <section>

@@ -9,7 +9,7 @@ export default function AboutPage() {
   return (
     <ComplianceLayout
       title="About TPAEngineX"
-      lastUpdated="January 2025"
+      lastUpdated="March 2026"
       description="Streamlining healthcare screening for employers and providers"
     >
       <section>

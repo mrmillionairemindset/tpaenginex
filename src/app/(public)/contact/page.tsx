@@ -10,7 +10,7 @@ export default function ContactPage() {
   return (
     <ComplianceLayout
       title="Contact Us"
-      lastUpdated="January 2025"
+      lastUpdated="March 2026"
       description="We're here to help"
     >
       <section>

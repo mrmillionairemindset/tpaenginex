@@ -9,7 +9,7 @@ export default function HIPAACompliancePage() {
   return (
     <ComplianceLayout
       title="HIPAA Compliance"
-      lastUpdated="January 2025"
+      lastUpdated="March 2026"
       description="Our commitment to protecting your health information"
     >
       <section>

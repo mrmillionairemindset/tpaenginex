@@ -9,7 +9,7 @@ export default function TermsOfServicePage() {
   return (
     <ComplianceLayout
       title="Terms of Service"
-      lastUpdated="January 2025"
+      lastUpdated="March 2026"
       description="Legal terms governing your use of the TPAEngineX"
     >
       <section>

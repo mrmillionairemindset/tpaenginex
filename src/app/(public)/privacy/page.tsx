@@ -9,7 +9,7 @@ export default function PrivacyPolicyPage() {
   return (
     <ComplianceLayout
       title="Privacy Policy"
-      lastUpdated="January 2025"
+      lastUpdated="March 2026"
       description="How we collect, use, and protect your information"
     >
       <section>
