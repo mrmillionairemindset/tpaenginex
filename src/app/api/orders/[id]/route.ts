@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { orders } from '@/db/schema';
+import { orders, auditLogs } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -20,6 +20,7 @@ const updateOrderSchema = z.object({
   scheduledFor: z.string().datetime().optional(),
   completedAt: z.string().datetime().optional(),
   ccfNumber: z.string().optional(),
+  ccfAuditReason: z.string().optional(),
   collectorId: z.string().uuid().optional(),
   resultStatus: z.enum(['pending', 'received', 'delivered']).optional(),
 });
@@ -180,12 +181,35 @@ export async function PATCH(
   if (data.scheduledFor) updateData.scheduledFor = new Date(data.scheduledFor);
   if (data.completedAt) updateData.completedAt = new Date(data.completedAt);
   if (data.ccfNumber !== undefined) {
-    // CCF is write-once — only admin can override after initial entry
-    if (existingOrder.ccfNumber && user.role !== 'tpa_admin' && user.role !== 'platform_admin') {
-      return NextResponse.json(
-        { error: 'CCF number cannot be modified after entry. Contact an admin.' },
-        { status: 403 }
-      );
+    if (existingOrder.ccfNumber) {
+      // CCF already set — only admin can override, with audit reason required
+      const isAdmin = user.role === 'tpa_admin' || user.role === 'platform_admin';
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: 'CCF number cannot be modified after entry. Contact an admin.' },
+          { status: 403 }
+        );
+      }
+      if (!data.ccfAuditReason?.trim()) {
+        return NextResponse.json(
+          { error: 'Audit reason is required when overriding a CCF number.' },
+          { status: 400 }
+        );
+      }
+      // Write audit log
+      await db.insert(auditLogs).values({
+        tpaOrgId: existingOrder.tpaOrgId,
+        actorUserId: user.id,
+        actorEmail: user.email,
+        entityType: 'order',
+        entityId: id,
+        action: 'ccf_override',
+        diffJson: {
+          previousCcf: existingOrder.ccfNumber,
+          newCcf: data.ccfNumber,
+          reason: data.ccfAuditReason.trim(),
+        },
+      });
     }
     updateData.ccfNumber = data.ccfNumber;
   }

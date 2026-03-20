@@ -31,6 +31,8 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
   const [togglingItem, setTogglingItem] = useState<string | null>(null);
   const [ccfNumber, setCcfNumber] = useState('');
   const [savingCcf, setSavingCcf] = useState(false);
+  const [ccfOverrideMode, setCcfOverrideMode] = useState(false);
+  const [ccfAuditReason, setCcfAuditReason] = useState('');
 
   useEffect(() => {
     async function fetchOrder() {
@@ -396,19 +398,91 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                         <span className="font-medium">{order.ccfNumber}</span>
                         <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded">Locked</span>
                       </div>
-                      {canAdminOverride && (
+                      {canAdminOverride && !ccfOverrideMode && (
                         <button
                           onClick={() => {
-                            if (confirm('CCF numbers should not be changed after entry. This will be logged in the audit trail. Continue?')) {
-                              setCcfNumber(order.ccfNumber);
-                              // Temporarily unlock by clearing the ccfNumber on the order object
-                              setOrder({ ...order, ccfNumber: null });
-                            }
+                            setCcfOverrideMode(true);
+                            setCcfNumber(order.ccfNumber);
+                            setCcfAuditReason('');
                           }}
                           className="mt-1 text-xs text-muted-foreground hover:text-foreground underline"
                         >
                           Admin: Correct CCF #
                         </button>
+                      )}
+                      {ccfOverrideMode && (
+                        <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+                          <p className="text-xs font-semibold text-destructive">CCF Override — This change will be logged in the audit trail</p>
+                          <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">New CCF #</label>
+                            <input
+                              type="text"
+                              value={ccfNumber}
+                              onChange={(e) => setCcfNumber(e.target.value)}
+                              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">Reason for change <span className="text-red-500">*</span></label>
+                            <textarea
+                              value={ccfAuditReason}
+                              onChange={(e) => setCcfAuditReason(e.target.value)}
+                              placeholder="e.g., Incorrect number entered by collector, corrected per lab confirmation..."
+                              rows={2}
+                              className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                if (!ccfNumber.trim() || !ccfAuditReason.trim()) {
+                                  toast({ title: 'Required', description: 'Both new CCF # and reason are required', variant: 'destructive' });
+                                  return;
+                                }
+                                setSavingCcf(true);
+                                try {
+                                  const res = await fetch(`/api/orders/${orderId}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      ccfNumber: ccfNumber.trim(),
+                                      ccfAuditReason: ccfAuditReason.trim(),
+                                    }),
+                                  });
+                                  if (res.ok) {
+                                    const data = await res.json();
+                                    setOrder(data.order);
+                                    setCcfOverrideMode(false);
+                                    setCcfNumber('');
+                                    setCcfAuditReason('');
+                                    toast({ title: 'CCF # Updated', description: 'Change has been recorded in the audit trail' });
+                                  } else {
+                                    const err = await res.json();
+                                    toast({ title: 'Error', description: err.error, variant: 'destructive' });
+                                  }
+                                } catch (err) {
+                                  toast({ title: 'Error', description: 'Failed to update CCF number', variant: 'destructive' });
+                                } finally {
+                                  setSavingCcf(false);
+                                }
+                              }}
+                              disabled={savingCcf || !ccfAuditReason.trim() || !ccfNumber.trim()}
+                              className="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+                            >
+                              {savingCcf ? 'Saving...' : 'Confirm Override'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCcfOverrideMode(false);
+                                setCcfNumber('');
+                                setCcfAuditReason('');
+                              }}
+                              className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </dd>
                   );
