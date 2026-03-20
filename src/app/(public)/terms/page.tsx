@@ -2,7 +2,7 @@ import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
   title: 'Terms of Service | TPAEngineX',
-  description: 'Terms of Service for TPAEngineX healthcare screening platform',
+  description: 'Terms of Service for TPAEngineX operations and compliance platform for TPAs',
 };
 
 export default function TermsOfServicePage() {
@@ -28,17 +28,20 @@ export default function TermsOfServicePage() {
       <section>
         <h2>2. Description of Service</h2>
         <p>
-          TPAEngineX provides a healthcare screening coordination platform that:
+          TPAEngineX provides an operations, workflow coordination, and compliance platform
+          designed for third-party administrators (TPAs), employers, and service providers.
         </p>
+        <p>The Platform enables users to:</p>
         <ul>
-          <li>Enables employers to order pre-employment and employee screening services</li>
-          <li>Facilitates appointment scheduling at third-party testing facilities</li>
-          <li>Coordinates collection and delivery of screening results</li>
-          <li>Manages multi-party workflows between employers, providers, and candidates</li>
+          <li>Manage and coordinate screening-related workflows</li>
+          <li>Facilitate scheduling and communication with third-party providers</li>
+          <li>Track order status, results, and operational processes</li>
+          <li>Support compliance and documentation requirements</li>
         </ul>
         <p>
-          TPAEngineX acts as a technology platform and coordinator. We do not directly
-          perform medical examinations, drug tests, or other screening procedures.
+          TPAEngineX provides infrastructure and coordination tools but does not provide
+          medical services, clinical decisions, or testing services. All such services are
+          provided by independent third-party providers.
         </p>
       </section>
 
@@ -70,20 +73,21 @@ export default function TermsOfServicePage() {
       <section>
         <h2>4. User Roles and Responsibilities</h2>
 
-        <h3>4.1 Employer Users</h3>
+        <h3>4.1 TPA Users</h3>
         <ul>
-          <li>Submit accurate screening orders with complete candidate information</li>
+          <li>Manage operational workflows and coordinate service execution</li>
+          <li>Assign collectors and manage scheduling for service events</li>
+          <li>Upload accurate and timely results</li>
+          <li>Maintain HIPAA compliance and data security standards</li>
+          <li>Respond promptly to order assignments and status updates</li>
+        </ul>
+
+        <h3>4.2 Client Users</h3>
+        <ul>
+          <li>Submit accurate service requests with complete candidate information</li>
           <li>Ensure compliance with employment laws and regulations</li>
           <li>Obtain necessary candidate authorizations and consents</li>
           <li>Handle screening results in accordance with applicable laws</li>
-        </ul>
-
-        <h3>4.2 Provider Users</h3>
-        <ul>
-          <li>Coordinate appointments and manage testing site relationships</li>
-          <li>Upload accurate and timely screening results</li>
-          <li>Maintain HIPAA compliance and data security standards</li>
-          <li>Respond promptly to order assignments and status updates</li>
         </ul>
 
         <h3>4.3 All Users</h3>
@@ -124,6 +128,10 @@ export default function TermsOfServicePage() {
           <a href="/baa"> Business Associate Agreement</a> and
           <a href="/hipaa"> HIPAA Compliance</a> policies.
         </p>
+        <p>
+          Where applicable, TPAEngineX enters into Business Associate Agreements (BAAs) with
+          covered entities and service providers to ensure HIPAA compliance.
+        </p>
       </section>
 
       <section>
@@ -146,7 +154,7 @@ export default function TermsOfServicePage() {
         <h3>7.3 Refunds</h3>
         <ul>
           <li>Refund eligibility is determined case-by-case</li>
-          <li>Services already rendered are generally non-refundable</li>
+          <li>All fees are non-refundable unless otherwise stated in writing</li>
           <li>Contact <a href="mailto:billing@tpaenginex.com">billing@tpaenginex.com</a> for refund requests</li>
         </ul>
       </section>
@@ -176,7 +184,42 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>9. Disclaimer of Warranties</h2>
+        <h2>9. No Medical Advice</h2>
+        <p>
+          TPAEngineX does not provide medical advice, diagnosis, or treatment. All medical
+          services are provided by independent third-party providers. Users should consult
+          qualified healthcare professionals for medical decisions.
+        </p>
+      </section>
+
+      <section>
+        <h2>10. No Employment Decision Liability</h2>
+        <p>
+          TPAEngineX is not responsible for employment decisions made by employers based on
+          screening results or platform data. Employers are solely responsible for compliance
+          with employment laws, including FCRA and EEOC regulations.
+        </p>
+      </section>
+
+      <section>
+        <h2>11. Data Accuracy</h2>
+        <p>
+          TPAEngineX does not guarantee the accuracy, completeness, or timeliness of data
+          provided by third-party providers or users.
+        </p>
+      </section>
+
+      <section>
+        <h2>12. Service Availability</h2>
+        <p>
+          We do not guarantee continuous, uninterrupted, or secure access to the Platform.
+          Maintenance, updates, or external factors may result in temporary service
+          interruptions.
+        </p>
+      </section>
+
+      <section>
+        <h2>13. Disclaimer of Warranties</h2>
 
         <p>
           THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY
@@ -194,7 +237,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>10. Limitation of Liability</h2>
+        <h2>14. Limitation of Liability</h2>
 
         <p>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, TPAENGINEX SHALL NOT BE LIABLE FOR:
@@ -212,7 +255,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>11. Indemnification</h2>
+        <h2>15. Indemnification</h2>
 
         <p>
           You agree to indemnify and hold harmless TPAEngineX from any claims, damages,
@@ -227,7 +270,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>12. Third-Party Services</h2>
+        <h2>16. Third-Party Services</h2>
 
         <p>
           The Platform integrates with third-party services (testing facilities, payment
@@ -245,7 +288,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>13. Dispute Resolution</h2>
+        <h2>17. Dispute Resolution</h2>
 
         <h3>13.1 Informal Resolution</h3>
         <p>
@@ -269,7 +312,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>14. Modifications to Terms</h2>
+        <h2>18. Modifications to Terms</h2>
 
         <p>
           We may modify these Terms at any time. Material changes will be communicated
@@ -282,7 +325,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>15. Termination</h2>
+        <h2>19. Termination</h2>
 
         <h3>15.1 By You</h3>
         <p>
@@ -310,11 +353,11 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>16. General Provisions</h2>
+        <h2>20. General Provisions</h2>
 
         <h3>16.1 Governing Law</h3>
         <p>
-          These Terms are governed by the laws of [State/Country], without regard to
+          These Terms are governed by the laws of the State of Arkansas, without regard to
           conflict of law principles.
         </p>
 
@@ -344,13 +387,12 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>17. Contact Information</h2>
+        <h2>21. Contact Information</h2>
 
         <p>For questions about these Terms:</p>
         <ul>
           <li><strong>Email:</strong> <a href="mailto:legal@tpaenginex.com">legal@tpaenginex.com</a></li>
-          <li><strong>Phone:</strong> (888) 555-0100</li>
-          <li><strong>Mail:</strong> TPAEngineX, Legal Department, [Address]</li>
+          <li><strong>Mail:</strong> TPAEngineX, Legal Department, Little Rock, AR</li>
         </ul>
       </section>
     </ComplianceLayout>
