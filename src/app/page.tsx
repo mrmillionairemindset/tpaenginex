@@ -15,7 +15,7 @@ export default async function HomePage() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <img src="/tpa-engine-x-logo.png" alt="TPAEngineX" className="h-8" />
-            <span className="font-semibold text-lg">TPAEngineX</span>
+            <span className="font-semibold text-lg">TPAEngine<span className="bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] bg-clip-text text-transparent">X</span></span>
           </div>
           <div className="flex items-center gap-4">
             {!isAuthenticated ? (

@@ -143,7 +143,7 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
         <Link href="/dashboard" className="flex items-center gap-2">
           <img src="/tpa-engine-x-logo.png" alt="TPAEngineX" className="h-8" />
           <span className="hidden font-semibold sm:inline-block">
-            TPAEngineX
+            TPAEngine<span className="bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] bg-clip-text text-transparent">X</span>
           </span>
         </Link>
 
