@@ -432,6 +432,31 @@ export const leads = pgTable("leads", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Lead Email Templates — per-TPA customizable email templates for pipeline stages
+export const leadEmailTemplates = pgTable("lead_email_templates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id).notNull(),
+  stage: leadStageEnum("stage").notNull(),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  body: text("body").notNull(), // HTML body with {{companyName}}, {{contactName}}, {{tpaName}} placeholders
+  isActive: boolean("is_active").default(true).notNull(),
+  delayMinutes: integer("delay_minutes").default(0).notNull(), // 0 = send immediately on stage change
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Lead Activities — activity timeline for leads
+export const leadActivities = pgTable("lead_activities", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  leadId: uuid("lead_id").references(() => leads.id, { onDelete: "cascade" }).notNull(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // 'stage_change', 'email_sent', 'call_reminder', 'note', 'follow_up_scheduled'
+  description: text("description").notNull(),
+  metadata: jsonb("metadata"), // extra data like { from: 'new_lead', to: 'outreach_sent' }
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // TPA Settings — per-tenant configuration
 export const tpaSettings = pgTable("tpa_settings", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -670,7 +695,7 @@ export const invoicesRelations = relations(invoices, ({ one }) => ({
   }),
 }));
 
-export const leadsRelations = relations(leads, ({ one }) => ({
+export const leadsRelations = relations(leads, ({ one, many }) => ({
   tpaOrg: one(organizations, {
     fields: [leads.tpaOrgId],
     references: [organizations.id],
@@ -682,6 +707,29 @@ export const leadsRelations = relations(leads, ({ one }) => ({
   convertedOrg: one(organizations, {
     fields: [leads.convertedToOrgId],
     references: [organizations.id],
+  }),
+  activities: many(leadActivities),
+}));
+
+export const leadEmailTemplatesRelations = relations(leadEmailTemplates, ({ one }) => ({
+  tpaOrg: one(organizations, {
+    fields: [leadEmailTemplates.tpaOrgId],
+    references: [organizations.id],
+  }),
+}));
+
+export const leadActivitiesRelations = relations(leadActivities, ({ one }) => ({
+  lead: one(leads, {
+    fields: [leadActivities.leadId],
+    references: [leads.id],
+  }),
+  tpaOrg: one(organizations, {
+    fields: [leadActivities.tpaOrgId],
+    references: [organizations.id],
+  }),
+  creator: one(users, {
+    fields: [leadActivities.createdBy],
+    references: [users.id],
   }),
 }));
 
@@ -715,4 +763,6 @@ export type OrganizationLocationType = typeof organizationLocations.$inferSelect
 export type EventType = typeof events.$inferSelect;
 export type InvoiceType = typeof invoices.$inferSelect;
 export type LeadType = typeof leads.$inferSelect;
+export type LeadEmailTemplateType = typeof leadEmailTemplates.$inferSelect;
+export type LeadActivityType = typeof leadActivities.$inferSelect;
 export type TpaSettingsType = typeof tpaSettings.$inferSelect;

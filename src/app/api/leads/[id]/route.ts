@@ -4,6 +4,7 @@ import { leads } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+import { enqueueNotification } from '@/jobs/queue';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,6 +97,17 @@ export async function PATCH(
   if (data.ownedBy !== undefined) updateData.ownedBy = data.ownedBy;
 
   await db.update(leads).set(updateData).where(eq(leads.id, id));
+
+  // Trigger stage automation if stage changed
+  if (data.stage && data.stage !== existing.stage && existing.tpaOrgId) {
+    await enqueueNotification('lead_stage_automation', {
+      leadId: id,
+      tpaOrgId: existing.tpaOrgId,
+      fromStage: existing.stage,
+      toStage: data.stage,
+      changedBy: user.id,
+    });
+  }
 
   const updated = await db.query.leads.findFirst({
     where: eq(leads.id, id),

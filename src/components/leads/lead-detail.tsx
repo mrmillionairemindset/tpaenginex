@@ -18,6 +18,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import Link from 'next/link';
+import {
+  ArrowRight,
+  Mail,
+  Phone,
+  MessageSquare,
+  Clock,
+  UserCircle,
+} from 'lucide-react';
+
+interface LeadActivity {
+  id: string;
+  type: string;
+  description: string;
+  metadata: Record<string, unknown> | null;
+  createdBy: string | null;
+  creator: { id: string; name: string | null; email: string } | null;
+  createdAt: string;
+}
 
 type LeadStage =
   | 'new_lead'
@@ -75,6 +93,8 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [activities, setActivities] = useState<LeadActivity[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [formData, setFormData] = useState({
     companyName: '',
     contactName: '',
@@ -128,7 +148,23 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
     }
 
     fetchLead();
+    fetchActivities();
   }, [leadId, toast]);
+
+  async function fetchActivities() {
+    setActivitiesLoading(true);
+    try {
+      const response = await fetch(`/api/leads/${leadId}/activities`);
+      if (response.ok) {
+        const data = await response.json();
+        setActivities(data.activities || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch activities:', error);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  }
 
   const handleSave = async () => {
     setSaving(true);
@@ -192,6 +228,8 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
           title: 'Stage Updated',
           description: `Lead moved to ${stageOptions.find((s) => s.value === newStage)?.label}`,
         });
+        // Refresh activities after stage change (with a slight delay for the job to process)
+        setTimeout(() => fetchActivities(), 2000);
       } else {
         const error = await response.json();
         toast({
@@ -409,6 +447,93 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
           </Button>
         </div>
       </Card>
+
+      {/* Activity Timeline */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Activity Timeline</h3>
+
+        {activitiesLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <LoadingSpinner />
+          </div>
+        ) : activities.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Clock className="h-10 w-10 mx-auto mb-2 opacity-30" />
+            <p>No activity yet</p>
+            <p className="text-sm">Stage changes and emails will appear here</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {activities.map((activity) => (
+              <div
+                key={activity.id}
+                className="flex items-start gap-3 border-l-2 border-muted pl-4 pb-4 last:pb-0"
+              >
+                <div className="mt-0.5">
+                  <ActivityIcon type={activity.type} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{activity.description}</p>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    <span>
+                      {new Date(activity.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                    {activity.creator && (
+                      <>
+                        <span>-</span>
+                        <span className="flex items-center gap-1">
+                          <UserCircle className="h-3 w-3" />
+                          {activity.creator.name || activity.creator.email}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {activity.type === 'stage_change' && activity.metadata && (
+                    <div className="flex items-center gap-1 mt-1 text-xs">
+                      <Badge
+                        className={`${stageStyles[(activity.metadata as any).from as LeadStage] || 'bg-muted'} text-xs`}
+                        variant="secondary"
+                      >
+                        {stageOptions.find((s) => s.value === (activity.metadata as any).from)?.label || (activity.metadata as any).from}
+                      </Badge>
+                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                      <Badge
+                        className={`${stageStyles[(activity.metadata as any).to as LeadStage] || 'bg-muted'} text-xs`}
+                        variant="secondary"
+                      >
+                        {stageOptions.find((s) => s.value === (activity.metadata as any).to)?.label || (activity.metadata as any).to}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
+}
+
+function ActivityIcon({ type }: { type: string }) {
+  switch (type) {
+    case 'stage_change':
+      return <ArrowRight className="h-4 w-4 text-primary" />;
+    case 'email_sent':
+      return <Mail className="h-4 w-4 text-blue-500" />;
+    case 'call_reminder':
+      return <Phone className="h-4 w-4 text-amber-500" />;
+    case 'note':
+      return <MessageSquare className="h-4 w-4 text-muted-foreground" />;
+    case 'follow_up_scheduled':
+      return <Clock className="h-4 w-4 text-cyan-500" />;
+    default:
+      return <Clock className="h-4 w-4 text-muted-foreground" />;
+  }
 }

@@ -336,6 +336,31 @@ export async function sendUserInviteEmail(options: {
 }
 
 /**
+ * Send a lead pipeline stage email (customizable template)
+ */
+export async function sendLeadStageEmail(options: {
+  to: string;
+  subject: string;
+  body: string; // Already has placeholders replaced
+}) {
+  const { to, subject, body } = options;
+
+  const msg = {
+    to,
+    from: DEFAULT_FROM,
+    subject,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        ${body}
+      </div>
+    `,
+  };
+
+  const response = await sgMail.send(msg);
+  return { success: true, emailId: response[0].headers['x-message-id'] };
+}
+
+/**
  * Send test email to verify configuration
  */
 export async function sendTestEmail(to: string) {

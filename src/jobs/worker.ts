@@ -20,6 +20,7 @@ import { handleOrderCompletionEmail } from './order-completion-email';
 import { handleEventCompletionEmail } from './event-completion-email';
 import { handleBillingQueueEntry } from './billing-queue-entry';
 import { handleLeadFollowUpReminder } from './lead-followup-reminder';
+import { handleLeadStageAutomation } from './lead-stage-automation';
 
 if (!redis) {
   console.error('REDIS_URL is not set — cannot start workers');
@@ -63,6 +64,8 @@ const notificationWorker = new Worker(
         return handleEventCompletionEmail(job);
       case 'billing_queue_entry':
         return handleBillingQueueEntry(job);
+      case 'lead_stage_automation':
+        return handleLeadStageAutomation(job);
       default:
         console.warn(`[worker] Unknown notification job: ${job.name}`);
     }

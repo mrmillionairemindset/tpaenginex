@@ -17,6 +17,7 @@ import {
   CalendarDays,
   DollarSign,
   Target,
+  Mail,
 } from 'lucide-react';
 
 interface NavItem {
@@ -90,6 +91,14 @@ const tpaNav: NavItem[] = [
     href: '/settings',
     icon: Settings,
     roles: ['tpa_admin'],
+    children: [
+      {
+        label: 'Lead Templates',
+        href: '/settings/lead-templates',
+        icon: Mail,
+        roles: ['tpa_admin'],
+      },
+    ],
   },
 ];
 
