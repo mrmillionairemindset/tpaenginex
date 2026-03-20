@@ -70,9 +70,15 @@ export function OrganizationSettings({ organization, currentUser }: Organization
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"general" | "members" | "invitations" | "locations">("general");
   const [orgName, setOrgName] = useState(organization.name);
-  const [inviteName, setInviteName] = useState("");
+  const [inviteFirstName, setInviteFirstName] = useState("");
+  const [inviteMiddleName, setInviteMiddleName] = useState("");
+  const [inviteLastName, setInviteLastName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("");
+  const [inviteAddress, setInviteAddress] = useState("");
+  const [inviteCity, setInviteCity] = useState("");
+  const [inviteState, setInviteState] = useState("");
+  const [inviteZip, setInviteZip] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -129,18 +135,30 @@ export function OrganizationSettings({ organization, currentUser }: Organization
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: inviteName,
+          firstName: inviteFirstName,
+          middleName: inviteMiddleName || undefined,
+          lastName: inviteLastName,
           email: inviteEmail,
           role: inviteRole,
+          address: inviteAddress || undefined,
+          city: inviteCity || undefined,
+          state: inviteState || undefined,
+          zip: inviteZip || undefined,
           orgId: organization.id,
         }),
       });
 
       if (response.ok) {
         setMessage({ type: "success", text: "Invitation sent successfully" });
-        setInviteName("");
+        setInviteFirstName("");
+        setInviteMiddleName("");
+        setInviteLastName("");
         setInviteEmail("");
         setInviteRole("");
+        setInviteAddress("");
+        setInviteCity("");
+        setInviteState("");
+        setInviteZip("");
         fetchMembers(); // Refresh members list
       } else {
         const data = await response.json();
@@ -556,54 +574,144 @@ export function OrganizationSettings({ organization, currentUser }: Organization
             Create the user identity, assign a role, and send them an invite to log in.
           </p>
           <form onSubmit={handleInviteUser} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={inviteFirstName}
+                  onChange={(e) => setInviteFirstName(e.target.value)}
+                  placeholder="Jane"
+                  required
+                  className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Middle Name
+                </label>
+                <input
+                  type="text"
+                  value={inviteMiddleName}
+                  onChange={(e) => setInviteMiddleName(e.target.value)}
+                  placeholder="Marie"
+                  className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={inviteLastName}
+                  onChange={(e) => setInviteLastName(e.target.value)}
+                  placeholder="Smith"
+                  required
+                  className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="jane@company.com"
+                  required
+                  className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Role <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                  required
+                  className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
+                  disabled={loading}
+                >
+                  <option value="">Select a role...</option>
+                  {roleOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Full Name <span className="text-red-500">*</span>
+                Address
               </label>
               <input
                 type="text"
-                value={inviteName}
-                onChange={(e) => setInviteName(e.target.value)}
-                placeholder="Jane Smith"
-                required
+                value={inviteAddress}
+                onChange={(e) => setInviteAddress(e.target.value)}
+                placeholder="123 Main Street"
                 className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                 disabled={loading}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="jane@company.com"
-                required
-                className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Role <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value)}
-                required
-                className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
-                disabled={loading}
-              >
-                <option value="">Select a role...</option>
-                {roleOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  City
+                </label>
+                <input
+                  type="text"
+                  value={inviteCity}
+                  onChange={(e) => setInviteCity(e.target.value)}
+                  placeholder="Little Rock"
+                  className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  State
+                </label>
+                <select
+                  value={inviteState}
+                  onChange={(e) => setInviteState(e.target.value)}
+                  className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
+                  disabled={loading}
+                >
+                  <option value="">Select...</option>
+                  {["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  ZIP
+                </label>
+                <input
+                  type="text"
+                  value={inviteZip}
+                  onChange={(e) => setInviteZip(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                  placeholder="72201"
+                  maxLength={5}
+                  className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
+                  disabled={loading}
+                />
+              </div>
             </div>
 
             <button
