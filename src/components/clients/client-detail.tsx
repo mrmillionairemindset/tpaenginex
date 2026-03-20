@@ -8,7 +8,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/use-toast';
-import { Building2, Users, FileText, UserPlus, AlertCircle, MapPin, Mail, Phone, CalendarDays, FileDown, Bell, ClipboardList, Upload, Archive, FolderOpen, CheckSquare, Plus, Trash2, RotateCcw } from 'lucide-react';
+import { Building2, Users, FileText, UserPlus, AlertCircle, MapPin, Mail, Phone, CalendarDays, FileDown, Bell, ClipboardList, Upload, Archive, FolderOpen, CheckSquare, Plus, Trash2, RotateCcw, Pencil } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { SERVICE_TYPE_CHECKLISTS } from '@/lib/service-templates';
@@ -53,6 +53,12 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
   const [docFile, setDocFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Location management state
+  const [showLocationForm, setShowLocationForm] = useState(false);
+  const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
+  const [locationForm, setLocationForm] = useState({ name: '', address: '', city: '', state: '', zip: '', phone: '', notes: '' });
+  const [savingLocation, setSavingLocation] = useState(false);
 
   // Checklist template editor state
   const [editingServiceType, setEditingServiceType] = useState<string | null>(null);
@@ -279,6 +285,72 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
     }
   };
 
+  const handleSaveLocation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingLocation(true);
+    try {
+      const method = editingLocationId ? 'PATCH' : 'POST';
+      const body = editingLocationId
+        ? { locationId: editingLocationId, ...locationForm }
+        : locationForm;
+
+      const res = await fetch(`/api/clients/${clientOrgId}/locations`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        toast({ title: editingLocationId ? 'Location Updated' : 'Location Added' });
+        setShowLocationForm(false);
+        setEditingLocationId(null);
+        setLocationForm({ name: '', address: '', city: '', state: '', zip: '', phone: '', notes: '' });
+        fetchClient();
+      } else {
+        const err = await res.json();
+        toast({ title: 'Error', description: err.error, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save location', variant: 'destructive' });
+    } finally {
+      setSavingLocation(false);
+    }
+  };
+
+  const handleDeleteLocation = async (locationId: string, name: string) => {
+    if (!confirm(`Delete location "${name}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/clients/${clientOrgId}/locations`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationId }),
+      });
+      if (res.ok) {
+        toast({ title: 'Location Deleted' });
+        fetchClient();
+      } else {
+        const err = await res.json();
+        toast({ title: 'Error', description: err.error, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to delete location', variant: 'destructive' });
+    }
+  };
+
+  const startEditLocation = (loc: any) => {
+    setEditingLocationId(loc.id);
+    setLocationForm({
+      name: loc.name || '',
+      address: loc.address || '',
+      city: loc.city || '',
+      state: loc.state || '',
+      zip: loc.zip || '',
+      phone: loc.phone || '',
+      notes: loc.notes || '',
+    });
+    setShowLocationForm(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -307,6 +379,7 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
     communications,
     serviceRequests,
     checklistTemplates,
+    locations,
     stats,
   } = data;
 
@@ -476,6 +549,163 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
           )}
         </Card>
       </div>
+
+      {/* Locations / Plants */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Locations ({locations?.length || 0})</h2>
+          </div>
+          {canUploadDocs && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingLocationId(null);
+                setLocationForm({ name: '', address: '', city: '', state: '', zip: '', phone: '', notes: '' });
+                setShowLocationForm(!showLocationForm);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Location
+            </Button>
+          )}
+        </div>
+
+        {showLocationForm && (
+          <form onSubmit={handleSaveLocation} className="mb-4 rounded-lg border border-border bg-secondary p-4 space-y-3">
+            <p className="text-sm font-medium">{editingLocationId ? 'Edit Location' : 'Add a new plant or location for this client'}</p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Location Name *</label>
+                <input
+                  type="text"
+                  value={locationForm.name}
+                  onChange={(e) => setLocationForm({ ...locationForm, name: e.target.value })}
+                  placeholder="e.g. Main Plant, Warehouse B"
+                  required
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Phone</label>
+                <input
+                  type="text"
+                  value={locationForm.phone}
+                  onChange={(e) => setLocationForm({ ...locationForm, phone: e.target.value })}
+                  placeholder="(555) 123-4567"
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Address *</label>
+              <input
+                type="text"
+                value={locationForm.address}
+                onChange={(e) => setLocationForm({ ...locationForm, address: e.target.value })}
+                placeholder="Street address"
+                required
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">City *</label>
+                <input
+                  type="text"
+                  value={locationForm.city}
+                  onChange={(e) => setLocationForm({ ...locationForm, city: e.target.value })}
+                  required
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">State *</label>
+                <input
+                  type="text"
+                  value={locationForm.state}
+                  onChange={(e) => setLocationForm({ ...locationForm, state: e.target.value.toUpperCase().slice(0, 2) })}
+                  placeholder="TX"
+                  required
+                  maxLength={2}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">ZIP *</label>
+                <input
+                  type="text"
+                  value={locationForm.zip}
+                  onChange={(e) => setLocationForm({ ...locationForm, zip: e.target.value })}
+                  required
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Notes</label>
+              <input
+                type="text"
+                value={locationForm.notes}
+                onChange={(e) => setLocationForm({ ...locationForm, notes: e.target.value })}
+                placeholder="Optional notes about this location..."
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={savingLocation}>
+                {savingLocation ? 'Saving...' : editingLocationId ? 'Update Location' : 'Add Location'}
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => { setShowLocationForm(false); setEditingLocationId(null); }}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {locations && locations.length > 0 ? (
+          <div className="space-y-2">
+            {locations.map((loc: any) => (
+              <div key={loc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{loc.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {loc.address}, {loc.city}, {loc.state} {loc.zip}
+                  </p>
+                  {loc.phone && (
+                    <p className="text-xs text-muted-foreground">{loc.phone}</p>
+                  )}
+                  {loc.notes && (
+                    <p className="text-xs text-muted-foreground italic mt-0.5">{loc.notes}</p>
+                  )}
+                </div>
+                {canUploadDocs && (
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => startEditLocation(loc)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-500 hover:text-red-600"
+                      onClick={() => handleDeleteLocation(loc.id, loc.name)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No locations added yet. Add plant locations for this client to use when placing orders.</p>
+        )}
+      </Card>
 
       {/* Recent Orders */}
       <Card className="p-6">

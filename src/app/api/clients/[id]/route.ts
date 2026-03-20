@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { organizations, orders, organizationMembers, events, documents, notifications, serviceRequests, clientDocuments, clientChecklistTemplates } from '@/db/schema';
+import { organizations, orders, organizationMembers, events, documents, notifications, serviceRequests, clientDocuments, clientChecklistTemplates, organizationLocations } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq, and, desc, count } from 'drizzle-orm';
 
@@ -140,6 +140,17 @@ export async function GET(
     // Table may not exist yet if migration hasn't run
   }
 
+  // Fetch locations for this client org
+  let locations: any[] = [];
+  try {
+    locations = await db.query.organizationLocations.findMany({
+      where: eq(organizationLocations.orgId, id),
+      orderBy: [desc(organizationLocations.createdAt)],
+    });
+  } catch {
+    // Table may not exist yet
+  }
+
   // Count stats
   const [totalOrders] = await db.select({ count: count() }).from(orders).where(eq(orders.orgId, id));
   const [openOrders] = await db.select({ count: count() }).from(orders).where(
@@ -164,6 +175,7 @@ export async function GET(
     communications,
     serviceRequests: clientServiceRequests,
     checklistTemplates,
+    locations,
     stats: {
       totalOrders: totalOrders?.count || 0,
       openOrders: openOrders?.count || 0,
