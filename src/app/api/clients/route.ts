@@ -8,13 +8,13 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 
 const createClientSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  contactEmail: z.string().email().optional(),
-  contactPhone: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().max(2).optional(),
-  zip: z.string().max(10).optional(),
+  name: z.string().min(1, 'Organization name is required'),
+  contactEmail: z.string().email('Valid email is required'),
+  contactPhone: z.string().min(1, 'Phone is required'),
+  address: z.string().min(1, 'Address is required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().length(2, 'State is required'),
+  zip: z.string().min(5, 'ZIP code is required'),
 });
 
 // GET /api/clients — list client organizations for this TPA
@@ -98,12 +98,12 @@ export const POST = withAuth(async (req, user) => {
     slug,
     type: 'client',
     tpaOrgId,
-    contactEmail: data.contactEmail || null,
-    contactPhone: data.contactPhone || null,
-    address: data.address || null,
-    city: data.city || null,
-    state: data.state || null,
-    zip: data.zip || null,
+    contactEmail: data.contactEmail,
+    contactPhone: data.contactPhone,
+    address: data.address,
+    city: data.city,
+    state: data.state,
+    zip: data.zip,
   }).returning();
 
   return NextResponse.json(

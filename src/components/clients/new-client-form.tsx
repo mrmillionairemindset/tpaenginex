@@ -39,12 +39,12 @@ export function NewClientForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
-          contactEmail: formData.contactEmail || undefined,
-          contactPhone: formData.contactPhone || undefined,
-          address: formData.address || undefined,
-          city: formData.city || undefined,
-          state: formData.state || undefined,
-          zip: formData.zip || undefined,
+          contactEmail: formData.contactEmail,
+          contactPhone: formData.contactPhone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zip: formData.zip,
         }),
       });
 
@@ -93,10 +93,11 @@ export function NewClientForm() {
               />
             </div>
             <div>
-              <Label htmlFor="contactEmail">Contact Email</Label>
+              <Label htmlFor="contactEmail">Contact Email <span className="text-red-500">*</span></Label>
               <Input
                 id="contactEmail"
                 type="email"
+                required
                 value={formData.contactEmail}
                 onChange={(e) =>
                   setFormData({ ...formData, contactEmail: e.target.value })
@@ -104,10 +105,12 @@ export function NewClientForm() {
               />
             </div>
             <div>
-              <Label htmlFor="contactPhone">Contact Phone</Label>
+              <Label htmlFor="contactPhone">Contact Phone <span className="text-red-500">*</span></Label>
               <Input
                 id="contactPhone"
                 type="tel"
+                required
+                placeholder="555-123-4567"
                 value={formData.contactPhone}
                 onChange={(e) =>
                   setFormData({ ...formData, contactPhone: e.target.value })
@@ -115,9 +118,10 @@ export function NewClientForm() {
               />
             </div>
             <div className="md:col-span-2">
-              <Label htmlFor="address">Address</Label>
+              <Label htmlFor="address">Address <span className="text-red-500">*</span></Label>
               <Input
                 id="address"
+                required
                 placeholder="123 Main Street"
                 value={formData.address}
                 onChange={(e) =>
@@ -126,9 +130,10 @@ export function NewClientForm() {
               />
             </div>
             <div>
-              <Label htmlFor="city">City</Label>
+              <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
               <Input
                 id="city"
+                required
                 value={formData.city}
                 onChange={(e) =>
                   setFormData({ ...formData, city: e.target.value })
@@ -136,7 +141,7 @@ export function NewClientForm() {
               />
             </div>
             <div>
-              <Label htmlFor="state">State</Label>
+              <Label htmlFor="state">State <span className="text-red-500">*</span></Label>
               <Select
                 value={formData.state}
                 onValueChange={(value) =>
@@ -202,10 +207,12 @@ export function NewClientForm() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="zip">ZIP Code</Label>
+              <Label htmlFor="zip">ZIP Code <span className="text-red-500">*</span></Label>
               <Input
                 id="zip"
+                required
                 placeholder="77777"
+                pattern="\d{5}"
                 maxLength={5}
                 value={formData.zip}
                 onChange={(e) =>
