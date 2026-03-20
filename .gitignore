@@ -40,3 +40,4 @@ next-env.d.ts
 # Module documentation (development only)
 /modules/
 claude.md
+*.docx
