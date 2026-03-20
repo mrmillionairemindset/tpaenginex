@@ -2,7 +2,7 @@ import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
   title: 'Privacy Policy | TPAEngineX',
-  description: 'Privacy Policy for TPAEngineX healthcare screening platform',
+  description: 'Privacy Policy for TPAEngineX operations and compliance platform for TPAs',
 };
 
 export default function PrivacyPolicyPage() {
@@ -17,11 +17,16 @@ export default function PrivacyPolicyPage() {
         <p>
           TPAEngineX ("we," "our," or "us") is committed to protecting your privacy
           and maintaining the confidentiality of your personal information and Protected Health
-          Information (PHI). This Privacy Policy explains how we collect, use, disclose, and
-          safeguard your information when you use our healthcare screening platform.
+          Information (PHI).
         </p>
         <p>
-          As a healthcare service provider, we comply with the Health Insurance Portability and
+          TPAEngineX provides an operations, workflow coordination, and compliance platform
+          designed for third-party administrators (TPAs) and related organizations. This Privacy
+          Policy explains how we collect, use, disclose, and safeguard your information when you
+          use our platform.
+        </p>
+        <p>
+          We comply with the Health Insurance Portability and
           Accountability Act (HIPAA) and other applicable privacy regulations.
         </p>
       </section>
@@ -60,8 +65,8 @@ export default function PrivacyPolicyPage() {
 
         <h3>3.1 Primary Uses</h3>
         <ul>
-          <li>Process and manage screening orders</li>
-          <li>Coordinate appointments with testing facilities</li>
+          <li>Process and manage operational workflows and service requests</li>
+          <li>Coordinate scheduling and service execution across providers and personnel</li>
           <li>Deliver test results to authorized parties</li>
           <li>Communicate about your orders and services</li>
           <li>Provide customer support</li>
@@ -126,6 +131,10 @@ export default function PrivacyPolicyPage() {
           <li><strong>Employee Training:</strong> HIPAA compliance training for all staff</li>
           <li><strong>Incident Response:</strong> Breach notification procedures per HIPAA requirements</li>
         </ul>
+        <p>
+          Our platform is designed with a security-first architecture to support compliance-driven
+          operations for TPAs handling sensitive data and regulated workflows.
+        </p>
       </section>
 
       <section>
@@ -142,7 +151,7 @@ export default function PrivacyPolicyPage() {
         </ul>
 
         <p>
-          To exercise these rights, contact us at <a href="mailto:privacy@rapidscreen.com">privacy@rapidscreen.com</a>
+          To exercise these rights, contact us at <a href="mailto:privacy@tpaenginex.com">privacy@tpaenginex.com</a>
         </p>
       </section>
 
@@ -198,7 +207,7 @@ export default function PrivacyPolicyPage() {
 
         <p>For privacy-related questions or concerns:</p>
         <ul>
-          <li><strong>Email:</strong> <a href="mailto:privacy@rapidscreen.com">privacy@rapidscreen.com</a></li>
+          <li><strong>Email:</strong> <a href="mailto:privacy@tpaenginex.com">privacy@tpaenginex.com</a></li>
           <li><strong>Phone:</strong> (888) 555-0100</li>
           <li><strong>Mail:</strong> TPAEngineX, Privacy Officer, [Address]</li>
         </ul>

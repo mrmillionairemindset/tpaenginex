@@ -126,7 +126,7 @@ export default function HelpPage() {
         <h3>Do I need a Business Associate Agreement?</h3>
         <p>
           If you're a covered entity or business associate handling PHI, yes. Contact us at{' '}
-          <a href="mailto:compliance@rapidscreen.com">compliance@rapidscreen.com</a> to execute
+          <a href="mailto:compliance@tpaenginex.com">compliance@tpaenginex.com</a> to execute
           a BAA. View our template <Link href="/baa">here</Link>.
         </p>
 
@@ -143,7 +143,7 @@ export default function HelpPage() {
         <p>
           We have a comprehensive incident response plan. Breaches affecting PHI are reported
           to covered entities within 48 hours. Report incidents to{' '}
-          <a href="mailto:security@rapidscreen.com">security@rapidscreen.com</a> or call
+          <a href="mailto:security@tpaenginex.com">security@tpaenginex.com</a> or call
           (888) 555-0199.
         </p>
       </section>
@@ -198,7 +198,7 @@ export default function HelpPage() {
         <p>
           Yes. We offer API access for enterprise clients to integrate with HR systems, ATS
           platforms, and other tools. Contact{' '}
-          <a href="mailto:sales@rapidscreen.com">sales@rapidscreen.com</a> to discuss integration options.
+          <a href="mailto:sales@tpaenginex.com">sales@tpaenginex.com</a> to discuss integration options.
         </p>
 
         <h3>I'm experiencing technical issues. Who do I contact?</h3>
@@ -206,7 +206,7 @@ export default function HelpPage() {
           For technical support:
         </p>
         <ul>
-          <li>Email: <a href="mailto:support@rapidscreen.com">support@rapidscreen.com</a></li>
+          <li>Email: <a href="mailto:support@tpaenginex.com">support@tpaenginex.com</a></li>
           <li>Phone: (888) 555-0100</li>
           <li>Emergency hotline: (888) 555-0199 (24/7)</li>
         </ul>
@@ -219,7 +219,7 @@ export default function HelpPage() {
         </p>
         <ul>
           <li>Visit our <Link href="/faq">FAQ page</Link></li>
-          <li>Email us at <a href="mailto:support@rapidscreen.com">support@rapidscreen.com</a></li>
+          <li>Email us at <a href="mailto:support@tpaenginex.com">support@tpaenginex.com</a></li>
           <li>Call (888) 555-0100</li>
           <li>Check our <Link href="/contact">contact page</Link> for department-specific contacts</li>
         </ul>

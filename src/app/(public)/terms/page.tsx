@@ -147,7 +147,7 @@ export default function TermsOfServicePage() {
         <ul>
           <li>Refund eligibility is determined case-by-case</li>
           <li>Services already rendered are generally non-refundable</li>
-          <li>Contact <a href="mailto:billing@rapidscreen.com">billing@rapidscreen.com</a> for refund requests</li>
+          <li>Contact <a href="mailto:billing@tpaenginex.com">billing@tpaenginex.com</a> for refund requests</li>
         </ul>
       </section>
 
@@ -197,7 +197,7 @@ export default function TermsOfServicePage() {
         <h2>10. Limitation of Liability</h2>
 
         <p>
-          TO THE MAXIMUM EXTENT PERMITTED BY LAW, RAPIDSCREEN SHALL NOT BE LIABLE FOR:
+          TO THE MAXIMUM EXTENT PERMITTED BY LAW, TPAENGINEX SHALL NOT BE LIABLE FOR:
         </p>
         <ul>
           <li>Indirect, incidental, special, or consequential damages</li>
@@ -250,7 +250,7 @@ export default function TermsOfServicePage() {
         <h3>13.1 Informal Resolution</h3>
         <p>
           Before filing a claim, you agree to contact us at
-          <a href="mailto:legal@rapidscreen.com"> legal@rapidscreen.com</a> to seek
+          <a href="mailto:legal@tpaenginex.com"> legal@tpaenginex.com</a> to seek
           informal resolution.
         </p>
 
@@ -348,7 +348,7 @@ export default function TermsOfServicePage() {
 
         <p>For questions about these Terms:</p>
         <ul>
-          <li><strong>Email:</strong> <a href="mailto:legal@rapidscreen.com">legal@rapidscreen.com</a></li>
+          <li><strong>Email:</strong> <a href="mailto:legal@tpaenginex.com">legal@tpaenginex.com</a></li>
           <li><strong>Phone:</strong> (888) 555-0100</li>
           <li><strong>Mail:</strong> TPAEngineX, Legal Department, [Address]</li>
         </ul>

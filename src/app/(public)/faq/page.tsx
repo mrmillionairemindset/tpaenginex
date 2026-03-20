@@ -33,7 +33,7 @@ export default function FAQPage() {
         <h3>How much does TPAEngineX cost?</h3>
         <p>
           Pricing varies based on order volume and service level. Contact{' '}
-          <a href="mailto:sales@rapidscreen.com">sales@rapidscreen.com</a> for a custom quote.
+          <a href="mailto:sales@tpaenginex.com">sales@tpaenginex.com</a> for a custom quote.
         </p>
 
         <h3>Is there a free trial?</h3>
@@ -154,7 +154,7 @@ export default function FAQPage() {
         <h3>Can I request data deletion?</h3>
         <p>
           Yes, but PHI retention is governed by legal requirements. Contact{' '}
-          <a href="mailto:privacy@rapidscreen.com">privacy@rapidscreen.com</a> to discuss
+          <a href="mailto:privacy@tpaenginex.com">privacy@tpaenginex.com</a> to discuss
           data deletion requests.
         </p>
       </section>
@@ -173,7 +173,7 @@ export default function FAQPage() {
           <li>Candidate management</li>
         </ul>
         <p>
-          Contact <a href="mailto:sales@rapidscreen.com">sales@rapidscreen.com</a> for API documentation.
+          Contact <a href="mailto:sales@tpaenginex.com">sales@tpaenginex.com</a> for API documentation.
         </p>
 
         <h3>Can I integrate with my ATS/HR system?</h3>
@@ -200,7 +200,7 @@ export default function FAQPage() {
         </p>
         <ul>
           <li>Our team is alerted immediately</li>
-          <li>Status updates posted at status.rapidscreen.com</li>
+          <li>Status updates posted at status.tpaenginex.com</li>
           <li>Critical workflows (notifications, result uploads) prioritized</li>
           <li>Scheduled maintenance announced 7 days in advance</li>
         </ul>
@@ -226,7 +226,7 @@ export default function FAQPage() {
         <p>
           Refund eligibility depends on the circumstances. Services already rendered are
           generally non-refundable. Contact{' '}
-          <a href="mailto:billing@rapidscreen.com">billing@rapidscreen.com</a> for specific requests.
+          <a href="mailto:billing@tpaenginex.com">billing@tpaenginex.com</a> for specific requests.
         </p>
 
         <h3>What happens if my payment fails?</h3>
@@ -241,7 +241,7 @@ export default function FAQPage() {
 
         <h3>How do I get help?</h3>
         <ul>
-          <li>Email: <a href="mailto:support@rapidscreen.com">support@rapidscreen.com</a></li>
+          <li>Email: <a href="mailto:support@tpaenginex.com">support@tpaenginex.com</a></li>
           <li>Phone: (888) 555-0100 (Mon-Fri, 8 AM - 6 PM EST)</li>
           <li>Emergency: (888) 555-0199 (24/7 for critical issues)</li>
           <li>Help Center: <Link href="/help">help center</Link></li>
@@ -276,7 +276,7 @@ export default function FAQPage() {
         </p>
         <ul>
           <li>Check our <Link href="/help">Help Center</Link> for detailed guides</li>
-          <li>Email us at <a href="mailto:support@rapidscreen.com">support@rapidscreen.com</a></li>
+          <li>Email us at <a href="mailto:support@tpaenginex.com">support@tpaenginex.com</a></li>
           <li>Call (888) 555-0100</li>
           <li>Visit our <Link href="/contact">Contact page</Link></li>
         </ul>

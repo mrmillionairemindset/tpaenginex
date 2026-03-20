@@ -11,10 +11,10 @@ async function seed() {
   try {
     // Seed a test TPA organization
     const [tpaOrg] = await db.insert(organizations).values({
-      slug: 'rapidscreen-tpa',
-      name: 'RapidScreen TPA Network',
+      slug: 'tpaenginex-tpa',
+      name: 'TPAEngineX TPA Network',
       type: 'tpa',
-      contactEmail: 'admin@rapidscreen.com',
+      contactEmail: 'admin@tpaenginex.com',
       isActive: true,
     }).returning();
 

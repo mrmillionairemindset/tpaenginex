@@ -317,7 +317,7 @@ export default function HIPAACompliancePage() {
         <h3>Do I need a BAA to use TPAEngineX?</h3>
         <p>
           If you are a covered entity or business associate handling PHI through our
-          platform, yes. Contact us at <a href="mailto:compliance@rapidscreen.com">compliance@rapidscreen.com</a> to
+          platform, yes. Contact us at <a href="mailto:compliance@tpaenginex.com">compliance@tpaenginex.com</a> to
           execute a BAA.
         </p>
 
@@ -334,7 +334,7 @@ export default function HIPAACompliancePage() {
 
         <h3>How do I report a security incident?</h3>
         <p>
-          Email <a href="mailto:security@rapidscreen.com">security@rapidscreen.com</a> immediately
+          Email <a href="mailto:security@tpaenginex.com">security@tpaenginex.com</a> immediately
           or call our 24/7 incident hotline at (888) 555-0199.
         </p>
       </section>
@@ -344,9 +344,9 @@ export default function HIPAACompliancePage() {
 
         <p>For HIPAA compliance questions:</p>
         <ul>
-          <li><strong>Privacy Officer:</strong> <a href="mailto:privacy@rapidscreen.com">privacy@rapidscreen.com</a></li>
-          <li><strong>Security Officer:</strong> <a href="mailto:security@rapidscreen.com">security@rapidscreen.com</a></li>
-          <li><strong>Compliance Team:</strong> <a href="mailto:compliance@rapidscreen.com">compliance@rapidscreen.com</a></li>
+          <li><strong>Privacy Officer:</strong> <a href="mailto:privacy@tpaenginex.com">privacy@tpaenginex.com</a></li>
+          <li><strong>Security Officer:</strong> <a href="mailto:security@tpaenginex.com">security@tpaenginex.com</a></li>
+          <li><strong>Compliance Team:</strong> <a href="mailto:compliance@tpaenginex.com">compliance@tpaenginex.com</a></li>
           <li><strong>General Inquiries:</strong> (888) 555-0100</li>
           <li><strong>Incident Hotline:</strong> (888) 555-0199 (24/7)</li>
         </ul>

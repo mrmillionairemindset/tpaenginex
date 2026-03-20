@@ -16,7 +16,7 @@ export default function BAAPage() {
         <p className="text-sm italic text-muted-foreground mb-6">
           This is a template Business Associate Agreement. To execute a formal BAA for your
           organization, please contact us at{' '}
-          <a href="mailto:compliance@rapidscreen.com">compliance@rapidscreen.com</a>.
+          <a href="mailto:compliance@tpaenginex.com">compliance@tpaenginex.com</a>.
         </p>
       </section>
 
@@ -334,7 +334,7 @@ export default function BAAPage() {
         <div className="mt-6 rounded-lg border bg-muted p-6">
           <p className="font-semibold mb-4">TPAEngineX, Inc.</p>
           <ul className="space-y-2 text-sm">
-            <li><strong>Email:</strong> <a href="mailto:compliance@rapidscreen.com">compliance@rapidscreen.com</a></li>
+            <li><strong>Email:</strong> <a href="mailto:compliance@tpaenginex.com">compliance@tpaenginex.com</a></li>
             <li><strong>Phone:</strong> (888) 555-0100</li>
             <li><strong>Attn:</strong> Compliance Officer</li>
           </ul>
@@ -365,7 +365,7 @@ export default function BAAPage() {
           Associate Agreement, please contact our compliance team:
         </p>
         <ul className="text-primary space-y-1">
-          <li>Email: <a href="mailto:compliance@rapidscreen.com" className="underline">compliance@rapidscreen.com</a></li>
+          <li>Email: <a href="mailto:compliance@tpaenginex.com" className="underline">compliance@tpaenginex.com</a></li>
           <li>Phone: (888) 555-0100</li>
         </ul>
         <p className="text-sm text-primary mt-4">

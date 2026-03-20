@@ -32,8 +32,8 @@ export default function ContactPage() {
             <div>
               <h3 className="font-semibold text-foreground">Email</h3>
               <p className="text-muted-foreground mt-1">
-                <a href="mailto:support@rapidscreen.com" className="text-primary hover:underline">
-                  support@rapidscreen.com
+                <a href="mailto:support@tpaenginex.com" className="text-primary hover:underline">
+                  support@tpaenginex.com
                 </a>
               </p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -80,28 +80,28 @@ export default function ContactPage() {
 
         <h3>Sales & New Accounts</h3>
         <p>
-          Email: <a href="mailto:sales@rapidscreen.com">sales@rapidscreen.com</a>
+          Email: <a href="mailto:sales@tpaenginex.com">sales@tpaenginex.com</a>
         </p>
 
         <h3>Technical Support</h3>
         <p>
-          Email: <a href="mailto:support@rapidscreen.com">support@rapidscreen.com</a>
+          Email: <a href="mailto:support@tpaenginex.com">support@tpaenginex.com</a>
         </p>
 
         <h3>Privacy & Compliance</h3>
         <p>
-          Email: <a href="mailto:privacy@rapidscreen.com">privacy@rapidscreen.com</a>
+          Email: <a href="mailto:privacy@tpaenginex.com">privacy@tpaenginex.com</a>
         </p>
 
         <h3>Security Incidents</h3>
         <p>
-          Email: <a href="mailto:security@rapidscreen.com">security@rapidscreen.com</a><br />
+          Email: <a href="mailto:security@tpaenginex.com">security@tpaenginex.com</a><br />
           Hotline: (888) 555-0199 (24/7)
         </p>
 
         <h3>Billing & Accounts</h3>
         <p>
-          Email: <a href="mailto:billing@rapidscreen.com">billing@rapidscreen.com</a>
+          Email: <a href="mailto:billing@tpaenginex.com">billing@tpaenginex.com</a>
         </p>
       </section>
 
@@ -122,7 +122,7 @@ export default function ContactPage() {
           To execute a Business Associate Agreement (BAA) for HIPAA compliance:
         </p>
         <ul>
-          <li>Email: <a href="mailto:compliance@rapidscreen.com">compliance@rapidscreen.com</a></li>
+          <li>Email: <a href="mailto:compliance@tpaenginex.com">compliance@tpaenginex.com</a></li>
           <li>Template: <a href="/baa">View BAA Template</a></li>
         </ul>
       </section>

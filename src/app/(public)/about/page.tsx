@@ -112,8 +112,8 @@ export default function AboutPage() {
           We'd love to hear from you:
         </p>
         <ul>
-          <li><strong>Sales:</strong> <a href="mailto:sales@rapidscreen.com">sales@rapidscreen.com</a></li>
-          <li><strong>Support:</strong> <a href="mailto:support@rapidscreen.com">support@rapidscreen.com</a></li>
+          <li><strong>Sales:</strong> <a href="mailto:sales@tpaenginex.com">sales@tpaenginex.com</a></li>
+          <li><strong>Support:</strong> <a href="mailto:support@tpaenginex.com">support@tpaenginex.com</a></li>
           <li><strong>Phone:</strong> (888) 555-0100</li>
         </ul>
       </section>
