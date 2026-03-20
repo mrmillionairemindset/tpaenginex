@@ -23,7 +23,7 @@ export default async function ClientsPage() {
   }
 
   const canAdd =
-    user.role === 'tpa_admin' || user.role === 'platform_admin';
+    user.role === 'tpa_admin' || user.role === 'tpa_staff' || user.role === 'platform_admin';
 
   return (
     <div>

@@ -59,10 +59,10 @@ export const GET = withAuth(async (req, user) => {
 
 // POST /api/clients — create a new client organization
 export const POST = withAuth(async (req, user) => {
-  // Require tpa_admin role
-  if (user.role !== 'tpa_admin' && user.role !== 'platform_admin') {
+  // Require tpa_admin or tpa_staff role
+  if (user.role !== 'tpa_admin' && user.role !== 'tpa_staff' && user.role !== 'platform_admin') {
     return NextResponse.json(
-      { error: 'Forbidden: tpa_admin role required' },
+      { error: 'Forbidden: tpa_admin or tpa_staff role required' },
       { status: 403 }
     );
   }
