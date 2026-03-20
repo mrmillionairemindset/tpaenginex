@@ -71,7 +71,7 @@ export function ClientsTable() {
       columns={columns}
       loading={loading}
       emptyMessage="No clients found. Add your first client to get started."
-      onRowClick={(client) => router.push(`/organizations/${client.id}`)}
+      onRowClick={(client) => router.push(`/clients/${client.id}`)}
     />
   );
 }

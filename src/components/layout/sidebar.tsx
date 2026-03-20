@@ -18,6 +18,7 @@ import {
   DollarSign,
   Target,
   Mail,
+  ClipboardList,
 } from 'lucide-react';
 
 interface NavItem {
@@ -87,6 +88,12 @@ const tpaNav: NavItem[] = [
     roles: ['tpa_admin', 'tpa_staff'],
   },
   {
+    label: 'Service Requests',
+    href: '/service-requests',
+    icon: ClipboardList,
+    roles: ['tpa_admin', 'tpa_staff'],
+  },
+  {
     label: 'Settings',
     href: '/settings',
     icon: Settings,
@@ -108,6 +115,18 @@ const clientNav: NavItem[] = [
     label: 'My Orders',
     href: '/client-portal/orders',
     icon: FileText,
+    roles: ['client_admin'],
+  },
+  {
+    label: 'Request Service',
+    href: '/client-portal/request',
+    icon: Plus,
+    roles: ['client_admin'],
+  },
+  {
+    label: 'My Requests',
+    href: '/client-portal/requests',
+    icon: ClipboardList,
     roles: ['client_admin'],
   },
   {

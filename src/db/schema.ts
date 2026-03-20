@@ -89,6 +89,13 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
   "voided",
 ]);
 
+export const serviceRequestStatusEnum = pgEnum("service_request_status", [
+  "submitted",    // Client submitted, waiting for TPA review
+  "accepted",     // TPA accepted, order will be created
+  "declined",     // TPA declined with reason
+  "converted",    // Converted to an order
+]);
+
 export const leadStageEnum = pgEnum("lead_stage", [
   "new_lead",
   "outreach_sent",
@@ -461,6 +468,36 @@ export const leadActivities = pgTable("lead_activities", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Service Requests — client self-service intake
+export const serviceRequests = pgTable("service_requests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id).notNull(),
+  clientOrgId: uuid("client_org_id").references(() => organizations.id).notNull(),
+  submittedBy: uuid("submitted_by").references(() => users.id).notNull(),
+
+  // Request details
+  donorFirstName: varchar("donor_first_name", { length: 120 }).notNull(),
+  donorLastName: varchar("donor_last_name", { length: 120 }).notNull(),
+  donorEmail: varchar("donor_email", { length: 320 }),
+  donorPhone: varchar("donor_phone", { length: 30 }),
+  serviceType: varchar("service_type", { length: 50 }).notNull(),
+  isDOT: boolean("is_dot").default(false).notNull(),
+  priority: varchar("priority", { length: 20 }).default("standard"),
+  location: text("location").notNull(),
+  requestedDate: timestamp("requested_date"),
+  notes: text("notes"),
+
+  // Status
+  status: serviceRequestStatusEnum("status").default("submitted").notNull(),
+  declineReason: text("decline_reason"),
+  convertedOrderId: uuid("converted_order_id").references(() => orders.id),
+  reviewedBy: uuid("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // TPA Settings — per-tenant configuration
 export const tpaSettings = pgTable("tpa_settings", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -750,6 +787,33 @@ export const leadActivitiesRelations = relations(leadActivities, ({ one }) => ({
   }),
 }));
 
+export const serviceRequestsRelations = relations(serviceRequests, ({ one }) => ({
+  tpaOrg: one(organizations, {
+    fields: [serviceRequests.tpaOrgId],
+    references: [organizations.id],
+    relationName: "tpaServiceRequests",
+  }),
+  clientOrg: one(organizations, {
+    fields: [serviceRequests.clientOrgId],
+    references: [organizations.id],
+    relationName: "clientServiceRequests",
+  }),
+  submitter: one(users, {
+    fields: [serviceRequests.submittedBy],
+    references: [users.id],
+    relationName: "submittedServiceRequests",
+  }),
+  reviewer: one(users, {
+    fields: [serviceRequests.reviewedBy],
+    references: [users.id],
+    relationName: "reviewedServiceRequests",
+  }),
+  convertedOrder: one(orders, {
+    fields: [serviceRequests.convertedOrderId],
+    references: [orders.id],
+  }),
+}));
+
 export const orderChecklistsRelations = relations(orderChecklists, ({ one }) => ({
   order: one(orders, {
     fields: [orderChecklists.orderId],
@@ -795,3 +859,4 @@ export type LeadEmailTemplateType = typeof leadEmailTemplates.$inferSelect;
 export type LeadActivityType = typeof leadActivities.$inferSelect;
 export type TpaSettingsType = typeof tpaSettings.$inferSelect;
 export type OrderChecklistType = typeof orderChecklists.$inferSelect;
+export type ServiceRequestType = typeof serviceRequests.$inferSelect;
