@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 
@@ -17,6 +18,7 @@ interface Collector {
 }
 
 export function CollectorsTable() {
+  const router = useRouter();
   const [collectors, setCollectors] = useState<Collector[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -82,6 +84,7 @@ export function CollectorsTable() {
       columns={columns}
       loading={loading}
       emptyMessage="No collectors found. Add your first collector to get started."
+      onRowClick={(collector) => router.push(`/collectors/${collector.id}`)}
     />
   );
 }
