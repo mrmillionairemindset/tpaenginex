@@ -135,6 +135,12 @@ const clientNav: NavItem[] = [
     icon: FileText,
     roles: ['client_admin'],
   },
+  {
+    label: 'Documents',
+    href: '/client-portal/documents',
+    icon: FileText,
+    roles: ['client_admin'],
+  },
 ];
 
 interface SidebarProps {

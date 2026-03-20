@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/use-toast';
-import { Building2, Users, FileText, UserPlus, AlertCircle, MapPin, Mail, Phone, CalendarDays, FileDown, Bell, ClipboardList } from 'lucide-react';
+import { Building2, Users, FileText, UserPlus, AlertCircle, MapPin, Mail, Phone, CalendarDays, FileDown, Bell, ClipboardList, Upload, Archive, FolderOpen } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
@@ -16,6 +16,22 @@ interface ClientDetailProps {
   clientOrgId: string;
   userRole: string;
 }
+
+const CLIENT_DOC_KIND_LABELS: Record<string, string> = {
+  contract: 'Contract',
+  sop: 'SOP',
+  baa: 'BAA',
+  coc_template: 'COC Template',
+  general: 'General',
+};
+
+const CLIENT_DOC_KIND_COLORS: Record<string, string> = {
+  contract: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  sop: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+  baa: 'bg-red-500/10 text-red-600 dark:text-red-400',
+  coc_template: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  general: 'bg-gray-500/10 text-gray-600 dark:text-gray-400',
+};
 
 export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
   const { toast } = useToast();
@@ -29,25 +45,34 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
 
+  // Client doc upload state
+  const [showDocUpload, setShowDocUpload] = useState(false);
+  const [docKind, setDocKind] = useState('general');
+  const [docNotes, setDocNotes] = useState('');
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const isAdmin = userRole === 'tpa_admin' || userRole === 'platform_admin';
+  const canUploadDocs = userRole === 'tpa_admin' || userRole === 'tpa_staff' || userRole === 'platform_admin';
+
+  const fetchClient = async () => {
+    try {
+      const response = await fetch(`/api/clients/${clientOrgId}`);
+      if (response.ok) {
+        const result = await response.json();
+        setData(result);
+      } else {
+        setError('Client not found');
+      }
+    } catch (err) {
+      setError('Failed to load client');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchClient() {
-      try {
-        const response = await fetch(`/api/clients/${clientOrgId}`);
-        if (response.ok) {
-          const result = await response.json();
-          setData(result);
-        } else {
-          setError('Client not found');
-        }
-      } catch (err) {
-        setError('Failed to load client');
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchClient();
   }, [clientOrgId]);
 
@@ -73,7 +98,6 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
         setInviteFirstName('');
         setInviteLastName('');
         setInviteEmail('');
-        // Refresh data
         const refreshRes = await fetch(`/api/clients/${clientOrgId}`);
         if (refreshRes.ok) setData(await refreshRes.json());
       } else {
@@ -84,6 +108,78 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
       toast({ title: 'Error', description: 'Failed to invite user', variant: 'destructive' });
     } finally {
       setInviting(false);
+    }
+  };
+
+  const handleDocUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!docFile) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', docFile);
+      formData.append('kind', docKind);
+      if (docNotes) formData.append('notes', docNotes);
+
+      const res = await fetch(`/api/clients/${clientOrgId}/documents`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        toast({ title: 'Document Uploaded', description: `${docFile.name} has been uploaded.` });
+        setShowDocUpload(false);
+        setDocFile(null);
+        setDocKind('general');
+        setDocNotes('');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        // Refresh data
+        const refreshRes = await fetch(`/api/clients/${clientOrgId}`);
+        if (refreshRes.ok) setData(await refreshRes.json());
+      } else {
+        const err = await res.json();
+        toast({ title: 'Upload Failed', description: err.error, variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to upload document', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleArchiveDoc = async (docId: string, fileName: string) => {
+    if (!confirm(`Archive "${fileName}"? It will no longer be visible to the client.`)) return;
+
+    try {
+      const res = await fetch(`/api/clients/${clientOrgId}/documents/${docId}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        toast({ title: 'Document Archived', description: `${fileName} has been archived.` });
+        const refreshRes = await fetch(`/api/clients/${clientOrgId}`);
+        if (refreshRes.ok) setData(await refreshRes.json());
+      } else {
+        const err = await res.json();
+        toast({ title: 'Error', description: err.error, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to archive document', variant: 'destructive' });
+    }
+  };
+
+  const handleDownloadClientDoc = async (docId: string) => {
+    try {
+      const res = await fetch(`/api/clients/${clientOrgId}/documents/${docId}`);
+      if (res.ok) {
+        const { url } = await res.json();
+        window.open(url, '_blank');
+      } else {
+        toast({ title: 'Error', description: 'Failed to get download link', variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to download', variant: 'destructive' });
     }
   };
 
@@ -105,7 +201,17 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
     );
   }
 
-  const { client, members, recentOrders, events: clientEvents, documents: clientDocuments, communications, serviceRequests, stats } = data;
+  const {
+    client,
+    members,
+    recentOrders,
+    events: clientEvents,
+    documents: orderDocuments,
+    clientDocuments: clientDocs,
+    communications,
+    serviceRequests,
+    stats,
+  } = data;
 
   return (
     <div className="space-y-6">
@@ -268,7 +374,7 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No portal users yet. Click "Invite User" to give this client access to view their orders and results.
+              No portal users yet. Click &quot;Invite User&quot; to give this client access to view their orders and results.
             </p>
           )}
         </Card>
@@ -348,7 +454,7 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
                   <p className="font-medium text-sm">{event.eventNumber}</p>
                   <p className="text-xs text-muted-foreground">
                     {event.serviceType?.replace(/_/g, ' ')} &middot; {format(new Date(event.scheduledDate), 'MMM d, yyyy')}
-                    {event.collector && ` &middot; ${event.collector.firstName} ${event.collector.lastName}`}
+                    {event.collector && ` \u00b7 ${event.collector.firstName} ${event.collector.lastName}`}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -367,16 +473,135 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
         )}
       </Card>
 
-      {/* Documents */}
+      {/* Client Documents (contracts, SOPs, BAAs) */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Client Documents ({clientDocs?.length || 0})</h2>
+          </div>
+          {canUploadDocs && (
+            <Button
+              size="sm"
+              onClick={() => setShowDocUpload(!showDocUpload)}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Document
+            </Button>
+          )}
+        </div>
+
+        {/* Upload Form */}
+        {showDocUpload && (
+          <form onSubmit={handleDocUpload} className="mb-4 rounded-lg border border-border bg-secondary p-4 space-y-3">
+            <p className="text-sm font-medium">Upload a document for this client (contract, SOP, BAA, etc.)</p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">File</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={(e) => setDocFile(e.target.files?.[0] || null)}
+                  required
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Document Type</label>
+                <select
+                  value={docKind}
+                  onChange={(e) => setDocKind(e.target.value)}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="contract">Contract</option>
+                  <option value="sop">SOP</option>
+                  <option value="baa">BAA</option>
+                  <option value="coc_template">COC Template</option>
+                  <option value="general">General</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Notes (optional)</label>
+              <input
+                type="text"
+                value={docNotes}
+                onChange={(e) => setDocNotes(e.target.value)}
+                placeholder="Add notes about this document..."
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={uploading || !docFile}>
+                {uploading ? 'Uploading...' : 'Upload'}
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => { setShowDocUpload(false); setDocFile(null); }}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {clientDocs && clientDocs.length > 0 ? (
+          <div className="space-y-2">
+            {clientDocs.map((doc: any) => (
+              <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{doc.fileName}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="secondary" className={`text-xs ${CLIENT_DOC_KIND_COLORS[doc.kind] || ''}`}>
+                      {CLIENT_DOC_KIND_LABELS[doc.kind] || doc.kind}
+                    </Badge>
+                    {doc.uploadedByUser && (
+                      <span className="text-xs text-muted-foreground">
+                        by {doc.uploadedByUser.name || doc.uploadedByUser.email}
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(doc.createdAt), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                  {doc.notes && (
+                    <p className="text-xs text-muted-foreground mt-1 truncate">{doc.notes}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 ml-4">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDownloadClientDoc(doc.id)}
+                  >
+                    <FileDown className="h-4 w-4" />
+                  </Button>
+                  {isAdmin && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-500 hover:text-red-600"
+                      onClick={() => handleArchiveDoc(doc.id, doc.fileName)}
+                    >
+                      <Archive className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No client documents uploaded yet. Upload contracts, SOPs, or BAAs above.</p>
+        )}
+      </Card>
+
+      {/* Order Documents */}
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <FileDown className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Documents ({stats.totalDocuments || 0})</h2>
+          <h2 className="text-lg font-semibold">Order Documents ({stats.totalDocuments || 0})</h2>
         </div>
 
-        {clientDocuments && clientDocuments.length > 0 ? (
+        {orderDocuments && orderDocuments.length > 0 ? (
           <div className="space-y-2">
-            {clientDocuments.map((doc: any) => (
+            {orderDocuments.map((doc: any) => (
               <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
                   <p className="font-medium text-sm">{doc.fileName}</p>
@@ -406,7 +631,7 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No documents uploaded for this client yet.</p>
+          <p className="text-sm text-muted-foreground">No order documents uploaded yet.</p>
         )}
       </Card>
 

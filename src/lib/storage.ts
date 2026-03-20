@@ -61,6 +61,36 @@ export function generateStorageKey(orderId: string, kind: string, filename: stri
 }
 
 /**
+ * Upload a file buffer directly to storage
+ * @param key Storage key/path for the file
+ * @param body File contents as Buffer or Uint8Array
+ * @param contentType MIME type of the file
+ */
+export async function uploadFile(key: string, body: Buffer | Uint8Array, contentType: string): Promise<void> {
+  const command = new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+    Body: body,
+    ContentType: contentType,
+  });
+
+  await s3.send(command);
+}
+
+/**
+ * Generate a storage key for a client document
+ * Format: client-docs/{clientOrgId}/{timestamp}-{filename}
+ * @param clientOrgId UUID of the client organization
+ * @param filename Original filename
+ * @returns Storage key path
+ */
+export function generateClientDocStorageKey(clientOrgId: string, filename: string): string {
+  const timestamp = Date.now();
+  const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+  return `client-docs/${clientOrgId}/${timestamp}-${sanitized}`;
+}
+
+/**
  * Check if storage is configured
  * @returns true if all required env vars are set
  */

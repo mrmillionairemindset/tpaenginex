@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { organizations, orders, organizationMembers, events, documents, notifications, serviceRequests } from '@/db/schema';
+import { organizations, orders, organizationMembers, events, documents, notifications, serviceRequests, clientDocuments } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq, and, desc, count } from 'drizzle-orm';
 
@@ -104,6 +104,20 @@ export async function GET(
     ).slice(0, 20);
   }
 
+  // Fetch client-level documents (contracts, SOPs, BAAs, etc.)
+  let clientDocs: any[] = [];
+  try {
+    clientDocs = await db.query.clientDocuments.findMany({
+      where: and(eq(clientDocuments.clientOrgId, id), eq(clientDocuments.isArchived, false)),
+      with: {
+        uploadedByUser: { columns: { id: true, name: true, email: true } },
+      },
+      orderBy: [desc(clientDocuments.createdAt)],
+    });
+  } catch {
+    // Table may not exist yet if migration hasn't run
+  }
+
   // Fetch service requests from this client
   let clientServiceRequests: any[] = [];
   try {
@@ -136,6 +150,7 @@ export async function GET(
     recentOrders,
     events: clientEvents,
     documents: allDocuments,
+    clientDocuments: clientDocs,
     communications,
     serviceRequests: clientServiceRequests,
     stats: {
@@ -145,6 +160,7 @@ export async function GET(
       totalUsers: members.length,
       totalEvents: clientEvents.length,
       totalDocuments: allDocuments.length,
+      totalClientDocuments: clientDocs.length,
     },
   });
 }

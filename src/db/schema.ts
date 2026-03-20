@@ -498,6 +498,23 @@ export const serviceRequests = pgTable("service_requests", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Client Documents — contracts, SOPs, BAAs attached to client orgs (not orders)
+export const clientDocuments = pgTable("client_documents", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id).notNull(),
+  clientOrgId: uuid("client_org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
+  kind: varchar("kind", { length: 50 }).notNull(), // 'contract', 'sop', 'baa', 'coc_template', 'general'
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  storageUrl: text("storage_url").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: varchar("mime_type", { length: 100 }),
+  uploadedBy: uuid("uploaded_by").references(() => users.id),
+  notes: text("notes"),
+  isArchived: boolean("is_archived").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // TPA Settings — per-tenant configuration
 export const tpaSettings = pgTable("tpa_settings", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -550,6 +567,8 @@ export const organizationsRelations = relations(organizations, ({ one, many }) =
     fields: [organizations.id],
     references: [tpaSettings.tpaOrgId],
   }),
+  clientDocumentsAsTpa: many(clientDocuments, { relationName: "tpaClientDocuments" }),
+  clientDocumentsAsClient: many(clientDocuments, { relationName: "clientOrgClientDocuments" }),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -563,6 +582,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   ordersCreated: many(orders, { relationName: "requestedBy" }),
   appointmentsAssigned: many(appointments, { relationName: "assignedBy" }),
   documentsUploaded: many(documents, { relationName: "uploadedBy" }),
+  clientDocumentsUploaded: many(clientDocuments, { relationName: "clientDocUploadedBy" }),
   auditLogs: many(auditLogs),
   notifications: many(notifications),
   ownedLeads: many(leads),
@@ -832,6 +852,24 @@ export const tpaSettingsRelations = relations(tpaSettings, ({ one }) => ({
   }),
 }));
 
+export const clientDocumentsRelations = relations(clientDocuments, ({ one }) => ({
+  tpaOrg: one(organizations, {
+    fields: [clientDocuments.tpaOrgId],
+    references: [organizations.id],
+    relationName: "tpaClientDocuments",
+  }),
+  clientOrg: one(organizations, {
+    fields: [clientDocuments.clientOrgId],
+    references: [organizations.id],
+    relationName: "clientOrgClientDocuments",
+  }),
+  uploadedByUser: one(users, {
+    fields: [clientDocuments.uploadedBy],
+    references: [users.id],
+    relationName: "clientDocUploadedBy",
+  }),
+}));
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
@@ -860,3 +898,4 @@ export type LeadActivityType = typeof leadActivities.$inferSelect;
 export type TpaSettingsType = typeof tpaSettings.$inferSelect;
 export type OrderChecklistType = typeof orderChecklists.$inferSelect;
 export type ServiceRequestType = typeof serviceRequests.$inferSelect;
+export type ClientDocumentType = typeof clientDocuments.$inferSelect;
