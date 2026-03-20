@@ -36,6 +36,7 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
   const [savingCcf, setSavingCcf] = useState(false);
   const [ccfOverrideMode, setCcfOverrideMode] = useState(false);
   const [ccfAuditReason, setCcfAuditReason] = useState('');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     async function fetchOrder() {
@@ -74,6 +75,42 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
 
     fetchChecklist();
   }, [orderId]);
+
+  const ORDER_STATUSES = [
+    { value: 'new', label: 'New' },
+    { value: 'needs_site', label: 'Needs Site' },
+    { value: 'scheduled', label: 'Scheduled' },
+    { value: 'in_progress', label: 'In Progress' },
+    { value: 'results_uploaded', label: 'Results Uploaded' },
+    { value: 'pending_review', label: 'Pending Review' },
+    { value: 'needs_correction', label: 'Needs Correction' },
+    { value: 'complete', label: 'Complete' },
+    { value: 'cancelled', label: 'Cancelled' },
+  ];
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (newStatus === order?.status) return;
+    setUpdatingStatus(true);
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setOrder(data.order);
+        toast({ title: 'Status Updated', description: `Order moved to ${ORDER_STATUSES.find(s => s.value === newStatus)?.label}` });
+      } else {
+        const err = await response.json();
+        toast({ title: 'Error', description: err.error, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const handleToggleChecklist = async (checklistItemId: string, isCompleted: boolean) => {
     setTogglingItem(checklistItemId);
@@ -256,7 +293,20 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
           {order.priority === 'urgent' && (
             <span className="text-xs font-semibold bg-red-100 text-red-800 px-2 py-1 rounded">URGENT</span>
           )}
-          <StatusBadge status={order.status} />
+          {isTpaUser ? (
+            <select
+              className="h-8 rounded-md border border-input bg-background px-2 py-1 text-sm font-medium ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+              value={order.status}
+              disabled={updatingStatus}
+              onChange={(e) => handleStatusChange(e.target.value)}
+            >
+              {ORDER_STATUSES.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          ) : (
+            <StatusBadge status={order.status} />
+          )}
           {canCancel && (
             <Button
               onClick={() => setShowCancelConfirm(true)}
