@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { organizations, users, organizationMembers } from "@/db/schema";
 import { withAuth } from "@/auth/api-middleware";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -15,9 +15,12 @@ export const GET = withAuth(async (req, user) => {
     const isTpaUser = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
 
     if (isTpaUser) {
-      // Providers see all employer organizations with stats
-      const employerOrgs = await db.query.organizations.findMany({
-        where: eq(organizations.type, 'client'),
+      // TPA users see only their own TPA's client organizations
+      const tpaOrgId = user.tpaOrgId;
+      const clientOrgs = await db.query.organizations.findMany({
+        where: tpaOrgId
+          ? and(eq(organizations.type, 'client'), eq(organizations.tpaOrgId, tpaOrgId))
+          : eq(organizations.type, 'client'),
         with: {
           orders: {
             columns: {
@@ -37,7 +40,7 @@ export const GET = withAuth(async (req, user) => {
         },
       });
 
-      const formattedOrgs = employerOrgs.map((org) => ({
+      const formattedOrgs = clientOrgs.map((org) => ({
         ...org,
         _count: {
           orders: org.orders?.length || 0,
