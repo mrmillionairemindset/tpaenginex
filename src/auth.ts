@@ -1,8 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "@/db/client";
-import { users, accounts, sessions, verificationTokens, organizations } from "@/db/schema";
+import { users, organizations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import type { DefaultSession } from "next-auth";
@@ -26,15 +25,12 @@ declare module "next-auth" {
   }
 }
 
-// Full auth config with database adapter (for API routes and server components)
+// Full auth config (for API routes and server components)
+// NOTE: Database adapter is intentionally omitted when using Credentials provider
+// with JWT strategy. NextAuth v5 throws a Configuration error if the adapter
+// tries to create a DB session for credential-based logins.
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
   providers: [
     Credentials({
       name: "credentials",
