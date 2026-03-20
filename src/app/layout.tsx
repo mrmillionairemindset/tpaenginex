@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'TPAEngineX',
-  description: 'TPAEngineX - Healthcare screening coordination platform',
+  description: 'TPAEngineX powers remote operations, workflow coordination, and compliance infrastructure for TPAs.',
 };
 
 export default function RootLayout({
@@ -20,8 +20,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <SessionProvider>{children}</SessionProvider>
