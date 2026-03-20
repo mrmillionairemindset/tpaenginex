@@ -3,7 +3,7 @@ import { getCurrentUser } from '@/auth/get-user';
 import Link from 'next/link';
 import { UserNav } from '@/components/user-nav';
 import { OrganizationSwitcher } from '@/components/organization-switcher';
-import { Shield, Lock, FileText, Building2, Zap, Users, CalendarDays, DollarSign, UserCheck, BarChart3 } from 'lucide-react';
+import { Shield, Lock, FileText, Building2 } from 'lucide-react';
 
 export default async function HomePage() {
   const session = await auth();
@@ -114,39 +114,6 @@ export default async function HomePage() {
                 <Building2 className="h-4 w-4 text-primary" />
                 <span>Built for TPAs</span>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* What We Power */}
-        <section className="py-20">
-          <div className="mx-auto max-w-7xl px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold">Everything a TPA Needs</h2>
-              <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-                Replace legacy systems with a platform built for how TPAs actually work.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                { icon: CalendarDays, title: 'Order & Event Management', description: 'Create orders, manage batch events, track random pulls — all from one dashboard.' },
-                { icon: UserCheck, title: 'Collector Dispatch', description: 'Assign mobile PRN collectors with certifications, service areas, and availability tracking.' },
-                { icon: Zap, title: 'Automated Workflows', description: '48-hour reminders, kit mailing alerts, pending result follow-ups — all fire automatically.' },
-                { icon: BarChart3, title: 'Client Portal', description: 'Clients view their own orders and results. No calls asking for status updates.' },
-                { icon: DollarSign, title: 'Billing Queue', description: 'Invoices auto-create when orders complete. Track pending, sent, paid, and overdue.' },
-                { icon: Users, title: 'CRM Pipeline', description: 'Track prospective clients from lead to signed contract with a built-in pipeline.' },
-              ].map((feature) => {
-                const Icon = feature.icon;
-                return (
-                  <div key={feature.title} className="rounded-xl border border-border bg-card p-6 hover:border-primary/30 transition-colors">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 mb-4">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="text-base font-semibold mb-2">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </div>
-                );
-              })}
             </div>
           </div>
         </section>
