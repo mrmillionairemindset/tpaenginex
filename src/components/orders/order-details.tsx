@@ -29,6 +29,8 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
   const [checklist, setChecklist] = useState<any[]>([]);
   const [checklistLoading, setChecklistLoading] = useState(true);
   const [togglingItem, setTogglingItem] = useState<string | null>(null);
+  const [ccfNumber, setCcfNumber] = useState('');
+  const [savingCcf, setSavingCcf] = useState(false);
 
   useEffect(() => {
     async function fetchOrder() {
@@ -339,12 +341,48 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                 <dd className="font-medium capitalize">{order.priority}</dd>
               </div>
             )}
-            {order.ccfNumber && (
-              <div>
-                <dt className="text-sm text-muted-foreground">CCF #</dt>
-                <dd className="font-medium">{order.ccfNumber}</dd>
-              </div>
-            )}
+            <div>
+              <dt className="text-sm text-muted-foreground">CCF #</dt>
+              {isTpaUser && order.status !== 'new' && order.status !== 'needs_site' && order.status !== 'complete' && order.status !== 'cancelled' ? (
+                <dd className="flex items-center gap-2 mt-1">
+                  <input
+                    type="text"
+                    value={ccfNumber || order.ccfNumber || ''}
+                    onChange={(e) => setCcfNumber(e.target.value)}
+                    placeholder="Enter CCF number..."
+                    className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!ccfNumber && !order.ccfNumber) return;
+                      setSavingCcf(true);
+                      try {
+                        const res = await fetch(`/api/orders/${orderId}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ ccfNumber: ccfNumber || order.ccfNumber }),
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setOrder(data.order);
+                          toast({ title: 'CCF # Saved', description: `CCF number updated to ${ccfNumber}` });
+                        }
+                      } catch (err) {
+                        toast({ title: 'Error', description: 'Failed to save CCF number', variant: 'destructive' });
+                      } finally {
+                        setSavingCcf(false);
+                      }
+                    }}
+                    disabled={savingCcf}
+                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {savingCcf ? 'Saving...' : 'Save'}
+                  </button>
+                </dd>
+              ) : (
+                <dd className="font-medium">{order.ccfNumber || <span className="text-muted-foreground">Not yet assigned</span>}</dd>
+              )}
+            </div>
             {order.resultStatus && (
               <div>
                 <dt className="text-sm text-muted-foreground">Result Status</dt>
