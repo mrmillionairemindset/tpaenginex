@@ -11,7 +11,7 @@ export default async function LeadsPage() {
   }
 
   const hasAccess =
-    user.role === 'tpa_admin' || user.role === 'platform_admin';
+    user.role === 'tpa_admin' || user.role === 'tpa_staff' || user.role === 'platform_admin';
 
   if (!hasAccess) {
     redirect('/dashboard');

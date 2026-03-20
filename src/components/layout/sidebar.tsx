@@ -84,7 +84,7 @@ const tpaNav: NavItem[] = [
     label: 'Leads & Pipeline',
     href: '/leads',
     icon: Target,
-    roles: ['tpa_admin'],
+    roles: ['tpa_admin', 'tpa_staff'],
   },
   {
     label: 'Settings',

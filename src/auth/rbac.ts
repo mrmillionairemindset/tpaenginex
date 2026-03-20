@@ -49,6 +49,7 @@ const permissions: Record<UserRole, Permission[]> = {
     'view_orders', 'create_orders', 'assign_collector',
     'manage_collectors', 'manage_clients',
     'view_events', 'manage_events',
+    'view_leads', 'manage_leads',
   ],
   tpa_records: [
     'view_orders', 'update_results',
