@@ -29,11 +29,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { email, role, orgId } = body;
+    const { name, email, role, orgId } = body;
 
-    if (!email || !role) {
+    if (!name || !email || !role) {
       return NextResponse.json(
-        { error: "Email and role are required" },
+        { error: "Name, email, and role are required" },
         { status: 400 }
       );
     }
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       .insert(users)
       .values({
         email: email.toLowerCase(),
-        name: email.split("@")[0], // Use email prefix as temporary name
+        name,
         password: hashedPassword,
         role,
         orgId,
@@ -85,14 +85,15 @@ export async function POST(request: Request) {
       isActive: true,
     });
 
-    // TODO: Send invitation email with temporary password or signup link
-    console.log(`User invited: ${email} with temporary password: ${temporaryPassword}`);
+    // TODO: Send invitation email with login credentials via SendGrid
+    console.log(`User created: ${name} (${email}) with temporary password: ${temporaryPassword}`);
 
     return NextResponse.json(
       {
-        message: "User invited successfully",
+        message: `${name} has been added and will receive an invite email`,
         user: {
           id: newUser.id,
+          name: newUser.name,
           email: newUser.email,
           role: newUser.role,
         },

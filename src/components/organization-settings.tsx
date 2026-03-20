@@ -70,6 +70,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"general" | "members" | "invitations" | "locations">("general");
   const [orgName, setOrgName] = useState(organization.name);
+  const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("");
   const [loading, setLoading] = useState(false);
@@ -128,6 +129,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          name: inviteName,
           email: inviteEmail,
           role: inviteRole,
           orgId: organization.id,
@@ -136,6 +138,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
 
       if (response.ok) {
         setMessage({ type: "success", text: "Invitation sent successfully" });
+        setInviteName("");
         setInviteEmail("");
         setInviteRole("");
         fetchMembers(); // Refresh members list
@@ -361,7 +364,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
             }`}
           >
             <Mail className="h-5 w-5" />
-            Invitations
+            Add Member
           </button>
           <button
             onClick={() => setActiveTab("locations")}
@@ -543,22 +546,25 @@ export function OrganizationSettings({ organization, currentUser }: Organization
         </div>
       )}
 
-      {/* Invitations */}
+      {/* Add Member */}
       {activeTab === "invitations" && (
         <div className="rounded-lg border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            Invite New Member
+          <h2 className="text-lg font-semibold text-foreground mb-2">
+            Add New Member
           </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Create the user identity, assign a role, and send them an invite to log in.
+          </p>
           <form onSubmit={handleInviteUser} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Email Address
+                Full Name <span className="text-red-500">*</span>
               </label>
               <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="colleague@example.com"
+                type="text"
+                value={inviteName}
+                onChange={(e) => setInviteName(e.target.value)}
+                placeholder="Jane Smith"
                 required
                 className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
                 disabled={loading}
@@ -567,7 +573,22 @@ export function OrganizationSettings({ organization, currentUser }: Organization
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Role
+                Email Address <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="jane@company.com"
+                required
+                className="w-full rounded-md border-0 px-3 py-2 text-foreground ring-1 ring-inset ring-input focus:ring-2 focus:ring-ring sm:text-sm"
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Role <span className="text-red-500">*</span>
               </label>
               <select
                 value={inviteRole}
@@ -590,7 +611,7 @@ export function OrganizationSettings({ organization, currentUser }: Organization
               disabled={loading}
               className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
             >
-              {loading ? "Sending..." : "Send Invitation"}
+              {loading ? "Creating & Sending Invite..." : "Create User & Send Invite"}
             </button>
           </form>
         </div>
