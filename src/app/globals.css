@@ -76,3 +76,44 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Compliance page typography */
+.compliance-content section {
+  @apply mb-10;
+}
+
+.compliance-content section:last-child {
+  @apply mb-0;
+}
+
+.compliance-content h2 {
+  @apply text-xl font-bold text-foreground mt-8 mb-4 pb-2 border-b border-border;
+}
+
+.compliance-content h3 {
+  @apply text-base font-semibold text-foreground mt-6 mb-3;
+}
+
+.compliance-content p {
+  @apply text-sm leading-relaxed text-secondary-foreground mb-4;
+}
+
+.compliance-content ul {
+  @apply list-disc list-inside space-y-2 mb-4 text-sm text-secondary-foreground;
+}
+
+.compliance-content li {
+  @apply leading-relaxed;
+}
+
+.compliance-content li strong {
+  @apply text-foreground;
+}
+
+.compliance-content a {
+  @apply text-primary hover:text-primary/80 underline underline-offset-2;
+}
+
+.compliance-content .italic {
+  @apply text-muted-foreground;
+}

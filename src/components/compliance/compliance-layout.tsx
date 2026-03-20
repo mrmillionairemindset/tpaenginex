@@ -19,7 +19,7 @@ export function ComplianceLayout({
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b bg-card">
+      <div className="border-b border-border bg-card">
         <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
           <Link href="/">
             <Button variant="ghost" size="sm" className="mb-4">
@@ -41,13 +41,13 @@ export function ComplianceLayout({
 
       {/* Content */}
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="rounded-lg border bg-card p-8 shadow-sm">
-          <div className="prose prose-gray max-w-none">{children}</div>
+        <div className="rounded-lg border border-border bg-card p-8 shadow-sm compliance-content">
+          {children}
         </div>
       </div>
 
       {/* Footer */}
-      <div className="border-t bg-card">
+      <div className="border-t border-border bg-card">
         <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
           <Separator className="mb-6" />
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
