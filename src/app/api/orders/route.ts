@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { orders, candidates, organizations } from '@/db/schema';
+import { orders, candidates, organizations, orderChecklists } from '@/db/schema';
 import { withAuth } from '@/auth/api-middleware';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { notifyOrderCreated } from '@/lib/notifications';
 import { appendOrderToSheet } from '@/integrations/sheets';
+import { SERVICE_TYPE_CHECKLISTS } from '@/lib/service-templates';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -219,6 +220,18 @@ export const POST = withAuth(async (req, user) => {
     scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : null,
     status: 'new',
   }).returning();
+
+  // Auto-populate checklist from service type template
+  const checklistItems = SERVICE_TYPE_CHECKLISTS[data.serviceType] || [];
+  if (checklistItems.length > 0) {
+    await db.insert(orderChecklists).values(
+      checklistItems.map((item, i) => ({
+        orderId: newOrder.id,
+        item,
+        sortOrder: i,
+      }))
+    );
+  }
 
   // Fetch full order with relations
   const fullOrder = await db.query.orders.findFirst({

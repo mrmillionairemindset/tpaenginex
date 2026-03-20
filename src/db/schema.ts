@@ -420,10 +420,14 @@ export const leads = pgTable("leads", {
   contactEmail: varchar("contact_email", { length: 320 }),
   contactPhone: varchar("contact_phone", { length: 30 }),
   source: varchar("source", { length: 100 }),
-  serviceInterest: text("service_interest"),
+  need: text("need"),
+  address: text("address"),
+  city: varchar("city", { length: 120 }),
+  state: varchar("state", { length: 2 }),
+  zip: varchar("zip", { length: 10 }),
+  employeeCount: integer("employee_count"),
   stage: leadStageEnum("stage").default("new_lead").notNull(),
   ownedBy: uuid("owned_by").references(() => users.id),
-  estimatedValue: integer("estimated_value"),
   lastContactedAt: timestamp("last_contacted_at"),
   nextFollowUpAt: timestamp("next_follow_up_at"),
   notes: text("notes"),
@@ -471,6 +475,18 @@ export const tpaSettings = pgTable("tpa_settings", {
   timezone: varchar("timezone", { length: 50 }).default("America/Chicago"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Order Checklists — auto-generated from service type templates
+export const orderChecklists = pgTable("order_checklists", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id").references(() => orders.id, { onDelete: "cascade" }).notNull(),
+  item: varchar("item", { length: 255 }).notNull(),
+  isCompleted: boolean("is_completed").default(false).notNull(),
+  completedBy: uuid("completed_by").references(() => users.id),
+  completedAt: timestamp("completed_at"),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // ============================================================================
@@ -572,6 +588,7 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   documents: many(documents),
   reviews: many(orderReviews),
   invoices: many(invoices),
+  checklists: many(orderChecklists),
 }));
 
 export const sitesRelations = relations(sites, ({ many }) => ({
@@ -733,6 +750,17 @@ export const leadActivitiesRelations = relations(leadActivities, ({ one }) => ({
   }),
 }));
 
+export const orderChecklistsRelations = relations(orderChecklists, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderChecklists.orderId],
+    references: [orders.id],
+  }),
+  completedByUser: one(users, {
+    fields: [orderChecklists.completedBy],
+    references: [users.id],
+  }),
+}));
+
 export const tpaSettingsRelations = relations(tpaSettings, ({ one }) => ({
   tpaOrg: one(organizations, {
     fields: [tpaSettings.tpaOrgId],
@@ -766,3 +794,4 @@ export type LeadType = typeof leads.$inferSelect;
 export type LeadEmailTemplateType = typeof leadEmailTemplates.$inferSelect;
 export type LeadActivityType = typeof leadActivities.$inferSelect;
 export type TpaSettingsType = typeof tpaSettings.$inferSelect;
+export type OrderChecklistType = typeof orderChecklists.$inferSelect;

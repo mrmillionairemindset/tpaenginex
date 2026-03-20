@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { AlertCircle, User, FileText, CheckCircle, XCircle, UserCheck } from 'lucide-react';
+import { AlertCircle, User, FileText, CheckCircle, XCircle, UserCheck, ClipboardCheck } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface OrderDetailsProps {
@@ -26,6 +26,9 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
   const [feedback, setFeedback] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [canceling, setCanceling] = useState(false);
+  const [checklist, setChecklist] = useState<any[]>([]);
+  const [checklistLoading, setChecklistLoading] = useState(true);
+  const [togglingItem, setTogglingItem] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchOrder() {
@@ -46,6 +49,59 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
 
     fetchOrder();
   }, [orderId]);
+
+  useEffect(() => {
+    async function fetchChecklist() {
+      try {
+        const response = await fetch(`/api/orders/${orderId}/checklist`);
+        if (response.ok) {
+          const data = await response.json();
+          setChecklist(data.checklist);
+        }
+      } catch (err) {
+        // Checklist may not exist for older orders
+      } finally {
+        setChecklistLoading(false);
+      }
+    }
+
+    fetchChecklist();
+  }, [orderId]);
+
+  const handleToggleChecklist = async (checklistItemId: string, isCompleted: boolean) => {
+    setTogglingItem(checklistItemId);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/checklist`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checklistItemId, isCompleted }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setChecklist((prev) =>
+          prev.map((item) =>
+            item.id === checklistItemId ? data.item : item
+          )
+        );
+      } else {
+        const data = await response.json();
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to update checklist item',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update checklist item',
+        variant: 'destructive',
+      });
+    } finally {
+      setTogglingItem(null);
+    }
+  };
 
   const handleDownload = async (documentId: string, filename: string) => {
     try {
@@ -322,6 +378,60 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
           </dl>
         </Card>
       </div>
+
+      {/* Checklist */}
+      {!checklistLoading && checklist.length > 0 && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Checklist</h2>
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {checklist.filter((item) => item.isCompleted).length}/{checklist.length} complete
+            </span>
+          </div>
+          <div className="w-full bg-secondary rounded-full h-2 mb-4">
+            <div
+              className="bg-primary h-2 rounded-full transition-all"
+              style={{
+                width: `${(checklist.filter((item) => item.isCompleted).length / checklist.length) * 100}%`,
+              }}
+            />
+          </div>
+          <div className="space-y-2">
+            {checklist.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-start gap-3 p-2 rounded hover:bg-secondary/50 transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={item.isCompleted}
+                  disabled={!isTpaUser || togglingItem === item.id}
+                  onChange={() => handleToggleChecklist(item.id, !item.isCompleted)}
+                  className="mt-1 h-4 w-4 rounded border-border cursor-pointer disabled:cursor-not-allowed"
+                />
+                <div className="flex-1 min-w-0">
+                  <span
+                    className={`text-sm ${
+                      item.isCompleted ? 'line-through text-muted-foreground' : ''
+                    }`}
+                  >
+                    {item.item}
+                  </span>
+                  {item.isCompleted && item.completedByUser && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Completed by {item.completedByUser.name || item.completedByUser.email}
+                      {item.completedAt && ` at ${format(new Date(item.completedAt), 'PPp')}`}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Collector Information */}
       {order.collector && (

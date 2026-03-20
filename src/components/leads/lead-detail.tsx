@@ -66,6 +66,15 @@ const stageStyles: Record<LeadStage, string> = {
   closed_lost: 'bg-red-100 text-red-800',
 };
 
+const US_STATES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
+  'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY',
+  'DC',
+];
+
 interface Lead {
   id: string;
   companyName: string;
@@ -73,7 +82,12 @@ interface Lead {
   contactEmail: string | null;
   contactPhone: string | null;
   stage: LeadStage;
-  estimatedValueCents: number;
+  need: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  employeeCount: number | null;
   notes: string | null;
   owner: string | null;
   convertedToOrgId: string | null;
@@ -100,7 +114,12 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
     contactName: '',
     contactEmail: '',
     contactPhone: '',
-    estimatedValueCents: '',
+    need: '',
+    address: '',
+    city: '',
+    state: '',
+    zip: '',
+    employeeCount: '',
     notes: '',
     owner: '',
     nextFollowUpAt: '',
@@ -119,9 +138,12 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
             contactName: leadData.contactName || '',
             contactEmail: leadData.contactEmail || '',
             contactPhone: leadData.contactPhone || '',
-            estimatedValueCents: leadData.estimatedValueCents
-              ? (leadData.estimatedValueCents / 100).toFixed(2)
-              : '',
+            need: leadData.need || '',
+            address: leadData.address || '',
+            city: leadData.city || '',
+            state: leadData.state || '',
+            zip: leadData.zip || '',
+            employeeCount: leadData.employeeCount != null ? String(leadData.employeeCount) : '',
             notes: leadData.notes || '',
             owner: leadData.owner || '',
             nextFollowUpAt: leadData.nextFollowUpAt
@@ -178,9 +200,14 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
           contactName: formData.contactName,
           contactEmail: formData.contactEmail || null,
           contactPhone: formData.contactPhone || null,
-          estimatedValueCents: formData.estimatedValueCents
-            ? Math.round(parseFloat(formData.estimatedValueCents) * 100)
-            : 0,
+          need: formData.need || null,
+          address: formData.address || null,
+          city: formData.city || null,
+          state: formData.state || null,
+          zip: formData.zip || null,
+          employeeCount: formData.employeeCount
+            ? parseInt(formData.employeeCount, 10)
+            : null,
           notes: formData.notes || null,
           owner: formData.owner || null,
           nextFollowUpAt: formData.nextFollowUpAt || null,
@@ -300,6 +327,10 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
     );
   }
 
+  const fullAddress = [lead.address, lead.city, lead.state, lead.zip]
+    .filter(Boolean)
+    .join(', ');
+
   return (
     <div className="space-y-6">
       <Card className="p-6">
@@ -342,6 +373,27 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Summary info */}
+        {(fullAddress || lead.employeeCount != null) && (
+          <div className="mb-6 p-4 bg-muted/50 rounded-lg space-y-1 text-sm">
+            {fullAddress && (
+              <p>
+                <span className="font-medium">Address:</span> {fullAddress}
+              </p>
+            )}
+            {lead.employeeCount != null && (
+              <p>
+                <span className="font-medium">Employee Count:</span> {lead.employeeCount}
+              </p>
+            )}
+            {lead.need && (
+              <p>
+                <span className="font-medium">Need:</span> {lead.need}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
@@ -387,18 +439,66 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
             />
           </div>
           <div>
-            <Label htmlFor="estimatedValue">Estimated Value ($)</Label>
+            <Label htmlFor="address">Address</Label>
             <Input
-              id="estimatedValue"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.estimatedValueCents}
+              id="address"
+              value={formData.address}
               onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  estimatedValueCents: e.target.value,
-                })
+                setFormData({ ...formData, address: e.target.value })
+              }
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label htmlFor="city">City</Label>
+              <Input
+                id="city"
+                value={formData.city}
+                onChange={(e) =>
+                  setFormData({ ...formData, city: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="state">State</Label>
+              <Select
+                value={formData.state}
+                onValueChange={(val) =>
+                  setFormData({ ...formData, state: val })
+                }
+              >
+                <SelectTrigger id="state">
+                  <SelectValue placeholder="ST" />
+                </SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((st) => (
+                    <SelectItem key={st} value={st}>
+                      {st}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="zip">ZIP</Label>
+              <Input
+                id="zip"
+                value={formData.zip}
+                onChange={(e) =>
+                  setFormData({ ...formData, zip: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="employeeCount">Employee Count</Label>
+            <Input
+              id="employeeCount"
+              type="number"
+              min="0"
+              value={formData.employeeCount}
+              onChange={(e) =>
+                setFormData({ ...formData, employeeCount: e.target.value })
               }
             />
           </div>
@@ -423,6 +523,19 @@ export function LeadDetail({ leadId, userRole }: LeadDetailProps) {
               }
             />
           </div>
+        </div>
+
+        <div className="mt-4">
+          <Label htmlFor="need">Need</Label>
+          <Textarea
+            id="need"
+            rows={3}
+            value={formData.need}
+            onChange={(e) =>
+              setFormData({ ...formData, need: e.target.value })
+            }
+            placeholder="What does this lead need? e.g., random program, post-accident coverage, DOT compliance"
+          />
         </div>
 
         <div className="mt-4">

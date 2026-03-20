@@ -52,7 +52,7 @@ export async function POST(
     .substring(0, 80)
     + '-' + Date.now().toString(36);
 
-  // Create client organization
+  // Create client organization with address info from lead
   const [newOrg] = await db.insert(organizations).values({
     name: lead.companyName,
     slug,
@@ -60,6 +60,10 @@ export async function POST(
     tpaOrgId,
     contactEmail: lead.contactEmail,
     contactPhone: lead.contactPhone,
+    address: lead.address,
+    city: lead.city,
+    state: lead.state,
+    zip: lead.zip,
   }).returning();
 
   // Update lead: mark as converted

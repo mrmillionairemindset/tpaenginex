@@ -4,7 +4,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { OrdersTable } from '@/components/orders/orders-table';
+import { OrdersViewToggle } from '@/components/orders/orders-view-toggle';
 
 export default async function OrdersPage() {
   const user = await getCurrentUser();
@@ -37,7 +37,7 @@ export default async function OrdersPage() {
       </PageHeader>
 
       <div className="mt-6">
-        <OrdersTable userRole={user.role || ''} />
+        <OrdersViewToggle userRole={user.role || ''} />
       </div>
     </div>
   );

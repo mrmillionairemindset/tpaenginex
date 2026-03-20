@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Dialog,
@@ -16,6 +17,13 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -33,7 +41,9 @@ interface Lead {
   companyName: string;
   contactName: string;
   stage: LeadStage;
-  estimatedValueCents: number;
+  city: string | null;
+  state: string | null;
+  need: string | null;
   lastContactedAt: string | null;
   nextFollowUpAt: string | null;
   owner: string | null;
@@ -49,12 +59,14 @@ const stageStyles: Record<LeadStage, { className: string; label: string }> = {
   closed_lost: { className: 'bg-red-100 text-red-800', label: 'Closed Lost' },
 };
 
-function formatCentsToDollars(cents: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(cents / 100);
-}
+const US_STATES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
+  'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY',
+  'DC',
+];
 
 export function LeadsTable() {
   const router = useRouter();
@@ -68,7 +80,13 @@ export function LeadsTable() {
     contactName: '',
     contactEmail: '',
     contactPhone: '',
-    estimatedValueCents: '',
+    source: '',
+    need: '',
+    address: '',
+    city: '',
+    state: '',
+    zip: '',
+    employeeCount: '',
   });
 
   const fetchLeads = async () => {
@@ -89,6 +107,22 @@ export function LeadsTable() {
     fetchLeads();
   }, []);
 
+  const resetForm = () => {
+    setFormData({
+      companyName: '',
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
+      source: '',
+      need: '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      employeeCount: '',
+    });
+  };
+
   const handleAddLead = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -99,11 +133,17 @@ export function LeadsTable() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           companyName: formData.companyName,
-          contactName: formData.contactName,
+          contactName: formData.contactName || undefined,
           contactEmail: formData.contactEmail || undefined,
           contactPhone: formData.contactPhone || undefined,
-          estimatedValueCents: formData.estimatedValueCents
-            ? Math.round(parseFloat(formData.estimatedValueCents) * 100)
+          source: formData.source || undefined,
+          need: formData.need || undefined,
+          address: formData.address || undefined,
+          city: formData.city || undefined,
+          state: formData.state || undefined,
+          zip: formData.zip || undefined,
+          employeeCount: formData.employeeCount
+            ? parseInt(formData.employeeCount, 10)
             : undefined,
         }),
       });
@@ -114,13 +154,7 @@ export function LeadsTable() {
           description: `${formData.companyName} has been added to the pipeline`,
         });
         setShowAddDialog(false);
-        setFormData({
-          companyName: '',
-          contactName: '',
-          contactEmail: '',
-          contactPhone: '',
-          estimatedValueCents: '',
-        });
+        resetForm();
         fetchLeads();
       } else {
         const error = await response.json();
@@ -162,10 +196,21 @@ export function LeadsTable() {
       },
     },
     {
-      header: 'Est. Value',
+      header: 'City / State',
+      accessor: (lead: Lead) => {
+        if (lead.city && lead.state) return `${lead.city}, ${lead.state}`;
+        if (lead.city) return lead.city;
+        if (lead.state) return lead.state;
+        return '-';
+      },
+    },
+    {
+      header: 'Need',
       accessor: (lead: Lead) =>
-        lead.estimatedValueCents
-          ? formatCentsToDollars(lead.estimatedValueCents)
+        lead.need
+          ? lead.need.length > 50
+            ? lead.need.substring(0, 50) + '...'
+            : lead.need
           : '-',
     },
     {
@@ -206,7 +251,7 @@ export function LeadsTable() {
       />
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Lead</DialogTitle>
             <DialogDescription>
@@ -229,12 +274,9 @@ export function LeadsTable() {
                 />
               </div>
               <div>
-                <Label htmlFor="contactName">
-                  Contact Name <span className="text-red-500">*</span>
-                </Label>
+                <Label htmlFor="contactName">Contact Name</Label>
                 <Input
                   id="contactName"
-                  required
                   value={formData.contactName}
                   onChange={(e) =>
                     setFormData({ ...formData, contactName: e.target.value })
@@ -264,19 +306,98 @@ export function LeadsTable() {
                 />
               </div>
               <div>
-                <Label htmlFor="estimatedValue">Estimated Value ($)</Label>
-                <Input
-                  id="estimatedValue"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={formData.estimatedValueCents}
+                <Label htmlFor="source">Source</Label>
+                <Select
+                  value={formData.source}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, source: val })
+                  }
+                >
+                  <SelectTrigger id="source">
+                    <SelectValue placeholder="Select source..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Referral">Referral</SelectItem>
+                    <SelectItem value="Website">Website</SelectItem>
+                    <SelectItem value="Cold Call">Cold Call</SelectItem>
+                    <SelectItem value="Trade Show">Trade Show</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="need">Need</Label>
+                <Textarea
+                  id="need"
+                  rows={3}
+                  placeholder="e.g., Random drug testing program for 50 employees"
+                  value={formData.need}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      estimatedValueCents: e.target.value,
-                    })
+                    setFormData({ ...formData, need: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="state">State</Label>
+                  <Select
+                    value={formData.state}
+                    onValueChange={(val) =>
+                      setFormData({ ...formData, state: val })
+                    }
+                  >
+                    <SelectTrigger id="state">
+                      <SelectValue placeholder="ST" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {US_STATES.map((st) => (
+                        <SelectItem key={st} value={st}>
+                          {st}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="zip">ZIP</Label>
+                  <Input
+                    id="zip"
+                    value={formData.zip}
+                    onChange={(e) =>
+                      setFormData({ ...formData, zip: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="employeeCount">Employee Count</Label>
+                <Input
+                  id="employeeCount"
+                  type="number"
+                  min="0"
+                  placeholder="Number of employees"
+                  value={formData.employeeCount}
+                  onChange={(e) =>
+                    setFormData({ ...formData, employeeCount: e.target.value })
                   }
                 />
               </div>

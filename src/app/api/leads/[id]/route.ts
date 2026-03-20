@@ -10,13 +10,19 @@ export const dynamic = 'force-dynamic';
 
 const updateLeadSchema = z.object({
   stage: z.enum(['new_lead', 'outreach_sent', 'proposal_sent', 'follow_up', 'contract_sent', 'closed_won', 'closed_lost']).optional(),
+  companyName: z.string().optional(),
   contactName: z.string().optional(),
-  contactEmail: z.string().email().optional(),
-  contactPhone: z.string().optional(),
-  notes: z.string().optional(),
-  estimatedValue: z.number().int().optional(),
+  contactEmail: z.string().email().optional().nullable(),
+  contactPhone: z.string().optional().nullable(),
+  need: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  city: z.string().max(120).optional().nullable(),
+  state: z.string().max(2).optional().nullable(),
+  zip: z.string().max(10).optional().nullable(),
+  employeeCount: z.number().int().optional().nullable(),
+  notes: z.string().optional().nullable(),
   lastContactedAt: z.string().datetime().optional(),
-  nextFollowUpAt: z.string().datetime().optional(),
+  nextFollowUpAt: z.string().datetime().optional().nullable(),
   ownedBy: z.string().uuid().optional(),
 });
 
@@ -87,13 +93,21 @@ export async function PATCH(
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
 
   if (data.stage !== undefined) updateData.stage = data.stage;
+  if (data.companyName !== undefined) updateData.companyName = data.companyName;
   if (data.contactName !== undefined) updateData.contactName = data.contactName;
   if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail;
   if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone;
+  if (data.need !== undefined) updateData.need = data.need;
+  if (data.address !== undefined) updateData.address = data.address;
+  if (data.city !== undefined) updateData.city = data.city;
+  if (data.state !== undefined) updateData.state = data.state;
+  if (data.zip !== undefined) updateData.zip = data.zip;
+  if (data.employeeCount !== undefined) updateData.employeeCount = data.employeeCount;
   if (data.notes !== undefined) updateData.notes = data.notes;
-  if (data.estimatedValue !== undefined) updateData.estimatedValue = data.estimatedValue;
   if (data.lastContactedAt !== undefined) updateData.lastContactedAt = new Date(data.lastContactedAt);
-  if (data.nextFollowUpAt !== undefined) updateData.nextFollowUpAt = new Date(data.nextFollowUpAt);
+  if (data.nextFollowUpAt !== undefined) {
+    updateData.nextFollowUpAt = data.nextFollowUpAt ? new Date(data.nextFollowUpAt) : null;
+  }
   if (data.ownedBy !== undefined) updateData.ownedBy = data.ownedBy;
 
   await db.update(leads).set(updateData).where(eq(leads.id, id));
