@@ -52,7 +52,7 @@ export function DashboardStats({ userRole }: DashboardStatsProps) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-32 rounded-lg border bg-white animate-pulse" />
+          <div key={i} className="h-32 rounded-lg border bg-card animate-pulse" />
         ))}
       </div>
     );

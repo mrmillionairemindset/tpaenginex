@@ -3,37 +3,15 @@
 @tailwind utilities;
 
 @layer base {
-  /* Dark-first design system matching TPAEngineX brand */
-  :root {
-    --background: 220 20% 4%;           /* #0B0F14 */
-    --foreground: 0 0% 100%;            /* #FFFFFF */
-    --card: 222 47% 11%;                /* #111827 */
-    --card-foreground: 0 0% 100%;       /* #FFFFFF */
-    --popover: 217 33% 10%;             /* #0F172A */
-    --popover-foreground: 0 0% 100%;    /* #FFFFFF */
-    --primary: 217 92% 60%;             /* #3B82F6 */
-    --primary-foreground: 0 0% 100%;    /* #FFFFFF */
-    --secondary: 217 33% 10%;           /* #0F172A */
-    --secondary-foreground: 214 32% 78%;/* #94A3B8 */
-    --muted: 217 33% 10%;              /* #0F172A */
-    --muted-foreground: 215 16% 47%;   /* #64748B */
-    --accent: 258 90% 66%;             /* #8B5CF6 */
-    --accent-foreground: 0 0% 100%;    /* #FFFFFF */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 217 24% 18%;             /* subtle border on dark */
-    --input: 217 24% 18%;
-    --ring: 217 92% 60%;               /* #3B82F6 */
-    --radius: 0.5rem;
-    --chart-1: 217 92% 60%;
-    --chart-2: 258 90% 66%;
-    --chart-3: 214 32% 78%;
-    --chart-4: 173 58% 39%;
-    --chart-5: 43 74% 66%;
-  }
+  /*
+   * TPAEngineX Design System
+   * Background: #0B0F14 | Panels: #0F172A | Cards: #111827
+   * Primary: #3B82F6 | Accent: #8B5CF6
+   * Text: #FFFFFF | Secondary: #94A3B8 | Muted: #64748B
+   */
 
-  /* Light mode override (if toggled) */
-  .light {
+  /* Light mode (fallback) */
+  :root {
     --background: 0 0% 100%;
     --foreground: 220 20% 4%;
     --card: 0 0% 100%;
@@ -53,9 +31,38 @@
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 217 92% 60%;
+    --radius: 0.5rem;
     --chart-1: 217 92% 60%;
     --chart-2: 258 90% 66%;
     --chart-3: 220 20% 17%;
+    --chart-4: 173 58% 39%;
+    --chart-5: 43 74% 66%;
+  }
+
+  /* Dark mode (default) — exact brand spec */
+  .dark {
+    --background: 220 20% 4%;           /* #0B0F14 */
+    --foreground: 0 0% 100%;            /* #FFFFFF */
+    --card: 222 47% 11%;                /* #111827 */
+    --card-foreground: 0 0% 100%;       /* #FFFFFF */
+    --popover: 217 33% 10%;             /* #0F172A */
+    --popover-foreground: 0 0% 100%;    /* #FFFFFF */
+    --primary: 217 92% 60%;             /* #3B82F6 */
+    --primary-foreground: 0 0% 100%;    /* #FFFFFF */
+    --secondary: 217 33% 10%;           /* #0F172A */
+    --secondary-foreground: 214 32% 78%;/* #94A3B8 */
+    --muted: 217 33% 10%;              /* #0F172A */
+    --muted-foreground: 215 16% 47%;   /* #64748B */
+    --accent: 258 90% 66%;             /* #8B5CF6 */
+    --accent-foreground: 0 0% 100%;    /* #FFFFFF */
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 24% 18%;
+    --input: 217 24% 18%;
+    --ring: 217 92% 60%;               /* #3B82F6 */
+    --chart-1: 217 92% 60%;
+    --chart-2: 258 90% 66%;
+    --chart-3: 214 32% 78%;
     --chart-4: 173 58% 39%;
     --chart-5: 43 74% 66%;
   }
