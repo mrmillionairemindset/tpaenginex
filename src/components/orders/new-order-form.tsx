@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { InfoIcon } from 'lucide-react';
+
+interface ClientOrg {
+  id: string;
+  name: string;
+}
 
 interface Location {
   id: string;
@@ -36,6 +38,8 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [clients, setClients] = useState<ClientOrg[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [locations, setLocations] = useState<Location[]>([]);
   const [collectors, setCollectors] = useState<Collector[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>('');
@@ -66,25 +70,21 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
   });
 
   useEffect(() => {
-    // Fetch user's organization locations
-    const fetchLocations = async () => {
-      if (!orgId) return;
-
-      try {
-        const response = await fetch(`/api/organizations/${orgId}/locations`);
-        if (response.ok) {
-          const data = await response.json();
-          setLocations(data.locations || []);
-        }
-      } catch (error) {
-        console.error('Failed to fetch locations:', error);
-      }
-    };
-
-    fetchLocations();
-
-    // Fetch collectors for TPA users
+    // Fetch clients for TPA users
     if (isTpaUser) {
+      const fetchClients = async () => {
+        try {
+          const response = await fetch('/api/clients');
+          if (response.ok) {
+            const data = await response.json();
+            setClients(data.clients || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch clients:', error);
+        }
+      };
+      fetchClients();
+
       const fetchCollectors = async () => {
         try {
           const response = await fetch('/api/collectors');
@@ -98,40 +98,34 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
       };
       fetchCollectors();
     }
-  }, [orgId, isTpaUser]);
+  }, [isTpaUser]);
 
-  const handleLocationSelect = (locationId: string) => {
-    if (locationId === 'custom') {
-      setUseCustomLocation(true);
+  // Fetch locations when selected client changes
+  useEffect(() => {
+    if (!selectedClientId) {
+      setLocations([]);
       setSelectedLocationId('');
-      setFormData({ ...formData, jobsiteLocation: '' });
-    } else {
       setUseCustomLocation(false);
-      setSelectedLocationId(locationId);
-      const location = locations.find(loc => loc.id === locationId);
-      if (location) {
-        // Build location string, only including fields that have values
-        const parts = [location.name];
-
-        if (location.address || location.city || location.state || location.zip) {
-          const addressParts = [];
-          if (location.address) addressParts.push(location.address);
-          if (location.city) addressParts.push(location.city);
-          if (location.state) addressParts.push(location.state);
-          if (location.zip) addressParts.push(location.zip);
-
-          if (addressParts.length > 0) {
-            parts.push(addressParts.join(', '));
-          }
-        }
-
-        setFormData({
-          ...formData,
-          jobsiteLocation: parts.join(' - '),
-        });
-      }
+      return;
     }
-  };
+
+    const fetchClientLocations = async () => {
+      try {
+        const response = await fetch(`/api/clients/${selectedClientId}/locations`);
+        if (response.ok) {
+          const data = await response.json();
+          setLocations(data.locations || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch client locations:', error);
+      }
+    };
+    fetchClientLocations();
+    // Reset location selection when client changes
+    setSelectedLocationId('');
+    setUseCustomLocation(false);
+    setFormData(prev => ({ ...prev, jobsiteLocation: '' }));
+  }, [selectedClientId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,6 +152,7 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
             state: formData.state,
             zip: formData.zip,
           },
+          clientOrgId: selectedClientId || undefined,
           testType: formData.testTypes.join(', '),
           serviceType: formData.serviceType,
           isDOT: formData.isDOT,
@@ -200,6 +195,81 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
   return (
     <form onSubmit={handleSubmit}>
       <Card className="p-6 space-y-6">
+        {/* Client / Employer Selection */}
+        {isTpaUser && clients.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Client / Employer</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="clientOrg">Client <span className="text-red-500">*</span></Label>
+                <select
+                  id="clientOrg"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  required
+                  value={selectedClientId}
+                  onChange={(e) => setSelectedClientId(e.target.value)}
+                >
+                  <option value="">Select a client...</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="clientLocation">Location</Label>
+                {selectedClientId && locations.length > 0 ? (
+                  <select
+                    id="clientLocation"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    value={selectedLocationId || (useCustomLocation ? 'custom' : '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'custom') {
+                        setUseCustomLocation(true);
+                        setSelectedLocationId('');
+                        setFormData(prev => ({ ...prev, jobsiteLocation: '' }));
+                      } else {
+                        setUseCustomLocation(false);
+                        setSelectedLocationId(val);
+                        const loc = locations.find(l => l.id === val);
+                        if (loc) {
+                          const parts = [loc.name];
+                          const addr = [loc.address, loc.city, loc.state, loc.zip].filter(Boolean).join(', ');
+                          if (addr) parts.push(addr);
+                          setFormData(prev => ({ ...prev, jobsiteLocation: parts.join(' - ') }));
+                        }
+                      }
+                    }}
+                  >
+                    <option value="">Select a location...</option>
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.name} — {loc.city}, {loc.state}
+                      </option>
+                    ))}
+                    <option value="custom">Other (Enter manually)</option>
+                  </select>
+                ) : selectedClientId ? (
+                  <p className="text-sm text-muted-foreground mt-2">No locations for this client. Enter jobsite below or add locations on the client page.</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-2">Select a client first</p>
+                )}
+                {useCustomLocation && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Enter location manually..."
+                    value={formData.jobsiteLocation}
+                    onChange={(e) => setFormData({ ...formData, jobsiteLocation: e.target.value })}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div>
           <h3 className="text-lg font-semibold mb-4">Candidate Information</h3>
           <div className="grid gap-4 md:grid-cols-2">
@@ -543,51 +613,10 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
               </div>
             )}
 
-            <div>
-              <div className="flex items-center gap-2">
+            {/* Jobsite Location — only show manual entry if no client/location selected above */}
+            {(!isTpaUser || clients.length === 0) && (
+              <div>
                 <Label htmlFor="jobsiteLocation">Jobsite Location <span className="text-red-500">*</span></Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Where the candidate will be working</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-
-              {locations.length > 0 ? (
-                <>
-                  <Select
-                    value={selectedLocationId || (useCustomLocation ? 'custom' : '')}
-                    onValueChange={handleLocationSelect}
-                  >
-                    <SelectTrigger id="jobsiteLocation">
-                      <SelectValue placeholder="Select a location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map((location) => (
-                        <SelectItem key={location.id} value={location.id}>
-                          {location.name}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom">Other (Enter manually)</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {useCustomLocation && (
-                    <Input
-                      className="mt-2"
-                      required
-                      placeholder="e.g., Main Office - 123 Business St, City, State"
-                      value={formData.jobsiteLocation}
-                      onChange={(e) => setFormData({ ...formData, jobsiteLocation: e.target.value })}
-                    />
-                  )}
-                </>
-              ) : (
                 <Input
                   id="jobsiteLocation"
                   required
@@ -595,8 +624,8 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
                   value={formData.jobsiteLocation}
                   onChange={(e) => setFormData({ ...formData, jobsiteLocation: e.target.value })}
                 />
-              )}
-            </div>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="notes">Notes</Label>

@@ -246,6 +246,7 @@ export const orders = pgTable("orders", {
   id: uuid("id").defaultRandom().primaryKey(),
   orgId: uuid("org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
   tpaOrgId: uuid("tpa_org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
+  clientOrgId: uuid("client_org_id").references(() => organizations.id),
   candidateId: uuid("candidate_id").references(() => candidates.id, { onDelete: "restrict" }).notNull(),
   collectorId: uuid("collector_id").references(() => collectors.id),
   eventId: uuid("event_id"),  // FK added after events table definition via relations

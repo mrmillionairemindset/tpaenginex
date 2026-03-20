@@ -30,6 +30,7 @@ const createOrderSchema = z.object({
     state: z.string().length(2, "State must be 2 characters"),
     zip: z.string().min(5, "ZIP code is required"),
   }).optional(),
+  clientOrgId: z.string().uuid().optional(),
   testType: z.string().min(1, "Test type is required"),
   serviceType: z.enum(['pre_employment', 'random', 'post_accident', 'reasonable_suspicion', 'physical', 'other', 'drug_screen']).default('drug_screen'),
   isDOT: z.boolean().default(false),
@@ -200,8 +201,9 @@ export const POST = withAuth(async (req, user) => {
 
   // Create order with TPA scope
   const [newOrder] = await db.insert(orders).values({
-    orgId: user.organization!.id,
+    orgId: data.clientOrgId || user.organization!.id,
     tpaOrgId,
+    clientOrgId: data.clientOrgId || null,
     candidateId,
     orderNumber,
     testType: data.testType,
