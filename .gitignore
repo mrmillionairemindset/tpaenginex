@@ -41,3 +41,5 @@ next-env.d.ts
 /modules/
 claude.md
 *.docx
+import.env
+*.env
