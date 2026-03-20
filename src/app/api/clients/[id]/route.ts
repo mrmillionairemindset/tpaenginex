@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { organizations, orders, organizationMembers, users } from '@/db/schema';
+import { organizations, orders, organizationMembers, events, documents, notifications, serviceRequests } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq, and, desc, count } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/clients/[id] — get client org detail with orders, members, stats
+// GET /api/clients/[id] — get client org detail with orders, members, events, docs, comms, requests
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -52,17 +52,69 @@ export async function GET(
     },
   });
 
-  // Fetch recent orders
+  // Fetch recent orders with documents
   const recentOrders = await db.query.orders.findMany({
     where: eq(orders.orgId, id),
     with: {
       candidate: {
         columns: { firstName: true, lastName: true },
       },
+      documents: {
+        columns: { id: true, fileName: true, kind: true, createdAt: true },
+      },
     },
     orderBy: [desc(orders.createdAt)],
     limit: 20,
   });
+
+  // Fetch events for this client
+  const clientEvents = await db.query.events.findMany({
+    where: eq(events.clientOrgId, id),
+    with: {
+      collector: {
+        columns: { id: true, firstName: true, lastName: true },
+      },
+    },
+    orderBy: [desc(events.scheduledDate)],
+    limit: 10,
+  });
+
+  // Collect all documents across this client's orders
+  const allDocuments = recentOrders.flatMap(order =>
+    (order.documents || []).map(doc => ({
+      ...doc,
+      orderNumber: order.orderNumber,
+      orderId: order.id,
+    }))
+  ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // Fetch notifications/communications for this client's users
+  const memberUserIds = members.map(m => m.user.id);
+  let communications: any[] = [];
+  if (memberUserIds.length > 0) {
+    const allNotifications = await db.query.notifications.findMany({
+      where: tpaOrgId ? eq(notifications.tpaOrgId, tpaOrgId) : undefined,
+      orderBy: [desc(notifications.createdAt)],
+      limit: 50,
+    });
+    // Filter to notifications related to this client's orders
+    const clientOrderIds = recentOrders.map(o => o.id);
+    communications = allNotifications.filter(
+      n => n.orderId && clientOrderIds.includes(n.orderId)
+    ).slice(0, 20);
+  }
+
+  // Fetch service requests from this client
+  let clientServiceRequests: any[] = [];
+  try {
+    clientServiceRequests = await db.query.serviceRequests.findMany({
+      where: eq(serviceRequests.clientOrgId, id),
+      orderBy: [desc(serviceRequests.createdAt)],
+      limit: 10,
+    });
+  } catch {
+    // Table may not exist yet if migration hasn't run
+  }
 
   // Count stats
   const [totalOrders] = await db.select({ count: count() }).from(orders).where(eq(orders.orgId, id));
@@ -82,11 +134,17 @@ export async function GET(
       user: m.user,
     })),
     recentOrders,
+    events: clientEvents,
+    documents: allDocuments,
+    communications,
+    serviceRequests: clientServiceRequests,
     stats: {
       totalOrders: totalOrders?.count || 0,
       openOrders: openOrders?.count || 0,
       completedOrders: completedOrders?.count || 0,
       totalUsers: members.length,
+      totalEvents: clientEvents.length,
+      totalDocuments: allDocuments.length,
     },
   });
 }

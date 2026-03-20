@@ -8,7 +8,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/use-toast';
-import { Building2, Users, FileText, UserPlus, AlertCircle, MapPin, Mail, Phone } from 'lucide-react';
+import { Building2, Users, FileText, UserPlus, AlertCircle, MapPin, Mail, Phone, CalendarDays, FileDown, Bell, ClipboardList } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
@@ -105,7 +105,7 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
     );
   }
 
-  const { client, members, recentOrders, stats } = data;
+  const { client, members, recentOrders, events: clientEvents, documents: clientDocuments, communications, serviceRequests, stats } = data;
 
   return (
     <div className="space-y-6">
@@ -317,6 +317,165 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">No orders yet for this client.</p>
+        )}
+      </Card>
+
+      {/* Service Events */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Service Events ({clientEvents?.length || 0})</h2>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => router.push('/events/new')}
+          >
+            New Event
+          </Button>
+        </div>
+
+        {clientEvents && clientEvents.length > 0 ? (
+          <div className="space-y-2">
+            {clientEvents.map((event: any) => (
+              <div
+                key={event.id}
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
+                onClick={() => router.push(`/events/${event.id}`)}
+              >
+                <div>
+                  <p className="font-medium text-sm">{event.eventNumber}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {event.serviceType?.replace(/_/g, ' ')} &middot; {format(new Date(event.scheduledDate), 'MMM d, yyyy')}
+                    {event.collector && ` &middot; ${event.collector.firstName} ${event.collector.lastName}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium">
+                    <span className="text-green-500">{event.totalCompleted}</span>
+                    /{event.totalOrdered}
+                    {event.totalPending > 0 && <span className="text-amber-500 ml-1">({event.totalPending} pending)</span>}
+                  </span>
+                  <StatusBadge status={event.status} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No events yet for this client.</p>
+        )}
+      </Card>
+
+      {/* Documents */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FileDown className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">Documents ({stats.totalDocuments || 0})</h2>
+        </div>
+
+        {clientDocuments && clientDocuments.length > 0 ? (
+          <div className="space-y-2">
+            {clientDocuments.map((doc: any) => (
+              <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <p className="font-medium text-sm">{doc.fileName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    <Badge variant="secondary" className="text-xs mr-2">{doc.kind}</Badge>
+                    Order {doc.orderNumber} &middot; {format(new Date(doc.createdAt), 'MMM d, yyyy')}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(`/api/files/${doc.id}`);
+                      if (res.ok) {
+                        const { url } = await res.json();
+                        window.open(url, '_blank');
+                      }
+                    } catch {
+                      toast({ title: 'Error', description: 'Failed to download', variant: 'destructive' });
+                    }
+                  }}
+                >
+                  Download
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No documents uploaded for this client yet.</p>
+        )}
+      </Card>
+
+      {/* Service Requests */}
+      {serviceRequests && serviceRequests.length > 0 && (
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ClipboardList className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Service Requests ({serviceRequests.length})</h2>
+          </div>
+
+          <div className="space-y-2">
+            {serviceRequests.map((req: any) => (
+              <div key={req.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <p className="font-medium text-sm">
+                    {req.donorFirstName} {req.donorLastName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {req.serviceType?.replace(/_/g, ' ')} &middot; {format(new Date(req.createdAt), 'MMM d, yyyy')}
+                  </p>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className={
+                    req.status === 'submitted' ? 'bg-amber-500/10 text-amber-500'
+                    : req.status === 'accepted' ? 'bg-primary/10 text-primary'
+                    : req.status === 'converted' ? 'bg-green-500/10 text-green-500'
+                    : req.status === 'declined' ? 'bg-red-500/10 text-red-500'
+                    : ''
+                  }
+                >
+                  {req.status}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Communications */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Bell className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">Communications ({communications?.length || 0})</h2>
+        </div>
+
+        {communications && communications.length > 0 ? (
+          <div className="space-y-2">
+            {communications.map((comm: any) => (
+              <div key={comm.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 flex-shrink-0 mt-0.5">
+                  <Bell className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{comm.title}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">{comm.message}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatDistanceToNow(new Date(comm.createdAt), { addSuffix: true })}
+                  </p>
+                </div>
+                <Badge variant="secondary" className="text-xs flex-shrink-0">
+                  {comm.type?.replace(/_/g, ' ')}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No communications logged yet.</p>
         )}
       </Card>
     </div>
