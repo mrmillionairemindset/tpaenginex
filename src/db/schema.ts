@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, timestamp, boolean, integer, jsonb, uuid, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, timestamp, boolean, integer, jsonb, uuid, pgEnum, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // ============================================================================
@@ -543,6 +543,20 @@ export const orderChecklists = pgTable("order_checklists", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Client Checklist Templates — per-client overrides for service type checklists
+export const clientChecklistTemplates = pgTable("client_checklist_templates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id).notNull(),
+  clientOrgId: uuid("client_org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
+  serviceType: varchar("service_type", { length: 50 }).notNull(),
+  items: jsonb("items").$type<string[]>().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueClientServiceType: uniqueIndex("uq_client_checklist_client_service").on(table.clientOrgId, table.serviceType),
+}));
+
 // ============================================================================
 // RELATIONS
 // ============================================================================
@@ -569,6 +583,8 @@ export const organizationsRelations = relations(organizations, ({ one, many }) =
   }),
   clientDocumentsAsTpa: many(clientDocuments, { relationName: "tpaClientDocuments" }),
   clientDocumentsAsClient: many(clientDocuments, { relationName: "clientOrgClientDocuments" }),
+  clientChecklistTemplatesAsTpa: many(clientChecklistTemplates, { relationName: "tpaChecklistTemplates" }),
+  clientChecklistTemplatesAsClient: many(clientChecklistTemplates, { relationName: "clientOrgChecklistTemplates" }),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -870,6 +886,19 @@ export const clientDocumentsRelations = relations(clientDocuments, ({ one }) => 
   }),
 }));
 
+export const clientChecklistTemplatesRelations = relations(clientChecklistTemplates, ({ one }) => ({
+  tpaOrg: one(organizations, {
+    fields: [clientChecklistTemplates.tpaOrgId],
+    references: [organizations.id],
+    relationName: "tpaChecklistTemplates",
+  }),
+  clientOrg: one(organizations, {
+    fields: [clientChecklistTemplates.clientOrgId],
+    references: [organizations.id],
+    relationName: "clientOrgChecklistTemplates",
+  }),
+}));
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
@@ -899,3 +928,4 @@ export type TpaSettingsType = typeof tpaSettings.$inferSelect;
 export type OrderChecklistType = typeof orderChecklists.$inferSelect;
 export type ServiceRequestType = typeof serviceRequests.$inferSelect;
 export type ClientDocumentType = typeof clientDocuments.$inferSelect;
+export type ClientChecklistTemplateType = typeof clientChecklistTemplates.$inferSelect;

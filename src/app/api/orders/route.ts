@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { orders, candidates, organizations, orderChecklists } from '@/db/schema';
+import { orders, candidates, organizations, orderChecklists, clientChecklistTemplates } from '@/db/schema';
 import { withAuth } from '@/auth/api-middleware';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
@@ -222,7 +222,25 @@ export const POST = withAuth(async (req, user) => {
   }).returning();
 
   // Auto-populate checklist from service type template
-  const checklistItems = SERVICE_TYPE_CHECKLISTS[data.serviceType] || [];
+  // Check for client-specific checklist template override
+  let checklistItems = SERVICE_TYPE_CHECKLISTS[data.serviceType] || [];
+
+  try {
+    const clientTemplate = await db.query.clientChecklistTemplates.findFirst({
+      where: and(
+        eq(clientChecklistTemplates.clientOrgId, newOrder.orgId),
+        eq(clientChecklistTemplates.serviceType, data.serviceType),
+        eq(clientChecklistTemplates.isActive, true),
+      ),
+    });
+
+    if (clientTemplate) {
+      checklistItems = clientTemplate.items;
+    }
+  } catch {
+    // Table may not exist yet if migration hasn't run — use defaults
+  }
+
   if (checklistItems.length > 0) {
     await db.insert(orderChecklists).values(
       checklistItems.map((item, i) => ({

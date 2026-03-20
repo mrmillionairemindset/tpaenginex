@@ -8,9 +8,10 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/use-toast';
-import { Building2, Users, FileText, UserPlus, AlertCircle, MapPin, Mail, Phone, CalendarDays, FileDown, Bell, ClipboardList, Upload, Archive, FolderOpen } from 'lucide-react';
+import { Building2, Users, FileText, UserPlus, AlertCircle, MapPin, Mail, Phone, CalendarDays, FileDown, Bell, ClipboardList, Upload, Archive, FolderOpen, CheckSquare, Plus, Trash2, RotateCcw } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { SERVICE_TYPE_CHECKLISTS } from '@/lib/service-templates';
 
 interface ClientDetailProps {
   clientOrgId: string;
@@ -52,6 +53,11 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
   const [docFile, setDocFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Checklist template editor state
+  const [editingServiceType, setEditingServiceType] = useState<string | null>(null);
+  const [editItems, setEditItems] = useState<string[]>([]);
+  const [savingChecklist, setSavingChecklist] = useState(false);
 
   const isAdmin = userRole === 'tpa_admin' || userRole === 'platform_admin';
   const canUploadDocs = userRole === 'tpa_admin' || userRole === 'tpa_staff' || userRole === 'platform_admin';
@@ -183,6 +189,96 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
     }
   };
 
+  const SERVICE_TYPE_LABELS: Record<string, string> = {
+    pre_employment: 'Pre-Employment',
+    random: 'Random',
+    post_accident: 'Post-Accident',
+    reasonable_suspicion: 'Reasonable Suspicion',
+    physical: 'Physical',
+    other: 'Other',
+    drug_screen: 'Drug Screen',
+  };
+
+  const getClientTemplate = (serviceType: string) => {
+    if (!data?.checklistTemplates) return null;
+    return data.checklistTemplates.find(
+      (t: any) => t.serviceType === serviceType && t.isActive
+    );
+  };
+
+  const handleStartEditChecklist = (serviceType: string) => {
+    const clientTemplate = getClientTemplate(serviceType);
+    const items = clientTemplate
+      ? clientTemplate.items
+      : SERVICE_TYPE_CHECKLISTS[serviceType] || [];
+    setEditItems([...items]);
+    setEditingServiceType(serviceType);
+  };
+
+  const handleSaveChecklist = async () => {
+    if (!editingServiceType) return;
+    setSavingChecklist(true);
+
+    try {
+      const filteredItems = editItems.filter(item => item.trim() !== '');
+      if (filteredItems.length === 0) {
+        toast({ title: 'Error', description: 'At least one checklist item is required', variant: 'destructive' });
+        setSavingChecklist(false);
+        return;
+      }
+
+      const res = await fetch(`/api/clients/${clientOrgId}/checklist-templates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serviceType: editingServiceType,
+          items: filteredItems,
+        }),
+      });
+
+      if (res.ok) {
+        toast({ title: 'Checklist Saved', description: `Custom checklist for ${SERVICE_TYPE_LABELS[editingServiceType] || editingServiceType} has been saved.` });
+        setEditingServiceType(null);
+        setEditItems([]);
+        // Refresh data
+        const refreshRes = await fetch(`/api/clients/${clientOrgId}`);
+        if (refreshRes.ok) setData(await refreshRes.json());
+      } else {
+        const err = await res.json();
+        toast({ title: 'Error', description: err.error, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save checklist', variant: 'destructive' });
+    } finally {
+      setSavingChecklist(false);
+    }
+  };
+
+  const handleResetChecklist = async (serviceType: string) => {
+    const clientTemplate = getClientTemplate(serviceType);
+    if (!clientTemplate) return;
+
+    if (!confirm(`Reset "${SERVICE_TYPE_LABELS[serviceType] || serviceType}" to the default checklist? The custom template will be deleted.`)) return;
+
+    try {
+      const res = await fetch(`/api/clients/${clientOrgId}/checklist-templates/${clientTemplate.id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        toast({ title: 'Reset to Default', description: `${SERVICE_TYPE_LABELS[serviceType] || serviceType} checklist has been reset to default.` });
+        // Refresh data
+        const refreshRes = await fetch(`/api/clients/${clientOrgId}`);
+        if (refreshRes.ok) setData(await refreshRes.json());
+      } else {
+        const err = await res.json();
+        toast({ title: 'Error', description: err.error, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to reset checklist', variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -210,6 +306,7 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
     clientDocuments: clientDocs,
     communications,
     serviceRequests,
+    checklistTemplates,
     stats,
   } = data;
 
@@ -590,6 +687,139 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
         ) : (
           <p className="text-sm text-muted-foreground">No client documents uploaded yet. Upload contracts, SOPs, or BAAs above.</p>
         )}
+      </Card>
+
+      {/* Checklist Templates */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <CheckSquare className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">Checklist Templates</h2>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Customize the checklist items that are auto-populated when creating orders for this client. Service types without a custom template use the system defaults.
+        </p>
+
+        <div className="space-y-3">
+          {Object.keys(SERVICE_TYPE_CHECKLISTS).map(serviceType => {
+            const defaultItems = SERVICE_TYPE_CHECKLISTS[serviceType] || [];
+            const clientTemplate = getClientTemplate(serviceType);
+            const displayItems = clientTemplate ? clientTemplate.items : defaultItems;
+            const isEditing = editingServiceType === serviceType;
+
+            if (defaultItems.length === 0 && !clientTemplate) return null;
+
+            return (
+              <div key={serviceType} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium text-sm">
+                      {SERVICE_TYPE_LABELS[serviceType] || serviceType}
+                    </h3>
+                    <Badge
+                      variant="secondary"
+                      className={clientTemplate
+                        ? 'bg-primary/10 text-primary text-xs'
+                        : 'bg-gray-500/10 text-gray-500 text-xs'
+                      }
+                    >
+                      {clientTemplate ? 'Custom' : 'Using default'}
+                    </Badge>
+                  </div>
+                  {isAdmin && !isEditing && (
+                    <div className="flex items-center gap-2">
+                      {clientTemplate && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                          onClick={() => handleResetChecklist(serviceType)}
+                        >
+                          <RotateCcw className="mr-1 h-3 w-3" />
+                          Reset to Default
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs"
+                        onClick={() => handleStartEditChecklist(serviceType)}
+                      >
+                        Customize
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {isEditing ? (
+                  <div className="space-y-2 mt-3">
+                    {editItems.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground w-6 text-right">{idx + 1}.</span>
+                        <input
+                          type="text"
+                          value={item}
+                          onChange={(e) => {
+                            const updated = [...editItems];
+                            updated[idx] = e.target.value;
+                            setEditItems(updated);
+                          }}
+                          className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-500 hover:text-red-600 h-8 w-8 p-0"
+                          onClick={() => {
+                            const updated = editItems.filter((_, i) => i !== idx);
+                            setEditItems(updated);
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => setEditItems([...editItems, ''])}
+                    >
+                      <Plus className="mr-1 h-3 w-3" />
+                      Add Item
+                    </Button>
+                    <div className="flex gap-2 pt-2 border-t">
+                      <Button
+                        size="sm"
+                        disabled={savingChecklist}
+                        onClick={handleSaveChecklist}
+                      >
+                        {savingChecklist ? 'Saving...' : 'Save Custom Checklist'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => { setEditingServiceType(null); setEditItems([]); }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <ul className="space-y-1 mt-2">
+                    {displayItems.map((item: string, idx: number) => (
+                      <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="text-xs mt-0.5 opacity-50">{idx + 1}.</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </Card>
 
       {/* Order Documents */}
