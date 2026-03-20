@@ -2,7 +2,7 @@ import { ComplianceLayout } from '@/components/compliance/compliance-layout';
 
 export const metadata = {
   title: 'HIPAA Compliance | TPAEngineX',
-  description: 'HIPAA compliance information for TPAEngineX healthcare screening platform',
+  description: 'HIPAA compliance information for TPAEngineX operations and compliance platform for TPAs',
 };
 
 export default function HIPAACompliancePage() {
@@ -15,14 +15,20 @@ export default function HIPAACompliancePage() {
       <section>
         <h2>1. Overview</h2>
         <p>
-          TPAEngineX is committed to full compliance with the Health Insurance
-          Portability and Accountability Act (HIPAA) of 1996 and its implementing regulations,
-          including the Privacy Rule, Security Rule, and Breach Notification Rule.
+          TPAEngineX is designed to support HIPAA compliance and implements administrative,
+          physical, and technical safeguards aligned with HIPAA requirements, including the
+          Privacy Rule, Security Rule, and Breach Notification Rule.
         </p>
         <p>
-          As a Business Associate to healthcare providers and covered entities, we implement
-          comprehensive safeguards to protect Protected Health Information (PHI) and ensure
-          the confidentiality, integrity, and availability of electronic PHI (ePHI).
+          TPAEngineX is not a healthcare provider, laboratory, or medical service provider.
+          We provide infrastructure and coordination tools and do not perform clinical services
+          or make medical decisions.
+        </p>
+        <p>
+          TPAEngineX follows a security-first architecture designed for compliance-driven
+          environments, including healthcare, employment screening, and regulated workflows.
+          We implement comprehensive safeguards to protect Protected Health Information (PHI)
+          and ensure the confidentiality, integrity, and availability of electronic PHI (ePHI).
         </p>
       </section>
 
@@ -31,7 +37,8 @@ export default function HIPAACompliancePage() {
 
         <h3>2.1 Business Associate Status</h3>
         <p>
-          TPAEngineX operates as a Business Associate when:
+          TPAEngineX acts as a Business Associate where applicable, as defined under HIPAA,
+          when handling PHI on behalf of covered entities and other business associates. This includes:
         </p>
         <ul>
           <li>Processing screening orders containing PHI on behalf of covered entities</li>
@@ -96,7 +103,7 @@ export default function HIPAACompliancePage() {
         <h3>3.5 Contingency Planning</h3>
         <ul>
           <li><strong>Data Backup:</strong> Daily automated backups with encryption</li>
-          <li><strong>Disaster Recovery:</strong> 99.9% uptime SLA with redundant infrastructure</li>
+          <li><strong>Disaster Recovery:</strong> High-availability infrastructure with redundancy and disaster recovery capabilities</li>
           <li><strong>Emergency Mode:</strong> Procedures for operating during system failures</li>
           <li><strong>Testing:</strong> Quarterly disaster recovery drills</li>
         </ul>
@@ -123,7 +130,7 @@ export default function HIPAACompliancePage() {
 
         <h3>4.3 Device and Media Controls</h3>
         <ul>
-          <li><strong>Disposal:</strong> Secure deletion using DOD 5220.22-M standards</li>
+          <li><strong>Disposal:</strong> Secure deletion methods aligned with industry standards</li>
           <li><strong>Media Reuse:</strong> Sanitization before repurposing</li>
           <li><strong>Accountability:</strong> Tracking of all hardware containing ePHI</li>
           <li><strong>Data Backup:</strong> Encrypted backups stored in geographically dispersed locations</li>
@@ -145,7 +152,7 @@ export default function HIPAACompliancePage() {
         <ul>
           <li>Comprehensive logging of all PHI access and modifications</li>
           <li>Logs include: user ID, timestamp, action, IP address, affected records</li>
-          <li>Tamper-proof log storage with 6-year retention</li>
+          <li>Logs are protected against unauthorized modification and retained securely for 6 years</li>
           <li>Regular log review and anomaly detection</li>
         </ul>
 
@@ -162,7 +169,7 @@ export default function HIPAACompliancePage() {
           <li><strong>Encryption:</strong> TLS 1.3 with perfect forward secrecy</li>
           <li><strong>Integrity Controls:</strong> HMAC verification for all transmissions</li>
           <li><strong>VPN:</strong> Secure remote access for administrative functions</li>
-          <li><strong>Email Security:</strong> PHI never sent via unencrypted email</li>
+          <li><strong>Email Security:</strong> PHI is not transmitted via unencrypted email by default. Secure communication methods are enforced where applicable</li>
         </ul>
       </section>
 
@@ -172,15 +179,24 @@ export default function HIPAACompliancePage() {
         <h3>6.1 Minimum Necessary Standard</h3>
         <p>
           We implement role-based access controls to ensure users can only access PHI
-          necessary for their job functions:
+          necessary for their job functions. Access is controlled both by platform design and
+          by configurations set by client organizations.
         </p>
         <ul>
-          <li><strong>Employer Users:</strong> View only their organization's orders and results</li>
-          <li><strong>Provider Agents:</strong> Access assigned orders and upload results</li>
-          <li><strong>Provider Admins:</strong> Full access to manage orders and sites</li>
+          <li><strong>Client Users:</strong> View only their organization's orders and results</li>
+          <li><strong>TPA Staff:</strong> Access assigned orders, coordinate scheduling, and manage workflows</li>
+          <li><strong>TPA Records:</strong> Update results and manage documents</li>
+          <li><strong>TPA Admins:</strong> Full access to manage operations within their tenant</li>
         </ul>
 
-        <h3>6.2 Individual Rights</h3>
+        <h3>6.2 Shared Responsibility Model</h3>
+        <p>
+          TPAEngineX provides secure infrastructure, access controls, and compliance-aligned
+          systems. Clients are responsible for configuring access appropriately, obtaining
+          required authorizations, and ensuring lawful use of PHI within their organization.
+        </p>
+
+        <h3>6.3 Individual Rights</h3>
         <p>We support the following HIPAA individual rights:</p>
         <ul>
           <li><strong>Access:</strong> Request copies of their PHI within 30 days</li>
@@ -190,7 +206,7 @@ export default function HIPAACompliancePage() {
           <li><strong>Confidential Communications:</strong> Specify preferred contact methods</li>
         </ul>
 
-        <h3>6.3 Uses and Disclosures</h3>
+        <h3>6.4 Uses and Disclosures</h3>
         <p>We only use and disclose PHI for:</p>
         <ul>
           <li>Treatment, payment, and healthcare operations (TPO)</li>
@@ -253,10 +269,10 @@ export default function HIPAACompliancePage() {
         </ul>
 
         <p>
-          All subcontractors are required to:
+          All subcontractors are required to implement safeguards consistent with HIPAA
+          requirements and applicable agreements, including:
         </p>
         <ul>
-          <li>Implement appropriate safeguards</li>
           <li>Report breaches to us immediately</li>
           <li>Allow audits and compliance reviews</li>
           <li>Return or destroy PHI upon contract termination</li>
@@ -310,8 +326,9 @@ export default function HIPAACompliancePage() {
 
         <h3>Is TPAEngineX HIPAA compliant?</h3>
         <p>
-          Yes. We implement all required administrative, physical, and technical safeguards
-          and execute Business Associate Agreements with our clients.
+          TPAEngineX is designed to support HIPAA compliance. We implement administrative, physical,
+          and technical safeguards aligned with HIPAA requirements and execute Business Associate
+          Agreements with our clients where applicable.
         </p>
 
         <h3>Do I need a BAA to use TPAEngineX?</h3>
@@ -347,16 +364,13 @@ export default function HIPAACompliancePage() {
           <li><strong>Privacy Officer:</strong> <a href="mailto:privacy@tpaenginex.com">privacy@tpaenginex.com</a></li>
           <li><strong>Security Officer:</strong> <a href="mailto:security@tpaenginex.com">security@tpaenginex.com</a></li>
           <li><strong>Compliance Team:</strong> <a href="mailto:compliance@tpaenginex.com">compliance@tpaenginex.com</a></li>
-          <li><strong>General Inquiries:</strong> (888) 555-0100</li>
-          <li><strong>Incident Hotline:</strong> (888) 555-0199 (24/7)</li>
         </ul>
 
         <p><strong>Mailing Address:</strong></p>
         <p>
           TPAEngineX<br />
           Attn: Privacy Officer<br />
-          [Address Line 1]<br />
-          [City, State ZIP]
+          Little Rock, AR
         </p>
       </section>
     </ComplianceLayout>
