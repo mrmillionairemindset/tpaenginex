@@ -19,6 +19,7 @@ import {
   Target,
   Mail,
   ClipboardList,
+  Shield,
 } from 'lucide-react';
 
 interface NavItem {
@@ -101,6 +102,36 @@ const tpaNav: NavItem[] = [
   },
 ];
 
+// Platform admin navigation
+const platformNav: NavItem[] = [
+  {
+    label: 'Platform Dashboard',
+    href: '/platform',
+    icon: Shield,
+    roles: ['platform_admin'],
+  },
+  {
+    label: 'TPA Accounts',
+    href: '/platform/tenants',
+    icon: Building2,
+    roles: ['platform_admin'],
+    children: [
+      {
+        label: 'New TPA',
+        href: '/platform/tenants/new',
+        icon: Plus,
+        roles: ['platform_admin'],
+      },
+    ],
+  },
+  {
+    label: 'Settings',
+    href: '/settings',
+    icon: Settings,
+    roles: ['platform_admin'],
+  },
+];
+
 // Client portal navigation (client_admin)
 const clientNav: NavItem[] = [
   {
@@ -142,8 +173,9 @@ interface SidebarProps {
 
 export function Sidebar({ userRole, className }: SidebarProps) {
   const pathname = usePathname();
-  const isTpaUser = userRole.startsWith('tpa_') || userRole === 'platform_admin';
-  const navItems = isTpaUser ? tpaNav : clientNav;
+  const isPlatformAdmin = userRole === 'platform_admin';
+  const isTpaUser = userRole.startsWith('tpa_');
+  const navItems = isPlatformAdmin ? platformNav : isTpaUser ? tpaNav : clientNav;
 
   const filteredNav = navItems.filter((item) => item.roles.includes(userRole));
 

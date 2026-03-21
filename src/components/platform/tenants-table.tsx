@@ -11,6 +11,7 @@ interface Tenant {
   name: string;
   slug: string;
   contactEmail: string | null;
+  contactPhone: string | null;
   clientCount: number;
   userCount: number;
   createdAt: string;
@@ -42,12 +43,8 @@ export function TenantsTable() {
 
   const columns = [
     {
-      header: 'Name',
+      header: 'TPA Name',
       accessor: 'name' as const,
-    },
-    {
-      header: 'Slug',
-      accessor: 'slug' as const,
     },
     {
       header: 'Contact',
@@ -55,11 +52,11 @@ export function TenantsTable() {
     },
     {
       header: 'Clients',
-      accessor: (tenant: Tenant) => String(tenant.clientCount ?? 0),
+      accessor: (tenant: Tenant) => String(tenant.clientCount),
     },
     {
       header: 'Users',
-      accessor: (tenant: Tenant) => String(tenant.userCount ?? 0),
+      accessor: (tenant: Tenant) => String(tenant.userCount),
     },
     {
       header: 'Status',
@@ -67,7 +64,7 @@ export function TenantsTable() {
         <Badge
           className={`font-medium ${
             tenant.isActive
-              ? 'bg-green-100 text-green-800'
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
               : 'bg-muted text-foreground'
           }`}
           variant="secondary"
@@ -88,8 +85,8 @@ export function TenantsTable() {
       data={tenants}
       columns={columns}
       loading={loading}
-      emptyMessage="No TPA tenants found."
-      onRowClick={(tenant) => router.push(`/organizations/${tenant.id}`)}
+      emptyMessage="No TPA accounts found. Create your first TPA to get started."
+      onRowClick={(tenant) => router.push(`/platform/tenants/${tenant.id}`)}
     />
   );
 }
