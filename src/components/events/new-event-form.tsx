@@ -30,7 +30,10 @@ export function NewEventForm() {
   const [formData, setFormData] = useState({
     clientOrgId: '',
     serviceType: 'random' as 'random' | 'post_accident' | 'reasonable_suspicion',
-    location: '',
+    locationStreet: '',
+    locationCity: '',
+    locationState: '',
+    locationZip: '',
     scheduledDate: '',
     totalOrdered: 1,
     collectorId: '',
@@ -57,11 +60,14 @@ export function NewEventForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
           clientOrgId: (formData.clientOrgId && formData.clientOrgId !== 'walk_in' && formData.clientOrgId !== 'other') ? formData.clientOrgId : undefined,
           clientLabel: formData.clientOrgId === 'walk_in' ? 'Walk-In' : formData.clientOrgId === 'other' ? clientLabel : undefined,
+          serviceType: formData.serviceType,
+          location: [formData.locationStreet, formData.locationCity, formData.locationState, formData.locationZip].filter(Boolean).join(', '),
           scheduledDate: new Date(formData.scheduledDate).toISOString(),
+          totalOrdered: formData.totalOrdered,
           collectorId: formData.collectorId || undefined,
+          notes: formData.notes || undefined,
         }),
       });
 
@@ -154,14 +160,45 @@ export function NewEventForm() {
         </div>
 
         <div>
-          <Label htmlFor="location">Collection Location / Address <span className="text-red-500">*</span></Label>
-          <Input
-            id="location"
-            required
-            placeholder="Full address where collector will go"
-            value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-          />
+          <Label>Collection Location / Address <span className="text-red-500">*</span></Label>
+          <div className="grid gap-4 md:grid-cols-2 mt-2">
+            <div className="md:col-span-2">
+              <Input
+                id="locationStreet"
+                required
+                placeholder="Street address"
+                value={formData.locationStreet}
+                onChange={(e) => setFormData({ ...formData, locationStreet: e.target.value })}
+              />
+            </div>
+            <div>
+              <Input
+                id="locationCity"
+                required
+                placeholder="City"
+                value={formData.locationCity}
+                onChange={(e) => setFormData({ ...formData, locationCity: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                id="locationState"
+                required
+                placeholder="State"
+                maxLength={2}
+                value={formData.locationState}
+                onChange={(e) => setFormData({ ...formData, locationState: e.target.value.toUpperCase() })}
+              />
+              <Input
+                id="locationZip"
+                required
+                placeholder="ZIP"
+                maxLength={5}
+                value={formData.locationZip}
+                onChange={(e) => setFormData({ ...formData, locationZip: e.target.value.replace(/\D/g, '').slice(0, 5) })}
+              />
+            </div>
+          </div>
         </div>
 
         <div>
