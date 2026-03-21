@@ -641,6 +641,11 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     fields: [orders.orgId],
     references: [organizations.id],
   }),
+  clientOrg: one(organizations, {
+    fields: [orders.clientOrgId],
+    references: [organizations.id],
+    relationName: "clientOrders",
+  }),
   candidate: one(candidates, {
     fields: [orders.candidateId],
     references: [candidates.id],

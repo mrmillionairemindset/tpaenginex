@@ -93,6 +93,12 @@ export const GET = withAuth(async (req, user) => {
           type: true,
         },
       },
+      clientOrg: {
+        columns: {
+          id: true,
+          name: true,
+        },
+      },
       collector: {
         columns: {
           id: true,

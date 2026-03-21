@@ -72,6 +72,12 @@ export async function GET(
           type: true,
         },
       },
+      clientOrg: {
+        columns: {
+          id: true,
+          name: true,
+        },
+      },
       collector: {
         columns: {
           id: true,
@@ -287,6 +293,12 @@ export async function PATCH(
           id: true,
           name: true,
           type: true,
+        },
+      },
+      clientOrg: {
+        columns: {
+          id: true,
+          name: true,
         },
       },
       collector: {
