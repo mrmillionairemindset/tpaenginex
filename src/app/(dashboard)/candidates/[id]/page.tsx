@@ -32,7 +32,7 @@ export default async function CandidatePage({ params }: CandidatePageProps) {
         </Button>
       </Link>
 
-      <CandidateDetails candidateId={params.id} />
+      <CandidateDetails candidateId={params.id} userRole={user.role || ''} />
     </div>
   );
 }

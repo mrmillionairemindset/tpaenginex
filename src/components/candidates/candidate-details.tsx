@@ -6,19 +6,24 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
-import { AlertCircle, User, MapPin, FileText, ClipboardList } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { AlertCircle, User, MapPin, FileText, ClipboardList, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
 interface CandidateDetailsProps {
   candidateId: string;
+  userRole?: string;
 }
 
-export function CandidateDetails({ candidateId }: CandidateDetailsProps) {
+export function CandidateDetails({ candidateId, userRole = '' }: CandidateDetailsProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [candidate, setCandidate] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const isAdmin = userRole === 'tpa_admin' || userRole === 'platform_admin';
 
   useEffect(() => {
     async function fetchCandidate() {
@@ -70,6 +75,35 @@ export function CandidateDetails({ candidateId }: CandidateDetailsProps) {
             Added {format(new Date(candidate.createdAt), 'PPP')}
           </p>
         </div>
+        {isAdmin && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-destructive text-destructive hover:bg-destructive/10"
+            disabled={deleting}
+            onClick={async () => {
+              if (!confirm(`Delete ${candidate.firstName} ${candidate.lastName}? This cannot be undone.`)) return;
+              setDeleting(true);
+              try {
+                const res = await fetch(`/api/candidates/${candidateId}`, { method: 'DELETE' });
+                if (res.ok) {
+                  toast({ title: 'Candidate Deleted' });
+                  router.push('/candidates');
+                } else {
+                  const err = await res.json();
+                  toast({ title: 'Error', description: err.error, variant: 'destructive' });
+                }
+              } catch {
+                toast({ title: 'Error', description: 'Failed to delete candidate', variant: 'destructive' });
+              } finally {
+                setDeleting(false);
+              }
+            }}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            {deleting ? 'Deleting...' : 'Delete Candidate'}
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

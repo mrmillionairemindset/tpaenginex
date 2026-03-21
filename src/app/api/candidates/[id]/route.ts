@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { candidates } from '@/db/schema';
+import { candidates, orders } from '@/db/schema';
 import { withAuth } from '@/auth/api-middleware';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, count } from 'drizzle-orm';
 import { z } from 'zod';
 
 // Force dynamic rendering
@@ -136,4 +136,47 @@ export const PATCH = withAuth(async (req, user, context) => {
   return NextResponse.json(
     { candidate: updatedCandidate, message: 'Candidate updated successfully' }
   );
+});
+
+// ============================================================================
+// DELETE /api/candidates/[id] - Delete candidate (admin only)
+// ============================================================================
+
+export const DELETE = withAuth(async (req, user, context) => {
+  const { id } = context.params;
+
+  if (user.role !== 'tpa_admin' && user.role !== 'platform_admin') {
+    return NextResponse.json(
+      { error: 'Only admins can delete candidates' },
+      { status: 403 }
+    );
+  }
+
+  // Verify candidate exists and belongs to TPA scope
+  const candidate = await db.query.candidates.findFirst({
+    where: user.tpaOrgId
+      ? and(eq(candidates.id, id), eq(candidates.tpaOrgId, user.tpaOrgId))
+      : eq(candidates.id, id),
+  });
+
+  if (!candidate) {
+    return NextResponse.json({ error: 'Candidate not found' }, { status: 404 });
+  }
+
+  // Check for linked orders
+  const [orderCount] = await db
+    .select({ count: count() })
+    .from(orders)
+    .where(eq(orders.candidateId, id));
+
+  if (orderCount.count > 0) {
+    return NextResponse.json(
+      { error: `Cannot delete: candidate has ${orderCount.count} linked order(s). Delete the orders first.` },
+      { status: 409 }
+    );
+  }
+
+  await db.delete(candidates).where(eq(candidates.id, id));
+
+  return NextResponse.json({ message: 'Candidate deleted' });
 });
