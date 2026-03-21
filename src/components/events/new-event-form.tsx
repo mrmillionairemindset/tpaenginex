@@ -39,14 +39,10 @@ export function NewEventForm() {
   useEffect(() => {
     // Fetch client orgs and collectors
     Promise.all([
-      fetch('/api/organizations').then(r => r.ok ? r.json() : { organizations: [] }),
+      fetch('/api/clients').then(r => r.ok ? r.json() : { clients: [] }),
       fetch('/api/collectors').then(r => r.ok ? r.json() : { collectors: [] }),
-    ]).then(([orgData, collectorData]) => {
-      // Filter to client type orgs
-      const clientOrgs = (orgData.organizations || []).filter(
-        (org: any) => org.type === 'client'
-      );
-      setClients(clientOrgs);
+    ]).then(([clientData, collectorData]) => {
+      setClients(clientData.clients || []);
       setCollectors(collectorData.collectors || []);
     });
   }, []);
