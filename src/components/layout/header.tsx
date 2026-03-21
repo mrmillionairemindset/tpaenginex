@@ -148,12 +148,7 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
         </Link>
 
         <div className="flex flex-1 items-center justify-end gap-4">
-          {/* Organization Switcher — platform admin only */}
-          {user.role === 'platform_admin' && user.organization && (
-            <div className="hidden sm:block">
-              <OrganizationSwitcher currentOrg={user.organization} />
-            </div>
-          )}
+          {/* Organization Switcher removed — platform admin manages TPAs via /platform */}
 
           {/* Theme Toggle */}
           <ThemeToggle />
