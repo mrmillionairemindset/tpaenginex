@@ -26,6 +26,7 @@ export function NewEventForm() {
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<ClientOrg[]>([]);
   const [collectors, setCollectors] = useState<Collector[]>([]);
+  const [clientLabel, setClientLabel] = useState('');
   const [formData, setFormData] = useState({
     clientOrgId: '',
     serviceType: 'random' as 'random' | 'post_accident' | 'reasonable_suspicion',
@@ -57,6 +58,8 @@ export function NewEventForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          clientOrgId: (formData.clientOrgId && formData.clientOrgId !== 'walk_in' && formData.clientOrgId !== 'other') ? formData.clientOrgId : undefined,
+          clientLabel: formData.clientOrgId === 'walk_in' ? 'Walk-In' : formData.clientOrgId === 'other' ? clientLabel : undefined,
           scheduledDate: new Date(formData.scheduledDate).toISOString(),
           collectorId: formData.collectorId || undefined,
         }),
@@ -98,13 +101,27 @@ export function NewEventForm() {
             required
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
             value={formData.clientOrgId}
-            onChange={(e) => setFormData({ ...formData, clientOrgId: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, clientOrgId: e.target.value });
+              if (e.target.value !== 'other') setClientLabel('');
+            }}
           >
             <option value="">Select a client...</option>
+            <option value="walk_in">Walk-In Individual</option>
+            <option value="other">Other (Non-Client Business)</option>
             {clients.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
+          {formData.clientOrgId === 'other' && (
+            <Input
+              className="mt-2"
+              placeholder="Enter business name..."
+              required
+              value={clientLabel}
+              onChange={(e) => setClientLabel(e.target.value)}
+            />
+          )}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

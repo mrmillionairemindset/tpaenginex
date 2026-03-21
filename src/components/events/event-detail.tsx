@@ -105,7 +105,7 @@ export function EventDetail({ eventId, userRole }: EventDetailProps) {
         <div>
           <h1 className="text-2xl font-bold">{event.eventNumber}</h1>
           <p className="text-muted-foreground mt-1">
-            {event.clientOrg?.name} &mdash; {format(new Date(event.scheduledDate), 'PPP')}
+            {event.clientOrg?.name || event.clientLabel || 'No Client'} &mdash; {format(new Date(event.scheduledDate), 'PPP')}
           </p>
         </div>
         <div className="flex items-center gap-3">

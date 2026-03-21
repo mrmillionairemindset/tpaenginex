@@ -247,6 +247,7 @@ export const orders = pgTable("orders", {
   orgId: uuid("org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
   tpaOrgId: uuid("tpa_org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
   clientOrgId: uuid("client_org_id").references(() => organizations.id),
+  clientLabel: varchar("client_label", { length: 255 }),
   candidateId: uuid("candidate_id").references(() => candidates.id, { onDelete: "restrict" }).notNull(),
   collectorId: uuid("collector_id").references(() => collectors.id),
   eventId: uuid("event_id"),  // FK added after events table definition via relations
@@ -381,7 +382,8 @@ export const notifications = pgTable("notifications", {
 export const events = pgTable("events", {
   id: uuid("id").defaultRandom().primaryKey(),
   tpaOrgId: uuid("tpa_org_id").references(() => organizations.id).notNull(),
-  clientOrgId: uuid("client_org_id").references(() => organizations.id).notNull(),
+  clientOrgId: uuid("client_org_id").references(() => organizations.id),
+  clientLabel: varchar("client_label", { length: 255 }),
   eventNumber: varchar("event_number", { length: 50 }).unique().notNull(),
   serviceType: varchar("service_type", { length: 50 }).notNull(),
   collectorId: uuid("collector_id").references(() => collectors.id),

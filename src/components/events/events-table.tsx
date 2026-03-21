@@ -19,7 +19,8 @@ interface Event {
   clientOrg: {
     id: string;
     name: string;
-  };
+  } | null;
+  clientLabel?: string | null;
   collector: {
     id: string;
     firstName: string;
@@ -57,7 +58,7 @@ export function EventsTable() {
     },
     {
       header: 'Client',
-      accessor: (e: Event) => e.clientOrg.name,
+      accessor: (e: Event) => e.clientOrg?.name || e.clientLabel || 'N/A',
     },
     {
       header: 'Type',

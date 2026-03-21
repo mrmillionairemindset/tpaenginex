@@ -22,6 +22,7 @@ interface Order {
   clientOrg?: {
     name: string;
   } | null;
+  clientLabel?: string | null;
   createdAt: string;
 }
 
@@ -68,7 +69,7 @@ export function OrdersTable({ userRole }: OrdersTableProps) {
       ? [
           {
             header: 'Client',
-            accessor: (order: Order) => order.clientOrg?.name || order.organization.name,
+            accessor: (order: Order) => order.clientOrg?.name || order.clientLabel || order.organization.name,
           },
         ]
       : []),

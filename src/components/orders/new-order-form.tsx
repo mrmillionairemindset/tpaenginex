@@ -41,10 +41,12 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<ClientOrg[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [clientLabel, setClientLabel] = useState<string>('');
   const [locations, setLocations] = useState<Location[]>([]);
   const [collectors, setCollectors] = useState<Collector[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>('');
   const [useCustomLocation, setUseCustomLocation] = useState(false);
+  const isSpecialClient = selectedClientId === 'walk_in' || selectedClientId === 'other';
   const isTpaUser = userRole.startsWith('tpa_') || userRole === 'platform_admin';
   const canAssignCollector = userRole === 'tpa_admin' || userRole === 'tpa_staff' || userRole === 'platform_admin';
   const [formData, setFormData] = useState({
@@ -103,7 +105,7 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
 
   // Fetch locations when selected client changes
   useEffect(() => {
-    if (!selectedClientId) {
+    if (!selectedClientId || selectedClientId === 'walk_in' || selectedClientId === 'other') {
       setLocations([]);
       setSelectedLocationId('');
       setUseCustomLocation(false);
@@ -153,7 +155,8 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
             state: formData.state,
             zip: formData.zip,
           },
-          clientOrgId: selectedClientId || undefined,
+          clientOrgId: (selectedClientId && !isSpecialClient) ? selectedClientId : undefined,
+          clientLabel: selectedClientId === 'walk_in' ? 'Walk-In' : selectedClientId === 'other' ? clientLabel : undefined,
           testType: formData.testTypes.join(', '),
           serviceType: formData.serviceType,
           isDOT: formData.isDOT,
@@ -197,7 +200,7 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
     <form onSubmit={handleSubmit}>
       <Card className="p-6 space-y-6">
         {/* Client / Employer Selection */}
-        {isTpaUser && clients.length > 0 && (
+        {isTpaUser && (
           <div>
             <h3 className="text-lg font-semibold mb-4">Client / Employer</h3>
             <div className="grid gap-4 md:grid-cols-2">
@@ -208,20 +211,34 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                   required
                   value={selectedClientId}
-                  onChange={(e) => setSelectedClientId(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedClientId(e.target.value);
+                    if (e.target.value !== 'other') setClientLabel('');
+                  }}
                 >
                   <option value="">Select a client...</option>
+                  <option value="walk_in">Walk-In Individual</option>
+                  <option value="other">Other (Non-Client Business)</option>
                   {clients.map((client) => (
                     <option key={client.id} value={client.id}>
                       {client.name}
                     </option>
                   ))}
                 </select>
+                {selectedClientId === 'other' && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Enter business name..."
+                    required
+                    value={clientLabel}
+                    onChange={(e) => setClientLabel(e.target.value)}
+                  />
+                )}
               </div>
 
               <div>
                 <Label htmlFor="clientLocation">Location</Label>
-                {selectedClientId && locations.length > 0 ? (
+                {!isSpecialClient && selectedClientId && locations.length > 0 ? (
                   <select
                     id="clientLocation"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
@@ -253,6 +270,13 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
                     ))}
                     <option value="custom">Other (Enter manually)</option>
                   </select>
+                ) : isSpecialClient ? (
+                  <Input
+                    className="mt-0"
+                    placeholder="Enter location manually..."
+                    value={formData.jobsiteLocation}
+                    onChange={(e) => setFormData({ ...formData, jobsiteLocation: e.target.value })}
+                  />
                 ) : selectedClientId ? (
                   <p className="text-sm text-muted-foreground mt-2">No locations for this client. Enter jobsite below or add locations on the client page.</p>
                 ) : (

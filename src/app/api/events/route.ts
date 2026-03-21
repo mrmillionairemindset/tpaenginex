@@ -8,7 +8,8 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 
 const createEventSchema = z.object({
-  clientOrgId: z.string().uuid('Client organization ID is required'),
+  clientOrgId: z.string().uuid().optional(),
+  clientLabel: z.string().max(255).optional(),
   serviceType: z.enum(['random', 'post_accident', 'reasonable_suspicion']),
   location: z.string().min(1, 'Location is required'),
   scheduledDate: z.string().datetime('Scheduled date is required'),
@@ -16,7 +17,10 @@ const createEventSchema = z.object({
   collectorId: z.string().uuid().optional(),
   notes: z.string().optional(),
   internalNotes: z.string().optional(),
-});
+}).refine(
+  (data) => data.clientOrgId || data.clientLabel,
+  { message: 'Either a client or a client name is required', path: ['clientOrgId'] }
+);
 
 // GET /api/events — list events for this TPA
 export const GET = withPermission('view_events', async (req, user) => {
@@ -65,7 +69,8 @@ export const POST = withPermission('manage_events', async (req, user) => {
 
   const [newEvent] = await db.insert(events).values({
     tpaOrgId,
-    clientOrgId: data.clientOrgId,
+    clientOrgId: data.clientOrgId || null,
+    clientLabel: data.clientLabel || null,
     eventNumber,
     serviceType: data.serviceType,
     location: data.location,

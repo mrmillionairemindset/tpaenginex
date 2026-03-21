@@ -814,10 +814,10 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                 <dd className="font-medium">{order.jobsiteLocation}</dd>
               </div>
             )}
-            {isTpaUser && (order.clientOrg || order.organization) && (
+            {isTpaUser && (order.clientOrg || order.clientLabel || order.organization) && (
               <div>
                 <dt className="text-sm text-muted-foreground">Client</dt>
-                <dd className="font-medium">{order.clientOrg?.name || order.organization?.name}</dd>
+                <dd className="font-medium">{order.clientOrg?.name || order.clientLabel || order.organization?.name}</dd>
               </div>
             )}
             {order.requestedByUser && (

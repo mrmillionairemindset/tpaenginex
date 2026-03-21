@@ -23,6 +23,7 @@ interface Order {
   clientOrg?: {
     name: string;
   } | null;
+  clientLabel?: string | null;
 }
 
 interface OrdersKanbanProps {
@@ -260,9 +261,9 @@ export function OrdersKanban({ userRole }: OrdersKanbanProps) {
                   <ServiceTypeBadge serviceType={order.serviceType} />
                   <StatusBadge status={order.status} />
                 </div>
-                {isTpaUser && (order.clientOrg || order.organization) && (
+                {isTpaUser && (order.clientOrg || order.clientLabel || order.organization) && (
                   <p className="text-xs text-muted-foreground mt-1.5 truncate">
-                    {order.clientOrg?.name || order.organization.name}
+                    {order.clientOrg?.name || order.clientLabel || order.organization.name}
                   </p>
                 )}
               </div>
