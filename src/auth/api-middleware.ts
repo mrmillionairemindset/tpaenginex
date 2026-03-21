@@ -150,7 +150,7 @@ export function withAdminAuth(
  * Protect API routes — require platform admin only
  */
 export function withPlatformAuth(
-  handler: (req: NextRequest, user: AuthenticatedUser) => Promise<Response>
+  handler: (req: NextRequest, user: AuthenticatedUser, context?: any) => Promise<Response>
 ) {
   return async (req: NextRequest, context?: any) => {
     const user = await getCurrentUser();
@@ -169,6 +169,6 @@ export function withPlatformAuth(
       );
     }
 
-    return handler(req, user);
+    return handler(req, user, context);
   };
 }
