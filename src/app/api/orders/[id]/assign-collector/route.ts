@@ -6,6 +6,7 @@ import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { notifyCollectorAssigned } from '@/lib/notifications';
 import { scheduleReminder } from '@/jobs/queue';
+import { getTpaAutomationSettings } from '@/lib/tpa-settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,22 +76,27 @@ export async function POST(
   const collectorName = `${collector.firstName} ${collector.lastName}`;
   await notifyCollectorAssigned(id, order.orderNumber, collectorName);
 
-  // Schedule 48-hr reminder jobs
+  // Schedule 48-hr reminder jobs (if enabled)
   if (order.scheduledFor) {
+    const automationSettings = await getTpaAutomationSettings(tpaOrgId);
     const scheduledTime = new Date(order.scheduledFor).getTime();
     const reminderDelay = scheduledTime - Date.now() - 48 * 60 * 60 * 1000;
 
-    await scheduleReminder('collector_confirm_reminder', {
-      orderId: id,
-      collectorId: collector.id,
-      scheduledFor: order.scheduledFor,
-      tpaOrgId,
-    }, reminderDelay);
+    if (automationSettings.enableCollectorConfirmReminders) {
+      await scheduleReminder('collector_confirm_reminder', {
+        orderId: id,
+        collectorId: collector.id,
+        scheduledFor: order.scheduledFor,
+        tpaOrgId,
+      }, reminderDelay);
+    }
 
-    await scheduleReminder('kit_mailing_reminder', {
-      orderId: id,
-      tpaOrgId,
-    }, reminderDelay);
+    if (automationSettings.enableKitReminders) {
+      await scheduleReminder('kit_mailing_reminder', {
+        orderId: id,
+        tpaOrgId,
+      }, reminderDelay);
+    }
   }
 
   const updatedOrder = await db.query.orders.findFirst({

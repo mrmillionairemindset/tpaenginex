@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { notifyOrderCreated } from '@/lib/notifications';
 import { appendOrderToSheet } from '@/integrations/sheets';
 import { SERVICE_TYPE_CHECKLISTS } from '@/lib/service-templates';
+import { getTpaAutomationSettings } from '@/lib/tpa-settings';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -294,7 +295,8 @@ export const POST = withAuth(async (req, user) => {
   await notifyOrderCreated(newOrder.id, orderNumber);
 
   // Sync to Google Sheets (async, don't block response)
-  if (fullOrder?.candidate) {
+  const automationSettings = await getTpaAutomationSettings(tpaOrgId);
+  if (automationSettings.enableSheetsSync && fullOrder?.candidate) {
     appendOrderToSheet({
       orderNumber: fullOrder.orderNumber,
       candidateFirstName: fullOrder.candidate.firstName,

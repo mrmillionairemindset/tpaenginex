@@ -4,6 +4,7 @@ import { events } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq, and } from 'drizzle-orm';
 import { enqueueNotification } from '@/jobs/queue';
+import { getTpaAutomationSettings } from '@/lib/tpa-settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,11 +46,14 @@ export async function POST(
     updatedAt: new Date(),
   }).where(eq(events.id, id));
 
-  // Queue completion email and billing entry
-  await enqueueNotification('event_completion_email', {
-    eventId: id,
-    tpaOrgId: event.tpaOrgId,
-  });
+  // Queue completion email (if enabled) and billing entry
+  const automationSettings = await getTpaAutomationSettings(event.tpaOrgId);
+  if (automationSettings.enableEventCompletionEmail) {
+    await enqueueNotification('event_completion_email', {
+      eventId: id,
+      tpaOrgId: event.tpaOrgId,
+    });
+  }
 
   await enqueueNotification('billing_queue_entry', {
     eventId: id,

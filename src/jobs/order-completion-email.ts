@@ -4,6 +4,7 @@ import { orders, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
 import { sendOrderCompletionEmail } from '@/lib/email';
+import { getTpaAutomationSettings } from '@/lib/tpa-settings';
 
 export interface OrderCompletionEmailData {
   orderId: string;
@@ -16,6 +17,12 @@ export interface OrderCompletionEmailData {
  */
 export async function handleOrderCompletionEmail(job: Job<OrderCompletionEmailData>) {
   const { orderId, tpaOrgId } = job.data;
+
+  const settings = await getTpaAutomationSettings(tpaOrgId);
+  if (!settings.enableOrderCompletionEmail) {
+    console.log(`[order-completion-email] Disabled for TPA ${tpaOrgId} — skipping`);
+    return;
+  }
 
   const order = await db.query.orders.findFirst({
     where: eq(orders.id, orderId),

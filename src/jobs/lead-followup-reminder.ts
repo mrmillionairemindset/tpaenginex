@@ -3,6 +3,7 @@ import { db } from '@/db/client';
 import { leads } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
+import { getTpaAutomationSettings } from '@/lib/tpa-settings';
 
 export interface LeadFollowUpReminderData {
   leadId: string;
@@ -15,6 +16,12 @@ export interface LeadFollowUpReminderData {
  */
 export async function handleLeadFollowUpReminder(job: Job<LeadFollowUpReminderData>) {
   const { leadId, tpaOrgId } = job.data;
+
+  const settings = await getTpaAutomationSettings(tpaOrgId);
+  if (!settings.enableLeadFollowUpReminders) {
+    console.log(`[lead-followup-reminder] Disabled for TPA ${tpaOrgId} — skipping`);
+    return;
+  }
 
   const lead = await db.query.leads.findFirst({
     where: eq(leads.id, leadId),

@@ -4,6 +4,7 @@ import { events } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
 import { sendEventCompletionEmail } from '@/lib/email';
+import { getTpaAutomationSettings } from '@/lib/tpa-settings';
 
 export interface EventCompletionEmailData {
   eventId: string;
@@ -16,6 +17,12 @@ export interface EventCompletionEmailData {
  */
 export async function handleEventCompletionEmail(job: Job<EventCompletionEmailData>) {
   const { eventId, tpaOrgId } = job.data;
+
+  const settings = await getTpaAutomationSettings(tpaOrgId);
+  if (!settings.enableEventCompletionEmail) {
+    console.log(`[event-completion-email] Disabled for TPA ${tpaOrgId} — skipping`);
+    return;
+  }
 
   const event = await db.query.events.findFirst({
     where: eq(events.id, eventId),

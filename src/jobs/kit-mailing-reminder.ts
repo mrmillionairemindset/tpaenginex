@@ -4,6 +4,7 @@ import { events, users } from '@/db/schema';
 import { eq, or } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
 import { sendKitMailingReminder } from '@/lib/email';
+import { getTpaAutomationSettings } from '@/lib/tpa-settings';
 
 export interface KitMailingReminderData {
   eventId: string;
@@ -16,6 +17,12 @@ export interface KitMailingReminderData {
  */
 export async function handleKitMailingReminder(job: Job<KitMailingReminderData>) {
   const { eventId, tpaOrgId } = job.data;
+
+  const settings = await getTpaAutomationSettings(tpaOrgId);
+  if (!settings.enableKitReminders) {
+    console.log(`[kit-mailing-reminder] Disabled for TPA ${tpaOrgId} — skipping`);
+    return;
+  }
 
   const event = await db.query.events.findFirst({
     where: eq(events.id, eventId),

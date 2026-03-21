@@ -3,6 +3,7 @@ import { db } from '@/db/client';
 import { orders, events, collectors, users } from '@/db/schema';
 import { eq, or } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
+import { getTpaAutomationSettings } from '@/lib/tpa-settings';
 
 export interface CollectorConfirmReminderData {
   orderId?: string;
@@ -18,6 +19,12 @@ export interface CollectorConfirmReminderData {
  */
 export async function handleCollectorConfirmReminder(job: Job<CollectorConfirmReminderData>) {
   const { collectorId, scheduledFor, tpaOrgId } = job.data;
+
+  const settings = await getTpaAutomationSettings(tpaOrgId);
+  if (!settings.enableCollectorConfirmReminders) {
+    console.log(`[collector-confirm-reminder] Disabled for TPA ${tpaOrgId} — skipping`);
+    return;
+  }
 
   const collector = await db.query.collectors.findFirst({
     where: eq(collectors.id, collectorId),

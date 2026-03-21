@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { sendLeadStageEmail } from '@/lib/email';
 import { scheduleReminder } from './queue';
 import { createNotification } from '@/lib/notifications';
+import { getTpaAutomationSettings } from '@/lib/tpa-settings';
 
 export interface LeadStageAutomationData {
   leadId: string;
@@ -64,14 +65,17 @@ export async function handleLeadStageAutomation(job: Job<LeadStageAutomationData
     createdBy: changedBy,
   });
 
-  // 2. Look up email template for the new stage
-  const template = await db.query.leadEmailTemplates.findFirst({
+  // Check if lead stage emails are enabled for this TPA
+  const automationSettings = await getTpaAutomationSettings(tpaOrgId);
+
+  // 2. Look up email template for the new stage (only if emails enabled)
+  const template = automationSettings.enableLeadStageEmails ? await db.query.leadEmailTemplates.findFirst({
     where: and(
       eq(leadEmailTemplates.tpaOrgId, tpaOrgId),
       eq(leadEmailTemplates.stage, toStage as any),
       eq(leadEmailTemplates.isActive, true),
     ),
-  });
+  }) : null;
 
   // 3. Send email if template exists and lead has a contact email
   if (template && lead.contactEmail) {

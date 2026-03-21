@@ -530,6 +530,15 @@ export const tpaSettings = pgTable("tpa_settings", {
   dotCompanyName: varchar("dot_company_name", { length: 200 }),
   dotConsortiumId: varchar("dot_consortium_id", { length: 100 }),
   timezone: varchar("timezone", { length: 50 }).default("America/Chicago"),
+  // Automation toggles
+  enableSheetsSync: boolean("enable_sheets_sync").default(false).notNull(),
+  enableKitReminders: boolean("enable_kit_reminders").default(true).notNull(),
+  enableCollectorConfirmReminders: boolean("enable_collector_confirm_reminders").default(true).notNull(),
+  enableResultsPendingDaily: boolean("enable_results_pending_daily").default(true).notNull(),
+  enableOrderCompletionEmail: boolean("enable_order_completion_email").default(true).notNull(),
+  enableEventCompletionEmail: boolean("enable_event_completion_email").default(true).notNull(),
+  enableLeadStageEmails: boolean("enable_lead_stage_emails").default(false).notNull(),
+  enableLeadFollowUpReminders: boolean("enable_lead_follow_up_reminders").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

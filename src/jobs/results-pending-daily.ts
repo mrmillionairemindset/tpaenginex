@@ -4,6 +4,7 @@ import { events, users } from '@/db/schema';
 import { eq, and, gt, or, lte } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
 import { sendPendingResultsReminder } from '@/lib/email';
+import { getTpaAutomationSettings } from '@/lib/tpa-settings';
 
 /**
  * Runs daily at 9am. For each event with totalPending > 0 and
@@ -39,7 +40,22 @@ export async function handleResultsPendingDaily(job: Job) {
     where: or(eq(users.role, 'tpa_records'), eq(users.role, 'tpa_admin')),
   });
 
+  // Batch-fetch automation settings for all distinct TPAs
+  const tpaOrgIds = [...new Set(activeEvents.map(e => e.tpaOrgId))];
+  const settingsMap = new Map<string, Awaited<ReturnType<typeof getTpaAutomationSettings>>>();
+  await Promise.all(
+    tpaOrgIds.map(async (id) => {
+      settingsMap.set(id, await getTpaAutomationSettings(id));
+    })
+  );
+
   for (const event of activeEvents) {
+    const settings = settingsMap.get(event.tpaOrgId);
+    if (!settings?.enableResultsPendingDaily) {
+      console.log(`[results-pending-daily] Disabled for TPA ${event.tpaOrgId} — skipping event ${event.eventNumber}`);
+      continue;
+    }
+
     const daysSinceEvent = Math.floor(
       (now.getTime() - new Date(event.scheduledDate).getTime()) / (1000 * 60 * 60 * 24)
     );
