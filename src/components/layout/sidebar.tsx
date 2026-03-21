@@ -86,6 +86,14 @@ const tpaNav: NavItem[] = [
     href: '/leads',
     icon: Target,
     roles: ['tpa_admin', 'tpa_staff'],
+    children: [
+      {
+        label: 'Lead Templates',
+        href: '/settings/lead-templates',
+        icon: Mail,
+        roles: ['tpa_admin'],
+      },
+    ],
   },
   {
     label: 'Service Requests',
@@ -98,14 +106,6 @@ const tpaNav: NavItem[] = [
     href: '/settings',
     icon: Settings,
     roles: ['tpa_admin'],
-    children: [
-      {
-        label: 'Lead Templates',
-        href: '/settings/lead-templates',
-        icon: Mail,
-        roles: ['tpa_admin'],
-      },
-    ],
   },
 ];
 
