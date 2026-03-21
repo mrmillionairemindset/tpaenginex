@@ -176,6 +176,14 @@ export async function PATCH(
   const updateData: any = { updatedAt: new Date() };
 
   if (data.status) updateData.status = data.status;
+  if (data.testType !== undefined) updateData.testType = data.testType;
+  if (data.serviceType !== undefined) updateData.serviceType = data.serviceType;
+  if (data.isDOT !== undefined) updateData.isDOT = data.isDOT;
+  if (data.priority !== undefined) updateData.priority = data.priority;
+  if (data.urgency !== undefined) updateData.urgency = data.urgency;
+  if (data.jobsiteLocation !== undefined) updateData.jobsiteLocation = data.jobsiteLocation;
+  if (data.needsMask !== undefined) updateData.needsMask = data.needsMask;
+  if (data.maskSize !== undefined) updateData.maskSize = data.maskSize;
   if (data.notes !== undefined) updateData.notes = data.notes;
   if (data.internalNotes !== undefined) updateData.internalNotes = data.internalNotes;
   if (data.scheduledFor) updateData.scheduledFor = new Date(data.scheduledFor);

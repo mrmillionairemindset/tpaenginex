@@ -9,7 +9,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { AlertCircle, User, FileText, CheckCircle, XCircle, UserCheck, ClipboardCheck } from 'lucide-react';
+import { AlertCircle, User, FileText, CheckCircle, XCircle, UserCheck, ClipboardCheck, Pencil } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 
 interface OrderDetailsProps {
@@ -37,6 +38,9 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
   const [ccfOverrideMode, setCcfOverrideMode] = useState(false);
   const [ccfAuditReason, setCcfAuditReason] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
 
   useEffect(() => {
     async function fetchOrder() {
@@ -109,6 +113,62 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
       toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const startEditing = () => {
+    setEditForm({
+      testType: order.testType || '',
+      serviceType: order.serviceType || 'drug_screen',
+      isDOT: order.isDOT || false,
+      priority: order.priority || 'standard',
+      urgency: order.urgency || 'standard',
+      jobsiteLocation: order.jobsiteLocation || '',
+      notes: order.notes || '',
+      internalNotes: order.internalNotes || '',
+      needsMask: order.needsMask || false,
+      maskSize: order.maskSize || '',
+      candidateFirstName: order.candidate?.firstName || '',
+      candidateLastName: order.candidate?.lastName || '',
+      candidateEmail: order.candidate?.email || '',
+      candidatePhone: order.candidate?.phone || '',
+    });
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      // Update order fields
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          testType: editForm.testType,
+          serviceType: editForm.serviceType,
+          isDOT: editForm.isDOT,
+          priority: editForm.priority,
+          urgency: editForm.urgency,
+          jobsiteLocation: editForm.jobsiteLocation,
+          notes: editForm.notes,
+          internalNotes: editForm.internalNotes,
+          needsMask: editForm.needsMask,
+          maskSize: editForm.maskSize,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOrder(data.order);
+        setEditing(false);
+        toast({ title: 'Order Updated' });
+      } else {
+        const err = await res.json();
+        toast({ title: 'Error', description: err.error, variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save changes', variant: 'destructive' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -307,6 +367,12 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
           ) : (
             <StatusBadge status={order.status} />
           )}
+          {isTpaUser && !editing && order.status !== 'cancelled' && (
+            <Button onClick={startEditing} variant="outline" size="sm">
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit Order
+            </Button>
+          )}
           {canCancel && (
             <Button
               onClick={() => setShowCancelConfirm(true)}
@@ -388,6 +454,121 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
             <FileText className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Order Details</h2>
           </div>
+
+          {editing ? (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-muted-foreground block mb-1">Test Type</label>
+                <Input
+                  value={editForm.testType}
+                  onChange={(e) => setEditForm({ ...editForm, testType: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground block mb-1">Service Type</label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={editForm.serviceType}
+                  onChange={(e) => setEditForm({ ...editForm, serviceType: e.target.value })}
+                >
+                  <option value="pre_employment">Pre-Employment</option>
+                  <option value="random">Random</option>
+                  <option value="post_accident">Post-Accident</option>
+                  <option value="reasonable_suspicion">Reasonable Suspicion</option>
+                  <option value="physical">Physical</option>
+                  <option value="drug_screen">Drug Screen</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-muted-foreground block mb-1">Priority</label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={editForm.priority}
+                    onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
+                  >
+                    <option value="standard">Standard</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <input
+                    type="checkbox"
+                    id="editIsDOT"
+                    checked={editForm.isDOT}
+                    onChange={(e) => setEditForm({ ...editForm, isDOT: e.target.checked })}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <label htmlFor="editIsDOT" className="text-sm">DOT Test</label>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground block mb-1">Collection Location</label>
+                <Input
+                  value={editForm.jobsiteLocation}
+                  onChange={(e) => setEditForm({ ...editForm, jobsiteLocation: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-muted-foreground block mb-1">Needs Mask</label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={editForm.needsMask ? 'yes' : 'no'}
+                    onChange={(e) => setEditForm({ ...editForm, needsMask: e.target.value === 'yes', maskSize: e.target.value === 'no' ? '' : editForm.maskSize })}
+                  >
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                  </select>
+                </div>
+                {editForm.needsMask && (
+                  <div>
+                    <label className="text-sm text-muted-foreground block mb-1">Mask Size</label>
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={editForm.maskSize}
+                      onChange={(e) => setEditForm({ ...editForm, maskSize: e.target.value })}
+                    >
+                      <option value="">Select size...</option>
+                      <option value="Small">Small</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Large">Large</option>
+                      <option value="X-Large">X-Large</option>
+                      <option value="Unknown">Unknown</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground block mb-1">Notes</label>
+                <Textarea
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  rows={2}
+                />
+              </div>
+              {isTpaUser && (
+                <div>
+                  <label className="text-sm text-muted-foreground block mb-1">Internal Notes</label>
+                  <Textarea
+                    value={editForm.internalNotes}
+                    onChange={(e) => setEditForm({ ...editForm, internalNotes: e.target.value })}
+                    rows={2}
+                    placeholder="Internal notes (not visible to clients)"
+                  />
+                </div>
+              )}
+              <div className="flex gap-2 pt-2">
+                <Button onClick={handleSaveEdit} disabled={saving} size="sm">
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+                <Button onClick={() => setEditing(false)} variant="outline" size="sm">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
           <dl className="space-y-2">
             <div>
               <dt className="text-sm text-muted-foreground">Service Type</dt>
@@ -586,6 +767,7 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
               </div>
             )}
           </dl>
+          )}
         </Card>
       </div>
 
