@@ -8,10 +8,20 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 
 const updateTpaSchema = z.object({
+  // Organization fields
   name: z.string().min(1).optional(),
   contactEmail: z.string().email().optional().nullable(),
   contactPhone: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
+  // TPA settings fields
+  settings: z.object({
+    brandName: z.string().optional().nullable(),
+    replyToEmail: z.string().email().optional().nullable(),
+    timezone: z.string().optional().nullable(),
+    dotCompanyName: z.string().optional().nullable(),
+    dotConsortiumId: z.string().optional().nullable(),
+    defaultCollectionWindowHours: z.number().int().min(1).optional().nullable(),
+  }).optional(),
 });
 
 // GET /api/platform/tenants/[id] — TPA detail (no PHI)
@@ -124,12 +134,43 @@ export const PATCH = withPlatformAuth(async (req, user, { params }: { params: Pr
     );
   }
 
-  const data = validation.data;
+  const { settings: settingsUpdate, ...orgData } = validation.data;
 
-  const [updated] = await db.update(organizations).set({
-    ...data,
-    updatedAt: new Date(),
-  }).where(eq(organizations.id, id)).returning();
+  // Update org fields
+  if (Object.keys(orgData).length > 0) {
+    await db.update(organizations).set({
+      ...orgData,
+      updatedAt: new Date(),
+    }).where(eq(organizations.id, id));
+  }
 
-  return NextResponse.json({ tpa: updated });
+  // Update TPA settings
+  if (settingsUpdate) {
+    const existing = await db.query.tpaSettings.findFirst({
+      where: eq(tpaSettings.tpaOrgId, id),
+    });
+
+    if (existing) {
+      await db.update(tpaSettings).set({
+        ...settingsUpdate,
+        updatedAt: new Date(),
+      }).where(eq(tpaSettings.tpaOrgId, id));
+    } else {
+      await db.insert(tpaSettings).values({
+        tpaOrgId: id,
+        ...settingsUpdate,
+      });
+    }
+  }
+
+  // Return updated data
+  const updatedOrg = await db.query.organizations.findFirst({
+    where: eq(organizations.id, id),
+  });
+
+  const updatedSettings = await db.query.tpaSettings.findFirst({
+    where: eq(tpaSettings.tpaOrgId, id),
+  });
+
+  return NextResponse.json({ tpa: updatedOrg, settings: updatedSettings });
 });

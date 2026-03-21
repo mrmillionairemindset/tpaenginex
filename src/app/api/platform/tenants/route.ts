@@ -5,6 +5,9 @@ import { withPlatformAuth } from '@/auth/api-middleware';
 import { eq, and, count, asc } from 'drizzle-orm';
 import { z } from 'zod';
 import crypto from 'crypto';
+import sgMail from '@sendgrid/mail';
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
 
 export const dynamic = 'force-dynamic';
 
@@ -129,6 +132,41 @@ export const POST = withPlatformAuth(async (req, user) => {
     organizationId: newOrg.id,
     role: 'tpa_admin',
     invitedBy: user.id,
+  });
+
+  // Send invite email to admin (async, don't block response)
+  const loginUrl = `${process.env.NEXTAUTH_URL || 'https://app.tpaenginex.com'}/auth/signin`;
+  sgMail.send({
+    to: data.adminEmail,
+    from: 'TPAEngineX <noreply@tpaenginex.com>',
+    subject: `Your TPA Account is Ready — ${data.name}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 24px;">Welcome to TPAEngineX</h1>
+        </div>
+        <div style="padding: 24px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <p>Hi ${data.adminName},</p>
+          <p>Your TPA account <strong>${data.name}</strong> has been created and is ready to use.</p>
+          ${!existingUser ? `
+            <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;">
+              <p style="margin: 0 0 8px 0;"><strong>Your login credentials:</strong></p>
+              <p style="margin: 0;">Email: <strong>${data.adminEmail}</strong></p>
+              <p style="margin: 0;">Temporary Password: <strong>${tempPassword}</strong></p>
+            </div>
+            <p>Please change your password after your first login.</p>
+          ` : `
+            <p>You can log in with your existing account: <strong>${data.adminEmail}</strong></p>
+          `}
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${loginUrl}" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-weight: bold;">Log In to Your Account</a>
+          </div>
+          <p style="color: #6b7280; font-size: 14px;">If you have any questions, contact your platform administrator.</p>
+        </div>
+      </div>
+    `,
+  }).catch((err) => {
+    console.error('Failed to send TPA invite email:', err);
   });
 
   return NextResponse.json(
