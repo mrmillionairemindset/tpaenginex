@@ -128,10 +128,17 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
       internalNotes: order.internalNotes || '',
       needsMask: order.needsMask || false,
       maskSize: order.maskSize || '',
+      collectorId: order.collectorId || '',
       candidateFirstName: order.candidate?.firstName || '',
       candidateLastName: order.candidate?.lastName || '',
       candidateEmail: order.candidate?.email || '',
       candidatePhone: order.candidate?.phone || '',
+      candidateDob: order.candidate?.dob || '',
+      candidateSsnLast4: order.candidate?.ssnLast4 || '',
+      candidateAddress: order.candidate?.address || '',
+      candidateCity: order.candidate?.city || '',
+      candidateState: order.candidate?.state || '',
+      candidateZip: order.candidate?.zip || '',
     });
     setEditing(true);
   };
@@ -154,6 +161,19 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
           internalNotes: editForm.internalNotes,
           needsMask: editForm.needsMask,
           maskSize: editForm.maskSize,
+          collectorId: editForm.collectorId || null,
+          candidate: {
+            firstName: editForm.candidateFirstName,
+            lastName: editForm.candidateLastName,
+            email: editForm.candidateEmail,
+            phone: editForm.candidatePhone,
+            dob: editForm.candidateDob,
+            ssnLast4: editForm.candidateSsnLast4,
+            address: editForm.candidateAddress,
+            city: editForm.candidateCity,
+            state: editForm.candidateState,
+            zip: editForm.candidateZip,
+          },
         }),
       });
       if (res.ok) {
@@ -396,6 +416,167 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
         </div>
       </div>
 
+      {/* Edit Mode — full form */}
+      {editing && (
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Edit Order</h2>
+          <div className="space-y-6">
+            {/* Candidate Section */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Candidate</h3>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">First Name</label>
+                  <Input value={editForm.candidateFirstName} onChange={(e) => setEditForm({ ...editForm, candidateFirstName: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Last Name</label>
+                  <Input value={editForm.candidateLastName} onChange={(e) => setEditForm({ ...editForm, candidateLastName: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Email</label>
+                  <Input type="email" value={editForm.candidateEmail} onChange={(e) => setEditForm({ ...editForm, candidateEmail: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Phone</label>
+                  <Input value={editForm.candidatePhone} onChange={(e) => setEditForm({ ...editForm, candidatePhone: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Date of Birth</label>
+                  <Input value={editForm.candidateDob} onChange={(e) => setEditForm({ ...editForm, candidateDob: e.target.value })} placeholder="MM/DD/YYYY" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">SSN Last 4</label>
+                  <Input value={editForm.candidateSsnLast4} maxLength={4} onChange={(e) => setEditForm({ ...editForm, candidateSsnLast4: e.target.value })} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs text-muted-foreground block mb-1">Address</label>
+                  <Input value={editForm.candidateAddress} onChange={(e) => setEditForm({ ...editForm, candidateAddress: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">City</label>
+                  <Input value={editForm.candidateCity} onChange={(e) => setEditForm({ ...editForm, candidateCity: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">State</label>
+                    <Input value={editForm.candidateState} maxLength={2} onChange={(e) => setEditForm({ ...editForm, candidateState: e.target.value.toUpperCase() })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">ZIP</label>
+                    <Input value={editForm.candidateZip} onChange={(e) => setEditForm({ ...editForm, candidateZip: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Order Details Section */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Order Details</h3>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <label className="text-xs text-muted-foreground block mb-1">Test Type</label>
+                  <Input value={editForm.testType} onChange={(e) => setEditForm({ ...editForm, testType: e.target.value })} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Service Type</label>
+                  <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={editForm.serviceType} onChange={(e) => setEditForm({ ...editForm, serviceType: e.target.value })}>
+                    <option value="pre_employment">Pre-Employment</option>
+                    <option value="random">Random</option>
+                    <option value="post_accident">Post-Accident</option>
+                    <option value="reasonable_suspicion">Reasonable Suspicion</option>
+                    <option value="physical">Physical</option>
+                    <option value="drug_screen">Drug Screen</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Priority</label>
+                  <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={editForm.priority} onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}>
+                    <option value="standard">Standard</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 pt-5">
+                  <input type="checkbox" id="editIsDOT" checked={editForm.isDOT} onChange={(e) => setEditForm({ ...editForm, isDOT: e.target.checked })} className="h-4 w-4 rounded border-input" />
+                  <label htmlFor="editIsDOT" className="text-sm">DOT Test</label>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Collection Location</label>
+                  <Input value={editForm.jobsiteLocation} onChange={(e) => setEditForm({ ...editForm, jobsiteLocation: e.target.value })} />
+                </div>
+              </div>
+            </div>
+
+            {/* Collector & Mask Section */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Assignment & Equipment</h3>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Assigned Collector</label>
+                  <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={editForm.collectorId} onChange={(e) => setEditForm({ ...editForm, collectorId: e.target.value })}>
+                    <option value="">No collector assigned</option>
+                    {order.collector && (
+                      <option value={order.collector.id}>{order.collector.firstName} {order.collector.lastName}</option>
+                    )}
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">To assign a different collector, use the Assign Collector action.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">Needs Mask</label>
+                    <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={editForm.needsMask ? 'yes' : 'no'} onChange={(e) => setEditForm({ ...editForm, needsMask: e.target.value === 'yes', maskSize: e.target.value === 'no' ? '' : editForm.maskSize })}>
+                      <option value="no">No</option>
+                      <option value="yes">Yes</option>
+                    </select>
+                  </div>
+                  {editForm.needsMask && (
+                    <div>
+                      <label className="text-xs text-muted-foreground block mb-1">Mask Size</label>
+                      <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={editForm.maskSize} onChange={(e) => setEditForm({ ...editForm, maskSize: e.target.value })}>
+                        <option value="">Select...</option>
+                        <option value="Small">Small</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Large">Large</option>
+                        <option value="X-Large">X-Large</option>
+                        <option value="Unknown">Unknown</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Notes Section */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Notes</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Notes</label>
+                  <Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={2} />
+                </div>
+                {isTpaUser && (
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1">Internal Notes (not visible to clients)</label>
+                    <Textarea value={editForm.internalNotes} onChange={(e) => setEditForm({ ...editForm, internalNotes: e.target.value })} rows={2} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t">
+              <Button onClick={handleSaveEdit} disabled={saving} size="sm">
+                {saving ? 'Saving...' : 'Save All Changes'}
+              </Button>
+              <Button onClick={() => setEditing(false)} variant="outline" size="sm">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {!editing && (
       <div className="grid gap-6 md:grid-cols-2">
         {/* Candidate Information */}
         <Card className="p-6">
@@ -454,121 +635,6 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
             <FileText className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold">Order Details</h2>
           </div>
-
-          {editing ? (
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-muted-foreground block mb-1">Test Type</label>
-                <Input
-                  value={editForm.testType}
-                  onChange={(e) => setEditForm({ ...editForm, testType: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground block mb-1">Service Type</label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={editForm.serviceType}
-                  onChange={(e) => setEditForm({ ...editForm, serviceType: e.target.value })}
-                >
-                  <option value="pre_employment">Pre-Employment</option>
-                  <option value="random">Random</option>
-                  <option value="post_accident">Post-Accident</option>
-                  <option value="reasonable_suspicion">Reasonable Suspicion</option>
-                  <option value="physical">Physical</option>
-                  <option value="drug_screen">Drug Screen</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-muted-foreground block mb-1">Priority</label>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={editForm.priority}
-                    onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
-                  >
-                    <option value="standard">Standard</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
-                </div>
-                <div className="flex items-center gap-2 pt-6">
-                  <input
-                    type="checkbox"
-                    id="editIsDOT"
-                    checked={editForm.isDOT}
-                    onChange={(e) => setEditForm({ ...editForm, isDOT: e.target.checked })}
-                    className="h-4 w-4 rounded border-input"
-                  />
-                  <label htmlFor="editIsDOT" className="text-sm">DOT Test</label>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground block mb-1">Collection Location</label>
-                <Input
-                  value={editForm.jobsiteLocation}
-                  onChange={(e) => setEditForm({ ...editForm, jobsiteLocation: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-muted-foreground block mb-1">Needs Mask</label>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={editForm.needsMask ? 'yes' : 'no'}
-                    onChange={(e) => setEditForm({ ...editForm, needsMask: e.target.value === 'yes', maskSize: e.target.value === 'no' ? '' : editForm.maskSize })}
-                  >
-                    <option value="no">No</option>
-                    <option value="yes">Yes</option>
-                  </select>
-                </div>
-                {editForm.needsMask && (
-                  <div>
-                    <label className="text-sm text-muted-foreground block mb-1">Mask Size</label>
-                    <select
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={editForm.maskSize}
-                      onChange={(e) => setEditForm({ ...editForm, maskSize: e.target.value })}
-                    >
-                      <option value="">Select size...</option>
-                      <option value="Small">Small</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Large">Large</option>
-                      <option value="X-Large">X-Large</option>
-                      <option value="Unknown">Unknown</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground block mb-1">Notes</label>
-                <Textarea
-                  value={editForm.notes}
-                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                  rows={2}
-                />
-              </div>
-              {isTpaUser && (
-                <div>
-                  <label className="text-sm text-muted-foreground block mb-1">Internal Notes</label>
-                  <Textarea
-                    value={editForm.internalNotes}
-                    onChange={(e) => setEditForm({ ...editForm, internalNotes: e.target.value })}
-                    rows={2}
-                    placeholder="Internal notes (not visible to clients)"
-                  />
-                </div>
-              )}
-              <div className="flex gap-2 pt-2">
-                <Button onClick={handleSaveEdit} disabled={saving} size="sm">
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </Button>
-                <Button onClick={() => setEditing(false)} variant="outline" size="sm">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
           <dl className="space-y-2">
             <div>
               <dt className="text-sm text-muted-foreground">Service Type</dt>
@@ -767,9 +833,9 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
               </div>
             )}
           </dl>
-          )}
         </Card>
       </div>
+      )}
 
       {/* Checklist */}
       {!checklistLoading && checklist.length > 0 && (

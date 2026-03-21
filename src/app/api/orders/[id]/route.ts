@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { orders, auditLogs, orderChecklists, documents, notifications } from '@/db/schema';
+import { orders, candidates, auditLogs, orderChecklists, documents, notifications } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -15,14 +15,35 @@ export const dynamic = 'force-dynamic';
 
 const updateOrderSchema = z.object({
   status: z.enum(['new', 'needs_site', 'scheduled', 'in_progress', 'results_uploaded', 'pending_review', 'needs_correction', 'complete', 'cancelled']).optional(),
+  testType: z.string().optional(),
+  serviceType: z.string().optional(),
+  isDOT: z.boolean().optional(),
+  priority: z.string().optional(),
+  urgency: z.string().optional(),
+  jobsiteLocation: z.string().optional(),
+  needsMask: z.boolean().optional(),
+  maskSize: z.string().optional(),
   notes: z.string().optional(),
   internalNotes: z.string().optional(),
   scheduledFor: z.string().datetime().optional(),
   completedAt: z.string().datetime().optional(),
   ccfNumber: z.string().optional(),
   ccfAuditReason: z.string().optional(),
-  collectorId: z.string().uuid().optional(),
+  collectorId: z.string().uuid().nullable().optional(),
   resultStatus: z.enum(['pending', 'received', 'delivered']).optional(),
+  // Candidate fields
+  candidate: z.object({
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    email: z.string().email().optional(),
+    phone: z.string().optional(),
+    dob: z.string().optional(),
+    ssnLast4: z.string().optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    zip: z.string().optional(),
+  }).optional(),
 });
 
 // ============================================================================
@@ -221,7 +242,7 @@ export async function PATCH(
     }
     updateData.ccfNumber = data.ccfNumber;
   }
-  if (data.collectorId) updateData.collectorId = data.collectorId;
+  if (data.collectorId !== undefined) updateData.collectorId = data.collectorId;
   if (data.resultStatus) updateData.resultStatus = data.resultStatus;
 
   // Auto-set completedAt if status changes to complete
@@ -231,6 +252,25 @@ export async function PATCH(
 
   // Update order
   await db.update(orders).set(updateData).where(eq(orders.id, id));
+
+  // Update candidate if provided
+  if (data.candidate && existingOrder.candidateId) {
+    const candidateUpdate: any = { updatedAt: new Date() };
+    if (data.candidate.firstName !== undefined) candidateUpdate.firstName = data.candidate.firstName;
+    if (data.candidate.lastName !== undefined) candidateUpdate.lastName = data.candidate.lastName;
+    if (data.candidate.email !== undefined) candidateUpdate.email = data.candidate.email;
+    if (data.candidate.phone !== undefined) candidateUpdate.phone = data.candidate.phone;
+    if (data.candidate.dob !== undefined) candidateUpdate.dob = data.candidate.dob;
+    if (data.candidate.ssnLast4 !== undefined) candidateUpdate.ssnLast4 = data.candidate.ssnLast4;
+    if (data.candidate.address !== undefined) candidateUpdate.address = data.candidate.address;
+    if (data.candidate.city !== undefined) candidateUpdate.city = data.candidate.city;
+    if (data.candidate.state !== undefined) candidateUpdate.state = data.candidate.state;
+    if (data.candidate.zip !== undefined) candidateUpdate.zip = data.candidate.zip;
+
+    if (Object.keys(candidateUpdate).length > 1) {
+      await db.update(candidates).set(candidateUpdate).where(eq(candidates.id, existingOrder.candidateId));
+    }
+  }
 
   // Send notifications for status changes
   if (data.status === 'pending_review' && existingOrder.status !== 'pending_review') {
