@@ -42,14 +42,6 @@ const tpaNav: NavItem[] = [
     href: '/orders',
     icon: FileText,
     roles: ['tpa_admin', 'tpa_staff', 'tpa_records', 'tpa_billing'],
-    children: [
-      {
-        label: 'New Order',
-        href: '/orders/new',
-        icon: Plus,
-        roles: ['tpa_admin', 'tpa_staff'],
-      },
-    ],
   },
   {
     label: 'Events',
