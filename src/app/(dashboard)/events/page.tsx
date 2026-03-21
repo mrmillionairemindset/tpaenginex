@@ -22,7 +22,7 @@ export default async function EventsPage() {
     <div>
       <PageHeader
         title="Service Events"
-        description="Manage random pulls and onsite batch collections"
+        description="Manage random pulls, post-accident, and reasonable suspicion events"
       >
         <Link href="/events/new">
           <Button>

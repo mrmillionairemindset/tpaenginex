@@ -28,7 +28,7 @@ export function NewEventForm() {
   const [collectors, setCollectors] = useState<Collector[]>([]);
   const [formData, setFormData] = useState({
     clientOrgId: '',
-    serviceType: 'random' as 'random' | 'onsite_batch',
+    serviceType: 'random' as 'random' | 'post_accident' | 'reasonable_suspicion',
     location: '',
     scheduledDate: '',
     totalOrdered: 1,
@@ -122,7 +122,8 @@ export function NewEventForm() {
               onChange={(e) => setFormData({ ...formData, serviceType: e.target.value as any })}
             >
               <option value="random">Random</option>
-              <option value="onsite_batch">Onsite Batch</option>
+              <option value="post_accident">Post-Accident</option>
+              <option value="reasonable_suspicion">Reasonable Suspicion</option>
             </select>
           </div>
 

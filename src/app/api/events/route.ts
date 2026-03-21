@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 const createEventSchema = z.object({
   clientOrgId: z.string().uuid('Client organization ID is required'),
-  serviceType: z.enum(['random', 'onsite_batch']),
+  serviceType: z.enum(['random', 'post_accident', 'reasonable_suspicion']),
   location: z.string().min(1, 'Location is required'),
   scheduledDate: z.string().datetime('Scheduled date is required'),
   totalOrdered: z.number().int().min(1, 'At least 1 donor required'),

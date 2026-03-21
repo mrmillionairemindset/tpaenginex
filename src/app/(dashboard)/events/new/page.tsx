@@ -19,7 +19,7 @@ export default async function NewEventPage() {
     <div>
       <PageHeader
         title="New Event"
-        description="Create a batch collection event or random pull"
+        description="Create a service event"
       />
 
       <div className="mt-6 max-w-2xl">
