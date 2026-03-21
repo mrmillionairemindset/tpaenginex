@@ -8,7 +8,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/use-toast';
-import { Building2, Users, FileText, UserPlus, AlertCircle, MapPin, Mail, Phone, CalendarDays, FileDown, Bell, ClipboardList, Upload, Archive, FolderOpen, CheckSquare, Plus, Trash2, RotateCcw, Pencil } from 'lucide-react';
+import { Building2, Users, FileText, UserPlus, AlertCircle, MapPin, Mail, Phone, CalendarDays, FileDown, Bell, ClipboardList, Upload, Archive, FolderOpen, CheckSquare, Plus, Trash2, RotateCcw, Pencil, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { SERVICE_TYPE_CHECKLISTS } from '@/lib/service-templates';
@@ -984,6 +984,32 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
                   <div className="space-y-2 mt-3">
                     {editItems.map((item, idx) => (
                       <div key={idx} className="flex items-center gap-2">
+                        <div className="flex flex-col">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-0.5"
+                            onClick={() => {
+                              const updated = [...editItems];
+                              [updated[idx - 1], updated[idx]] = [updated[idx], updated[idx - 1]];
+                              setEditItems(updated);
+                            }}
+                          >
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === editItems.length - 1}
+                            className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-0.5"
+                            onClick={() => {
+                              const updated = [...editItems];
+                              [updated[idx], updated[idx + 1]] = [updated[idx + 1], updated[idx]];
+                              setEditItems(updated);
+                            }}
+                          >
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <span className="text-xs text-muted-foreground w-6 text-right">{idx + 1}.</span>
                         <input
                           type="text"
