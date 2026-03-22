@@ -15,6 +15,7 @@ import {
   isSameDay,
   eachDayOfInterval,
 } from 'date-fns';
+import { useMemo } from 'react';
 import {
   CalendarDays,
   FileText,
@@ -96,8 +97,8 @@ export function ScheduleView() {
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-  const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 1 }), [weekStart]);
+  const days = useMemo(() => eachDayOfInterval({ start: weekStart, end: weekEnd }), [weekStart, weekEnd]);
 
   const fetchSchedule = useCallback(async () => {
     try {
@@ -172,7 +173,8 @@ export function ScheduleView() {
   useEffect(() => {
     setLoading(true);
     fetchSchedule();
-  }, [fetchSchedule]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekStart]);
 
   usePolling(fetchSchedule, 30000);
 
