@@ -62,22 +62,50 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json();
 
-  // Only allow updating automation toggle fields
-  const updateData: Record<string, boolean> = {};
-  for (const field of AUTOMATION_FIELDS) {
-    if (typeof body[field] === 'boolean') {
-      updateData[field] = body[field];
-    }
+  // Build update object with explicit column references
+  const updateData: Partial<typeof tpaSettings.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+  let hasChanges = false;
+
+  if (typeof body.enableSheetsSync === 'boolean') {
+    updateData.enableSheetsSync = body.enableSheetsSync;
+    hasChanges = true;
+  }
+  if (typeof body.enableKitReminders === 'boolean') {
+    updateData.enableKitReminders = body.enableKitReminders;
+    hasChanges = true;
+  }
+  if (typeof body.enableCollectorConfirmReminders === 'boolean') {
+    updateData.enableCollectorConfirmReminders = body.enableCollectorConfirmReminders;
+    hasChanges = true;
+  }
+  if (typeof body.enableResultsPendingDaily === 'boolean') {
+    updateData.enableResultsPendingDaily = body.enableResultsPendingDaily;
+    hasChanges = true;
+  }
+  if (typeof body.enableOrderCompletionEmail === 'boolean') {
+    updateData.enableOrderCompletionEmail = body.enableOrderCompletionEmail;
+    hasChanges = true;
+  }
+  if (typeof body.enableEventCompletionEmail === 'boolean') {
+    updateData.enableEventCompletionEmail = body.enableEventCompletionEmail;
+    hasChanges = true;
+  }
+  if (typeof body.enableLeadStageEmails === 'boolean') {
+    updateData.enableLeadStageEmails = body.enableLeadStageEmails;
+    hasChanges = true;
+  }
+  if (typeof body.enableLeadFollowUpReminders === 'boolean') {
+    updateData.enableLeadFollowUpReminders = body.enableLeadFollowUpReminders;
+    hasChanges = true;
   }
 
-  if (Object.keys(updateData).length === 0) {
+  if (!hasChanges) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
   }
 
-  await db.update(tpaSettings).set({
-    ...updateData,
-    updatedAt: new Date(),
-  }).where(eq(tpaSettings.tpaOrgId, tpaOrgId));
+  await db.update(tpaSettings).set(updateData).where(eq(tpaSettings.tpaOrgId, tpaOrgId));
 
   const updated = await db.query.tpaSettings.findFirst({
     where: eq(tpaSettings.tpaOrgId, tpaOrgId),
