@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { StatCard } from '@/components/ui/stat-card';
+import { usePolling } from '@/hooks/use-polling';
 import { FileText, Users, CheckCircle, Clock, Building, CalendarDays, DollarSign, UserCheck, Target } from 'lucide-react';
 
 interface DashboardStatsProps {
@@ -27,23 +28,25 @@ export function DashboardStats({ userRole }: DashboardStatsProps) {
   const [stats, setStats] = useState<Stats>({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const response = await fetch('/api/dashboard/stats');
-        if (response.ok) {
-          const data = await response.json();
-          setStats(data.stats);
-        }
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
-      } finally {
-        setLoading(false);
+  const fetchStats = useCallback(async () => {
+    try {
+      const response = await fetch('/api/dashboard/stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data.stats);
       }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    } finally {
+      setLoading(false);
     }
-
-    fetchStats();
   }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  usePolling(fetchStats, 30000);
 
   const isClient = userRole === 'client_admin';
   const isPlatform = userRole === 'platform_admin';

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { usePolling } from '@/hooks/use-polling';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -89,7 +90,7 @@ export function LeadsTable() {
     employeeCount: '',
   });
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     try {
       const response = await fetch('/api/leads');
       if (response.ok) {
@@ -101,11 +102,13 @@ export function LeadsTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [fetchLeads]);
+
+  usePolling(fetchLeads);
 
   const resetForm = () => {
     setFormData({

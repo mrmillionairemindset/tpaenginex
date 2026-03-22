@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { usePolling } from '@/hooks/use-polling';
 
 type BillingStatus = 'pending' | 'sent' | 'paid' | 'overdue';
 
@@ -45,7 +46,7 @@ export function BillingTable() {
   const [items, setItems] = useState<BillingItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchBilling = async () => {
+  const fetchBilling = useCallback(async () => {
     try {
       const response = await fetch('/api/billing');
       if (response.ok) {
@@ -57,11 +58,13 @@ export function BillingTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchBilling();
-  }, []);
+  }, [fetchBilling]);
+
+  usePolling(fetchBilling);
 
   const handleStatusChange = async (id: string, newStatus: BillingStatus) => {
     try {

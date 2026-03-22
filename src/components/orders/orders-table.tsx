@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { DataTable } from '@/components/ui/data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
+import { usePolling } from '@/hooks/use-polling';
 
 interface Order {
   id: string;
@@ -35,23 +36,25 @@ export function OrdersTable({ userRole }: OrdersTableProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchOrders() {
-      try {
-        const response = await fetch('/api/orders');
-        if (response.ok) {
-          const data = await response.json();
-          setOrders(data.orders);
-        }
-      } catch (error) {
-        console.error('Failed to fetch orders:', error);
-      } finally {
-        setLoading(false);
+  const fetchOrders = useCallback(async () => {
+    try {
+      const response = await fetch('/api/orders');
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data.orders);
       }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+    } finally {
+      setLoading(false);
     }
-
-    fetchOrders();
   }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  usePolling(fetchOrders);
 
   const isTpaUser = userRole.startsWith('tpa_') || userRole === 'platform_admin';
 
