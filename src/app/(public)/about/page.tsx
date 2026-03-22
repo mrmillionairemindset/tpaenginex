@@ -10,15 +10,15 @@ export default function AboutPage() {
     <ComplianceLayout
       title="About TPAEngineX"
       lastUpdated="March 2026"
-      description="Streamlining healthcare screening for employers and providers"
+      description="Streamlining healthcare screening for TPAs and their clients"
     >
       <section>
         <h2>Our Mission</h2>
         <p>
-          TPAEngineX was founded to modernize and streamline the pre-employment
-          and employee health screening process. We connect employers, screening providers,
-          and testing facilities through a secure, HIPAA-compliant platform that makes
-          coordination simple and efficient.
+          TPAEngineX was founded to modernize and streamline the drug testing and
+          occupational health screening process. We connect Third Party Administrators (TPAs),
+          their client companies, and collectors through a secure, HIPAA-compliant platform
+          that makes coordination simple and efficient.
         </p>
       </section>
 
@@ -29,10 +29,10 @@ export default function AboutPage() {
         </p>
         <ul>
           <li>Pre-employment drug testing and physical examinations</li>
-          <li>Employee health monitoring and compliance screenings</li>
-          <li>Appointment coordination with nationwide testing facilities</li>
+          <li>DOT and non-DOT drug and alcohol testing</li>
+          <li>Collector assignment and scheduling coordination</li>
           <li>Secure result delivery and record management</li>
-          <li>Multi-tenant workflows for employers and providers</li>
+          <li>Multi-tenant workflows for TPAs and their client companies</li>
         </ul>
       </section>
 
@@ -67,26 +67,26 @@ export default function AboutPage() {
       <section>
         <h2>How It Works</h2>
 
-        <h3>For Employers</h3>
+        <h3>For TPAs</h3>
         <ol>
-          <li>Create screening orders with candidate information</li>
-          <li>Receive automated status updates throughout the process</li>
-          <li>Access results securely through the platform</li>
-          <li>Maintain centralized records for compliance</li>
-        </ol>
-
-        <h3>For Providers</h3>
-        <ol>
-          <li>Receive new screening orders automatically</li>
-          <li>Coordinate appointments at your network of testing sites</li>
+          <li>Manage screening orders across all your client companies</li>
+          <li>Assign and coordinate collectors for on-site and mobile collections</li>
           <li>Upload results with built-in quality checks</li>
           <li>Track performance metrics and operational efficiency</li>
+        </ol>
+
+        <h3>For Client Companies</h3>
+        <ol>
+          <li>Submit screening orders with candidate information</li>
+          <li>Receive automated status updates throughout the process</li>
+          <li>Access results securely through the client portal</li>
+          <li>Maintain centralized records for compliance</li>
         </ol>
 
         <h3>For Candidates</h3>
         <ol>
           <li>Receive clear appointment information via email/SMS</li>
-          <li>Visit convenient testing locations nationwide</li>
+          <li>Complete screenings at convenient locations</li>
           <li>Know that your health information is protected</li>
         </ol>
       </section>

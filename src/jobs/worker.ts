@@ -11,7 +11,7 @@ import 'dotenv/config';
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
-import { Worker } from 'bullmq';
+import { Worker, Queue } from 'bullmq';
 import { redis } from '@/lib/redis';
 import { handleKitMailingReminder } from './kit-mailing-reminder';
 import { handleCollectorConfirmReminder } from './collector-confirm-reminder';
@@ -93,6 +93,27 @@ notificationWorker.on('completed', (job) => {
   console.log(`[worker] Notification job ${job.name} completed`);
 });
 
+// Schedule daily cron jobs on the reminder queue.
+// BullMQ deduplicates repeatable jobs by name + repeat config,
+// so restarting the worker will not create duplicate schedules.
+const reminderQueue = new Queue('reminders', { connection: redis });
+
+async function scheduleCronJobs() {
+  await reminderQueue.add('results_pending_daily', {}, {
+    repeat: { pattern: '0 9 * * *' }, // daily at 9am
+  });
+  console.log('[worker] Scheduled cron: results_pending_daily (daily 9am)');
+
+  await reminderQueue.add('invoice_overdue_check', {}, {
+    repeat: { pattern: '0 9 * * *' }, // daily at 9am
+  });
+  console.log('[worker] Scheduled cron: invoice_overdue_check (daily 9am)');
+}
+
+scheduleCronJobs().catch((err) => {
+  console.error('[worker] Failed to schedule cron jobs:', err.message);
+});
+
 console.log('[worker] Workers started. Listening for jobs...');
 
 // Graceful shutdown
@@ -100,6 +121,7 @@ process.on('SIGTERM', async () => {
   console.log('[worker] SIGTERM received — shutting down...');
   await reminderWorker.close();
   await notificationWorker.close();
+  await reminderQueue.close();
   process.exit(0);
 });
 
@@ -107,5 +129,6 @@ process.on('SIGINT', async () => {
   console.log('[worker] SIGINT received — shutting down...');
   await reminderWorker.close();
   await notificationWorker.close();
+  await reminderQueue.close();
   process.exit(0);
 });

@@ -18,16 +18,17 @@ export default function FAQPage() {
 
         <h3>What is TPAEngineX?</h3>
         <p>
-          TPAEngineX is a healthcare screening coordination platform that connects employers,
-          screening providers, and testing facilities. We streamline the entire pre-employment
-          and employee screening process from order creation to result delivery.
+          TPAEngineX is a multi-tenant operations platform built for Third Party Administrators (TPAs)
+          in the drug testing and occupational health industry. We streamline the entire screening
+          process from order creation to result delivery, connecting TPAs, their client companies,
+          and collectors.
         </p>
 
         <h3>Who uses TPAEngineX?</h3>
         <ul>
-          <li><strong>Employers:</strong> Companies requiring pre-employment or employee health screenings</li>
-          <li><strong>Screening Providers:</strong> Organizations that coordinate drug tests, physicals, and other screenings</li>
-          <li><strong>Testing Facilities:</strong> Clinics and labs (like Concentra) where appointments take place</li>
+          <li><strong>TPAs:</strong> Third Party Administrators who coordinate drug tests, physicals, and other screenings</li>
+          <li><strong>Client Companies:</strong> Organizations requiring pre-employment or employee health screenings</li>
+          <li><strong>Collectors:</strong> Certified professionals who perform collections at job sites or testing facilities</li>
         </ul>
 
         <h3>How much does TPAEngineX cost?</h3>
@@ -48,12 +49,12 @@ export default function FAQPage() {
 
         <h3>How long does setup take?</h3>
         <p>
-          Most organizations are up and running within 24-48 hours. Setup includes:
+          Most TPAs are up and running within 24-48 hours. Setup includes:
         </p>
         <ul>
           <li>Account creation and user onboarding</li>
-          <li>Configuring organization settings</li>
-          <li>Establishing provider/employer relationships</li>
+          <li>Configuring TPA settings (branding, collectors, DOT info)</li>
+          <li>Onboarding client companies</li>
           <li>Executing Business Associate Agreements (if applicable)</li>
         </ul>
 
@@ -71,8 +72,8 @@ export default function FAQPage() {
 
         <h3>Can I change my organization type?</h3>
         <p>
-          Organization type (employer or provider) cannot be changed after creation. If you
-          need both, create separate organizations.
+          Organization type (TPA or client) is set during provisioning and cannot be changed
+          after creation. Contact support if you need assistance.
         </p>
       </section>
 
@@ -91,28 +92,28 @@ export default function FAQPage() {
 
         <h3>How quickly can screenings be scheduled?</h3>
         <p>
-          Most appointments are scheduled within 24-48 hours of order creation, depending on
-          candidate availability and testing site capacity.
+          Most screenings are scheduled within 24-48 hours of order creation, depending on
+          candidate availability and collector scheduling.
         </p>
 
         <h3>Can candidates choose their testing location?</h3>
         <p>
-          Providers suggest nearby testing sites based on the candidate's address. While
-          candidates can request alternatives, the provider makes the final assignment based
-          on availability and network agreements.
+          Your TPA will coordinate with a collector based on the candidate's location. While
+          candidates can request alternatives, the TPA makes the final assignment based
+          on availability and scheduling.
         </p>
 
         <h3>What if a candidate misses their appointment?</h3>
         <p>
-          Candidates can reschedule through the notification link or by contacting the provider.
-          Repeated no-shows may result in order cancellation at the employer's discretion.
+          Candidates can reschedule through the notification link or by contacting the TPA.
+          Repeated no-shows may result in order cancellation at the client company's discretion.
         </p>
 
         <h3>How are results delivered?</h3>
         <p>
-          Results are securely uploaded to the platform and made available to the employer.
-          Employers receive an email notification when results are ready. Candidates do not
-          receive results directly (results go to the employer only).
+          Results are securely uploaded to the platform and made available to the client company.
+          Client contacts receive an email notification when results are ready. Candidates do not
+          receive results directly (results go to the client company only).
         </p>
       </section>
 
@@ -140,7 +141,7 @@ export default function FAQPage() {
         <h3>Do you sell my data?</h3>
         <p>
           Never. We do not sell, rent, or share your data with third parties except as
-          necessary to provide our services (e.g., with testing facilities for appointments)
+          necessary to provide our services (e.g., with collectors for scheduled screenings)
           or as required by law.
         </p>
 

@@ -58,7 +58,7 @@ export default function TermsOfServicePage() {
 
         <h3>3.2 Organization Accounts</h3>
         <ul>
-          <li>Employer and provider accounts are organization-based</li>
+          <li>TPA and client accounts are organization-based</li>
           <li>Organization administrators control user access and permissions</li>
           <li>You represent that you have authority to bind your organization</li>
         </ul>
@@ -195,8 +195,8 @@ export default function TermsOfServicePage() {
       <section>
         <h2>10. No Employment Decision Liability</h2>
         <p>
-          TPAEngineX is not responsible for employment decisions made by employers based on
-          screening results or platform data. Employers are solely responsible for compliance
+          TPAEngineX is not responsible for employment decisions made by client companies based on
+          screening results or platform data. Client companies are solely responsible for compliance
           with employment laws, including FCRA and EEOC regulations.
         </p>
       </section>

@@ -55,7 +55,7 @@ export default function HIPAACompliancePage() {
 
         <h3>2.3 Covered Entity Obligations</h3>
         <p>
-          When using our platform, covered entities (employers, providers) remain responsible for:
+          When using our platform, covered entities (TPAs, client companies) remain responsible for:
         </p>
         <ul>
           <li>Obtaining patient authorizations for disclosures</li>
@@ -78,7 +78,7 @@ export default function HIPAACompliancePage() {
 
         <h3>3.2 Workforce Security</h3>
         <ul>
-          <li><strong>Authorization:</strong> Role-based access controls (employer, provider, admin, user)</li>
+          <li><strong>Authorization:</strong> Role-based access controls (TPA admin, TPA staff, client admin, etc.)</li>
           <li><strong>Supervision:</strong> Management oversight of PHI access</li>
           <li><strong>Termination:</strong> Immediate access revocation upon separation</li>
           <li><strong>Training:</strong> Annual HIPAA training for all employees and contractors</li>

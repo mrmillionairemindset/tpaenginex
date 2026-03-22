@@ -19,16 +19,17 @@ export default function HelpPage() {
         <h3>How do I create an account?</h3>
         <p>
           Visit our <Link href="/auth/signup">sign up page</Link> and complete the registration
-          form. You'll need to provide your organization information and choose whether you're
-          an employer or provider.
+          form. You'll need to provide your organization information. TPA accounts are provisioned
+          by our platform team.
         </p>
 
         <h3>What user roles are available?</h3>
         <ul>
-          <li><strong>Employer Admin:</strong> Full access to create orders, manage candidates, and organization settings</li>
-          <li><strong>Employer User:</strong> Read-only access to orders and results</li>
-          <li><strong>Provider Admin:</strong> Full access to manage orders, sites, and provider settings</li>
-          <li><strong>Provider Agent:</strong> Assign sites, update order status, upload results</li>
+          <li><strong>TPA Admin:</strong> Full access to manage orders, collectors, clients, and TPA settings</li>
+          <li><strong>TPA Staff:</strong> Create orders, assign collectors, manage scheduling</li>
+          <li><strong>TPA Records:</strong> Update results and manage documents</li>
+          <li><strong>TPA Billing:</strong> Manage invoices and billing queue</li>
+          <li><strong>Client Admin:</strong> Read-only portal access to orders and results for their company</li>
         </ul>
 
         <h3>How do I invite team members?</h3>
@@ -39,13 +40,12 @@ export default function HelpPage() {
       </section>
 
       <section>
-        <h2>For Employers</h2>
+        <h2>For Client Companies</h2>
 
         <h3>How do I create a screening order?</h3>
         <p>
-          From your dashboard, click "Orders" then "New Order." Fill in the candidate information
-          and select the screening type. The order will be automatically routed to your designated
-          provider.
+          Client companies can submit service requests through the client portal. Your TPA
+          will review and process the order, assigning a collector and scheduling the screening.
         </p>
 
         <h3>When will I receive results?</h3>
@@ -63,10 +63,10 @@ export default function HelpPage() {
           Yes! All orders show real-time status updates:
         </p>
         <ul>
-          <li><strong>New:</strong> Order created, awaiting provider assignment</li>
-          <li><strong>Needs Site:</strong> Provider reviewing, assigning testing location</li>
+          <li><strong>New:</strong> Order created, awaiting collector assignment</li>
+          <li><strong>Assigned:</strong> Collector assigned, scheduling in progress</li>
           <li><strong>Scheduled:</strong> Appointment confirmed with candidate</li>
-          <li><strong>In Progress:</strong> Candidate has attended appointment</li>
+          <li><strong>In Progress:</strong> Collection underway</li>
           <li><strong>Complete:</strong> Results available</li>
         </ul>
 
@@ -76,24 +76,24 @@ export default function HelpPage() {
         </p>
         <ul>
           <li>An order is created</li>
-          <li>A site is assigned and appointment is scheduled</li>
-          <li>Results are ready (sent to employer only)</li>
+          <li>A collector is assigned and appointment is scheduled</li>
+          <li>Results are ready (sent to client company only)</li>
         </ul>
       </section>
 
       <section>
-        <h2>For Providers</h2>
+        <h2>For TPAs</h2>
 
-        <h3>How do I manage testing sites?</h3>
+        <h3>How do I manage collectors?</h3>
         <p>
-          From your dashboard, navigate to "Sites" to add, edit, or deactivate testing locations.
-          Each site includes address, contact information, hours, and available screening types.
+          From your dashboard, navigate to "Collectors" to add, edit, or deactivate collectors.
+          Each collector profile includes contact information, certifications, and service area.
         </p>
 
-        <h3>How do I assign a site to an order?</h3>
+        <h3>How do I assign a collector to an order?</h3>
         <p>
-          Open the order details and click "Assign Site." The platform will suggest nearby sites
-          based on the candidate's location. Select a site and confirm the appointment details.
+          Open the order details and click "Assign Collector." Select an available collector
+          based on the candidate's location and confirm the scheduling details.
         </p>
 
         <h3>How do I upload results?</h3>
@@ -104,12 +104,12 @@ export default function HelpPage() {
 
         <h3>Can I see performance metrics?</h3>
         <p>
-          Provider admins have access to analytics including:
+          TPA admins have access to analytics including:
         </p>
         <ul>
           <li>Average turnaround time</li>
-          <li>Orders by status and employer</li>
-          <li>Site utilization rates</li>
+          <li>Orders by status and client</li>
+          <li>Collector utilization</li>
           <li>Monthly volume trends</li>
         </ul>
       </section>

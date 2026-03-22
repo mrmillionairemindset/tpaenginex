@@ -76,7 +76,7 @@ export default function BAAPage() {
           BA may use and disclose PHI only to perform the following services on behalf of CE:
         </p>
         <ul>
-          <li>Coordinate and orchestrate screening workflows between TPAs, employers, and third-party providers</li>
+          <li>Coordinate and orchestrate screening workflows between TPAs, client organizations, and third-party service providers</li>
           <li>Provide a technology platform for order routing, tracking, and status visibility</li>
           <li>Process and manage screening-related operational workflows</li>
           <li>Facilitate scheduling and communication with third-party service providers</li>
