@@ -20,6 +20,7 @@ import {
   Mail,
   ClipboardList,
   Shield,
+  Clock,
 } from 'lucide-react';
 
 interface NavItem {
@@ -37,6 +38,12 @@ const tpaNav: NavItem[] = [
     href: '/dashboard',
     icon: LayoutDashboard,
     roles: ['tpa_admin', 'tpa_staff', 'tpa_records', 'tpa_billing'],
+  },
+  {
+    label: 'Schedule',
+    href: '/schedule',
+    icon: Clock,
+    roles: ['tpa_admin', 'tpa_staff', 'tpa_records'],
   },
   {
     label: 'Orders',
