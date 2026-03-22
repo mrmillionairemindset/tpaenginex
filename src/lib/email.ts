@@ -361,6 +361,84 @@ export async function sendLeadStageEmail(options: {
 }
 
 /**
+ * Invoice email to client when status changes to "sent"
+ */
+export async function sendInvoiceEmail(options: {
+  to: string;
+  invoiceNumber: string;
+  clientName: string;
+  amount: number; // cents
+  dueDate: string;
+  tpaBrandName: string;
+}) {
+  const { to, invoiceNumber, clientName, amount, dueDate, tpaBrandName } = options;
+  const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount / 100);
+
+  const msg = {
+    to,
+    from: DEFAULT_FROM,
+    subject: `Invoice ${invoiceNumber} — ${clientName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Invoice from ${tpaBrandName}</h2>
+        <p>Please find your invoice details below:</p>
+        <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+          <tr><td style="padding: 8px; color: #666;">Invoice #</td><td style="padding: 8px; font-weight: bold;">${invoiceNumber}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Client</td><td style="padding: 8px; font-weight: bold;">${clientName}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Amount Due</td><td style="padding: 8px; font-weight: bold; color: #2563eb;">${formattedAmount}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Due Date</td><td style="padding: 8px; font-weight: bold;">${dueDate}</td></tr>
+        </table>
+        <p>Please remit payment by the due date. If you have questions about this invoice, contact your TPA administrator.</p>
+        <p>Thank you for your business.</p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+        <p style="color: #9ca3af; font-size: 12px;">${tpaBrandName} — Sent via TPAEngineX</p>
+      </div>
+    `,
+  };
+
+  const response = await sgMail.send(msg);
+  return { success: true, emailId: response[0].headers['x-message-id'] };
+}
+
+/**
+ * Overdue invoice notification email to TPA billing staff
+ */
+export async function sendInvoiceOverdueNotification(options: {
+  to: string;
+  invoiceNumber: string;
+  clientName: string;
+  amount: number; // cents
+  dueDate: string;
+  daysPastDue: number;
+}) {
+  const { to, invoiceNumber, clientName, amount, dueDate, daysPastDue } = options;
+  const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount / 100);
+
+  const msg = {
+    to,
+    from: DEFAULT_FROM,
+    subject: `Overdue Invoice — ${invoiceNumber} | ${clientName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #dc2626;">Invoice Overdue</h2>
+        <p>The following invoice is past its due date and requires attention:</p>
+        <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+          <tr><td style="padding: 8px; color: #666;">Invoice #</td><td style="padding: 8px; font-weight: bold;">${invoiceNumber}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Client</td><td style="padding: 8px; font-weight: bold;">${clientName}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Amount</td><td style="padding: 8px; font-weight: bold;">${formattedAmount}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Due Date</td><td style="padding: 8px; font-weight: bold; color: #dc2626;">${dueDate}</td></tr>
+          <tr><td style="padding: 8px; color: #666;">Days Past Due</td><td style="padding: 8px; font-weight: bold; color: #dc2626;">${daysPastDue}</td></tr>
+        </table>
+        <p>Please follow up with the client to collect payment.</p>
+      </div>
+    `,
+  };
+
+  const response = await sgMail.send(msg);
+  return { success: true, emailId: response[0].headers['x-message-id'] };
+}
+
+/**
  * Send test email to verify configuration
  */
 export async function sendTestEmail(to: string) {

@@ -21,6 +21,7 @@ import { handleEventCompletionEmail } from './event-completion-email';
 import { handleBillingQueueEntry } from './billing-queue-entry';
 import { handleLeadFollowUpReminder } from './lead-followup-reminder';
 import { handleLeadStageAutomation } from './lead-stage-automation';
+import { handleInvoiceOverdueCheck } from './invoice-overdue-check';
 
 if (!redis) {
   console.error('REDIS_URL is not set — cannot start workers');
@@ -44,6 +45,8 @@ const reminderWorker = new Worker(
         return handleResultsPendingDaily(job);
       case 'lead_followup_reminder':
         return handleLeadFollowUpReminder(job);
+      case 'invoice_overdue_check':
+        return handleInvoiceOverdueCheck(job);
       default:
         console.warn(`[worker] Unknown reminder job: ${job.name}`);
     }

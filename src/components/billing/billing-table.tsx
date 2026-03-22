@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
 type BillingStatus = 'pending' | 'sent' | 'paid' | 'overdue';
@@ -145,6 +145,15 @@ export function BillingTable() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(`/api/billing/${item.id}/pdf`, '_blank');
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download PDF
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();

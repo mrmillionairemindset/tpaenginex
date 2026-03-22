@@ -539,6 +539,10 @@ export const tpaSettings = pgTable("tpa_settings", {
   enableEventCompletionEmail: boolean("enable_event_completion_email").default(true).notNull(),
   enableLeadStageEmails: boolean("enable_lead_stage_emails").default(false).notNull(),
   enableLeadFollowUpReminders: boolean("enable_lead_follow_up_reminders").default(true).notNull(),
+  // Pricing — JSON map of serviceType to amount in cents
+  defaultServiceRates: jsonb("default_service_rates").$type<Record<string, number>>(),
+  dotSurchargeRate: integer("dot_surcharge_rate").default(0),
+  defaultPaymentTermDays: integer("default_payment_term_days").default(30),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

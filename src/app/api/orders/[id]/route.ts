@@ -252,12 +252,34 @@ export async function PATCH(
   if (data.resultStatus) updateData.resultStatus = data.resultStatus;
 
   // Auto-set completedAt if status changes to complete
-  if (data.status === 'complete' && !existingOrder.completedAt) {
+  const isCompletionTransition = data.status === 'complete' && existingOrder.status !== 'complete';
+  if (isCompletionTransition && !existingOrder.completedAt) {
     updateData.completedAt = new Date();
   }
 
   // Update order
   await db.update(orders).set(updateData).where(eq(orders.id, id));
+
+  // Trigger billing + completion email on order completion
+  if (isCompletionTransition && existingOrder.tpaOrgId) {
+    const { enqueueNotification } = await import('@/jobs/queue');
+    const { getTpaAutomationSettings } = await import('@/lib/tpa-settings');
+    const automationSettings = await getTpaAutomationSettings(existingOrder.tpaOrgId);
+
+    // Always create billing entry
+    await enqueueNotification('billing_queue_entry', {
+      orderId: id,
+      tpaOrgId: existingOrder.tpaOrgId,
+    });
+
+    // Send completion email if enabled
+    if (automationSettings.enableOrderCompletionEmail) {
+      await enqueueNotification('order_completion_email', {
+        orderId: id,
+        tpaOrgId: existingOrder.tpaOrgId,
+      });
+    }
+  }
 
   // Update candidate if provided
   if (data.candidate && existingOrder.candidateId) {
