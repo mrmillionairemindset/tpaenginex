@@ -268,41 +268,48 @@ export function ScheduleView() {
                 key={day.toISOString()}
                 className={cn(
                   !isLast && 'border-b',
-                  today && 'bg-primary/[0.03]',
-                  past && 'opacity-60',
+                  today && 'bg-primary/[0.06] dark:bg-primary/[0.08]',
+                  past && 'opacity-50',
                 )}
               >
                 {/* Day header row */}
                 <div className={cn(
-                  'flex items-center gap-2 px-4 py-2',
-                  today ? 'border-l-2 border-l-primary' : 'border-l-2 border-l-transparent',
+                  'flex items-center gap-3 px-4 py-2.5',
+                  today ? 'border-l-[3px] border-l-primary' : 'border-l-[3px] border-l-transparent',
                 )}>
-                  <span className={cn(
-                    'text-xs font-semibold w-8 text-center',
-                    today ? 'text-primary' : 'text-muted-foreground',
+                  <div className={cn(
+                    'flex items-center justify-center w-9 h-9 rounded-full text-xs font-bold',
+                    today
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground',
                   )}>
-                    {format(day, 'EEE')}
-                  </span>
-                  <span className={cn(
-                    'text-xs font-medium',
-                    today ? 'text-primary' : 'text-foreground',
-                  )}>
-                    {format(day, 'MMM d')}
-                  </span>
+                    {format(day, 'd')}
+                  </div>
+                  <div>
+                    <span className={cn(
+                      'text-sm font-semibold block leading-tight',
+                      today ? 'text-primary' : 'text-foreground',
+                    )}>
+                      {format(day, 'EEEE')}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground leading-tight">
+                      {format(day, 'MMMM d')}
+                    </span>
+                  </div>
                   {today && (
                     <Badge className="text-[9px] px-1.5 py-0 h-4">Today</Badge>
                   )}
                   {dayItems.length > 0 && (
-                    <span className="text-[11px] text-muted-foreground ml-auto">
-                      {dayItems.length}
+                    <span className="text-[11px] text-muted-foreground ml-auto tabular-nums">
+                      {dayItems.length} item{dayItems.length !== 1 ? 's' : ''}
                     </span>
                   )}
                 </div>
 
                 {/* Items */}
                 {dayItems.length > 0 && (
-                  <div className="px-4 pb-2 space-y-1">
-                    {dayItems.map((item) => {
+                  <div className="pl-[calc(1rem+3px)] pr-4 pb-2.5 ml-[18px] border-l border-border/50 space-y-0.5">
+                    {dayItems.map((item, itemIdx) => {
                       const config = typeConfig[item.type];
                       const Icon = config.icon;
                       const statusClass = statusColors[item.status] || 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
@@ -311,7 +318,12 @@ export function ScheduleView() {
                         <Link
                           key={`${item.type}-${item.id}`}
                           href={item.href}
-                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-muted/50 transition-colors group"
+                          className={cn(
+                            'flex items-center gap-2.5 px-3 py-2 rounded-md transition-all cursor-pointer',
+                            'hover:bg-background hover:shadow-sm hover:border-border',
+                            'border border-transparent',
+                            itemIdx % 2 === 0 ? 'bg-muted/30' : '',
+                          )}
                         >
                           <Icon className={cn('h-3.5 w-3.5 shrink-0', config.color)} />
                           <span className="text-sm font-medium truncate">
@@ -337,7 +349,7 @@ export function ScheduleView() {
                             >
                               {item.status.replace(/_/g, ' ')}
                             </Badge>
-                            <span className="text-[11px] text-muted-foreground w-16 text-right">
+                            <span className="text-[11px] text-muted-foreground w-16 text-right tabular-nums">
                               {format(item.time, 'h:mm a')}
                             </span>
                           </div>
