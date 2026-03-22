@@ -546,6 +546,7 @@ export const tpaSettings = pgTable("tpa_settings", {
   defaultServiceRates: jsonb("default_service_rates").$type<Record<string, number>>(),
   dotSurchargeRate: integer("dot_surcharge_rate").default(0),
   defaultPaymentTermDays: integer("default_payment_term_days").default(30),
+  defaultEmailFooter: text("default_email_footer"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

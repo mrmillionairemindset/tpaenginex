@@ -108,8 +108,8 @@ const tpaNav: NavItem[] = [
     roles: ['tpa_admin'],
     children: [
       {
-        label: 'TPA Settings',
-        href: '/settings/tpa',
+        label: 'Organization',
+        href: '/settings/organization',
         icon: Building2,
         roles: ['tpa_admin'],
       },

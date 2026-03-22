@@ -15,7 +15,6 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { OrganizationSwitcher } from '@/components/organization-switcher';
 import { ProfileModal } from '@/components/profile-modal';
-import { OrganizationSettingsModal } from '@/components/organization-settings-modal';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { signOut } from 'next-auth/react';
 
@@ -47,7 +46,6 @@ interface Notification {
 
 export function Header({ user, onMobileMenuToggle }: HeaderProps) {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [orgSettingsModalOpen, setOrgSettingsModalOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -120,11 +118,6 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
       <ProfileModal
         open={profileModalOpen}
         onOpenChange={setProfileModalOpen}
-        user={user}
-      />
-      <OrganizationSettingsModal
-        open={orgSettingsModalOpen}
-        onOpenChange={setOrgSettingsModalOpen}
         user={user}
       />
     <header className="sticky top-0 z-40 w-full border-b bg-background">
@@ -249,15 +242,6 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
                 <User className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
-              {isAdmin && (
-                <DropdownMenuItem
-                  onClick={() => setOrgSettingsModalOpen(true)}
-                  className="cursor-pointer"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Organization Settings
-                </DropdownMenuItem>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/help" target="_blank" className="cursor-pointer">

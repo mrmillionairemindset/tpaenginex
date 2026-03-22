@@ -101,6 +101,15 @@ export async function PATCH(req: NextRequest) {
     hasChanges = true;
   }
 
+  // Branding fields
+  const brandingFields = ['brandName', 'logoUrl', 'primaryColor', 'defaultEmailFooter'] as const;
+  for (const field of brandingFields) {
+    if (body[field] !== undefined) {
+      (updateData as any)[field] = body[field] || null;
+      hasChanges = true;
+    }
+  }
+
   // Reply-to email fields (per category)
   const emailFields = ['replyToEmail', 'replyToOrders', 'replyToBilling', 'replyToLeads'] as const;
   for (const field of emailFields) {
