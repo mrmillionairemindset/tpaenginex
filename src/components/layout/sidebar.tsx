@@ -99,6 +99,20 @@ const tpaNav: NavItem[] = [
     href: '/settings',
     icon: Settings,
     roles: ['tpa_admin'],
+    children: [
+      {
+        label: 'TPA Settings',
+        href: '/settings/tpa',
+        icon: Building2,
+        roles: ['tpa_admin'],
+      },
+      {
+        label: 'Automations',
+        href: '/settings/automations',
+        icon: Settings,
+        roles: ['tpa_admin'],
+      },
+    ],
   },
 ];
 
