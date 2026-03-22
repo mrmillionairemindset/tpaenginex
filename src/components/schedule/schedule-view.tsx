@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,8 +14,8 @@ import {
   isToday,
   isSameDay,
   eachDayOfInterval,
+  isPast,
 } from 'date-fns';
-import { useMemo } from 'react';
 import {
   CalendarDays,
   FileText,
@@ -23,8 +23,10 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface ScheduledOrder {
   id: string;
@@ -77,17 +79,17 @@ interface ScheduleItem {
 }
 
 const statusColors: Record<string, string> = {
-  new: 'bg-blue-100 text-blue-800',
-  scheduled: 'bg-indigo-100 text-indigo-800',
-  in_progress: 'bg-yellow-100 text-yellow-800',
-  complete: 'bg-green-100 text-green-800',
-  partially_complete: 'bg-amber-100 text-amber-800',
+  new: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  scheduled: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  in_progress: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+  complete: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  partially_complete: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
 };
 
 const typeConfig = {
-  order: { icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50' },
-  event: { icon: CalendarDays, color: 'text-purple-500', bg: 'bg-purple-50' },
-  followup: { icon: Target, color: 'text-orange-500', bg: 'bg-orange-50' },
+  order: { icon: FileText, color: 'text-blue-500' },
+  event: { icon: CalendarDays, color: 'text-purple-500' },
+  followup: { icon: Target, color: 'text-orange-500' },
 };
 
 export function ScheduleView() {
@@ -118,8 +120,8 @@ export function ScheduleView() {
           subtitle: [
             o.candidate ? `${o.candidate.firstName} ${o.candidate.lastName}` : '',
             o.clientOrg?.name || o.clientLabel || '',
-            o.collector ? `Collector: ${o.collector.firstName} ${o.collector.lastName}` : '',
-          ].filter(Boolean).join(' — '),
+            o.collector ? `${o.collector.firstName} ${o.collector.lastName}` : '',
+          ].filter(Boolean).join(' \u00b7 '),
           time: new Date(o.scheduledFor),
           href: `/orders/${o.id}`,
           priority: o.priority,
@@ -136,9 +138,8 @@ export function ScheduleView() {
           subtitle: [
             e.clientOrg?.name || '',
             e.location || '',
-            `${e.totalOrdered} ordered, ${e.totalCompleted} done`,
-            e.collector ? `Collector: ${e.collector.firstName} ${e.collector.lastName}` : '',
-          ].filter(Boolean).join(' — '),
+            `${e.totalCompleted}/${e.totalOrdered} done`,
+          ].filter(Boolean).join(' \u00b7 '),
           time: new Date(e.scheduledDate),
           href: `/events/${e.id}`,
           status: e.status,
@@ -152,9 +153,8 @@ export function ScheduleView() {
           title: f.companyName,
           subtitle: [
             f.contactName || '',
-            f.owner?.name ? `Owned by ${f.owner.name}` : '',
             f.stage.replace(/_/g, ' '),
-          ].filter(Boolean).join(' — '),
+          ].filter(Boolean).join(' \u00b7 '),
           time: new Date(f.nextFollowUpAt),
           href: `/leads/${f.id}`,
           status: f.stage,
@@ -184,146 +184,169 @@ export function ScheduleView() {
 
   const isCurrentWeek = isSameDay(weekStart, startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  // Count items per type
   const orderCount = items.filter((i) => i.type === 'order').length;
   const eventCount = items.filter((i) => i.type === 'event').length;
   const followUpCount = items.filter((i) => i.type === 'followup').length;
+  const totalCount = items.length;
 
   return (
     <div className="space-y-4">
-      {/* Week navigation */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={goPrev}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={goNext}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          {!isCurrentWeek && (
-            <Button variant="ghost" size="sm" onClick={goToThisWeek}>
-              This Week
+      {/* Header bar */}
+      <Card className="p-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-1.5">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goPrev}>
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-          )}
-          <span className="text-sm font-medium ml-2">
-            {format(weekStart, 'MMM d')} — {format(weekEnd, 'MMM d, yyyy')}
-          </span>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goNext}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-semibold ml-1">
+              {format(weekStart, 'MMM d')} — {format(weekEnd, 'MMM d, yyyy')}
+            </span>
+            {!isCurrentWeek && (
+              <Button variant="outline" size="sm" className="h-7 text-xs ml-1" onClick={goToThisWeek}>
+                Today
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              {orderCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <FileText className="h-3 w-3 text-blue-500" /> {orderCount}
+                </span>
+              )}
+              {eventCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <CalendarDays className="h-3 w-3 text-purple-500" /> {eventCount}
+                </span>
+              )}
+              {followUpCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <Target className="h-3 w-3 text-orange-500" /> {followUpCount}
+                </span>
+              )}
+              {totalCount === 0 && !loading && (
+                <span>No items this week</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <Button asChild size="sm" variant="outline" className="h-7 text-xs">
+                <Link href="/orders/new">
+                  <Plus className="h-3 w-3 mr-1" /> Order
+                </Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="h-7 text-xs">
+                <Link href="/events/new">
+                  <Plus className="h-3 w-3 mr-1" /> Event
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <FileText className="h-3.5 w-3.5 text-blue-500" /> {orderCount} orders
-          </span>
-          <span className="flex items-center gap-1">
-            <CalendarDays className="h-3.5 w-3.5 text-purple-500" /> {eventCount} events
-          </span>
-          <span className="flex items-center gap-1">
-            <Target className="h-3.5 w-3.5 text-orange-500" /> {followUpCount} follow-ups
-          </span>
-        </div>
-      </div>
+      </Card>
 
       {loading ? (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-24 rounded-lg border bg-card animate-pulse" />
+        <div className="space-y-1">
+          {[...Array(7)].map((_, i) => (
+            <div key={i} className="h-12 rounded-lg border bg-card animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
-          {days.map((day) => {
+        <div className="rounded-lg border bg-card overflow-hidden">
+          {days.map((day, idx) => {
             const dayItems = items.filter((item) => isSameDay(item.time, day));
             const today = isToday(day);
+            const past = isPast(day) && !today;
+            const isLast = idx === days.length - 1;
 
             return (
-              <Card
+              <div
                 key={day.toISOString()}
-                className={`p-4 ${today ? 'ring-2 ring-primary/30' : ''}`}
+                className={cn(
+                  !isLast && 'border-b',
+                  today && 'bg-primary/[0.03]',
+                  past && 'opacity-60',
+                )}
               >
-                <div className="flex items-center gap-2 mb-3">
-                  <h3
-                    className={`text-sm font-semibold ${
-                      today ? 'text-primary' : 'text-foreground'
-                    }`}
-                  >
-                    {format(day, 'EEEE, MMMM d')}
-                  </h3>
-                  {today && (
-                    <Badge variant="default" className="text-[10px] px-1.5 py-0">
-                      Today
-                    </Badge>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {dayItems.length === 0
-                      ? 'No items'
-                      : `${dayItems.length} item${dayItems.length > 1 ? 's' : ''}`}
+                {/* Day header row */}
+                <div className={cn(
+                  'flex items-center gap-2 px-4 py-2',
+                  today ? 'border-l-2 border-l-primary' : 'border-l-2 border-l-transparent',
+                )}>
+                  <span className={cn(
+                    'text-xs font-semibold w-8 text-center',
+                    today ? 'text-primary' : 'text-muted-foreground',
+                  )}>
+                    {format(day, 'EEE')}
                   </span>
+                  <span className={cn(
+                    'text-xs font-medium',
+                    today ? 'text-primary' : 'text-foreground',
+                  )}>
+                    {format(day, 'MMM d')}
+                  </span>
+                  {today && (
+                    <Badge className="text-[9px] px-1.5 py-0 h-4">Today</Badge>
+                  )}
+                  {dayItems.length > 0 && (
+                    <span className="text-[11px] text-muted-foreground ml-auto">
+                      {dayItems.length}
+                    </span>
+                  )}
                 </div>
 
-                {dayItems.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic pl-1">
-                    Nothing scheduled
-                  </p>
-                ) : (
-                  <div className="space-y-2">
+                {/* Items */}
+                {dayItems.length > 0 && (
+                  <div className="px-4 pb-2 space-y-1">
                     {dayItems.map((item) => {
                       const config = typeConfig[item.type];
                       const Icon = config.icon;
-                      const statusClass =
-                        statusColors[item.status] || 'bg-gray-100 text-gray-800';
+                      const statusClass = statusColors[item.status] || 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
 
                       return (
                         <Link
                           key={`${item.type}-${item.id}`}
                           href={item.href}
-                          className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-muted/50 transition-colors group"
                         >
-                          <div
-                            className={`mt-0.5 p-1.5 rounded ${config.bg}`}
-                          >
-                            <Icon className={`h-4 w-4 ${config.color}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-sm">
-                                {item.title}
-                              </span>
-                              <Badge
-                                variant="secondary"
-                                className={`text-[10px] px-1.5 py-0 ${statusClass}`}
-                              >
-                                {item.status.replace(/_/g, ' ')}
+                          <Icon className={cn('h-3.5 w-3.5 shrink-0', config.color)} />
+                          <span className="text-sm font-medium truncate">
+                            {item.title}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate hidden sm:inline">
+                            {item.subtitle}
+                          </span>
+                          <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                            {item.priority === 'urgent' && (
+                              <Badge variant="destructive" className="text-[9px] px-1 py-0 h-4">
+                                Urgent
                               </Badge>
-                              {item.priority === 'urgent' && (
-                                <Badge
-                                  variant="destructive"
-                                  className="text-[10px] px-1.5 py-0"
-                                >
-                                  Urgent
-                                </Badge>
-                              )}
-                              {item.isDOT && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] px-1.5 py-0"
-                                >
-                                  DOT
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                              {item.subtitle}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
-                            <Clock className="h-3 w-3" />
-                            {format(item.time, 'h:mm a')}
+                            )}
+                            {item.isDOT && (
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                                DOT
+                              </Badge>
+                            )}
+                            <Badge
+                              variant="secondary"
+                              className={cn('text-[9px] px-1.5 py-0 h-4', statusClass)}
+                            >
+                              {item.status.replace(/_/g, ' ')}
+                            </Badge>
+                            <span className="text-[11px] text-muted-foreground w-16 text-right">
+                              {format(item.time, 'h:mm a')}
+                            </span>
                           </div>
                         </Link>
                       );
                     })}
                   </div>
                 )}
-              </Card>
+              </div>
             );
           })}
         </div>
