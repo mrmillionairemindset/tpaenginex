@@ -11,6 +11,8 @@ export default async function DashboardPage() {
     return null;
   }
 
+  const isTpaUser = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
+
   return (
     <div>
       <PageHeader
@@ -20,15 +22,22 @@ export default async function DashboardPage() {
 
       <DashboardStats userRole={user.role || ''} />
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-2">
-        <div>
-          <UpcomingSchedule />
+      {isTpaUser && (
+        <div className="mt-6 grid gap-6 lg:grid-cols-5">
+          <div className="lg:col-span-3">
+            <UpcomingSchedule />
+          </div>
+          <div className="lg:col-span-2">
+            <RecentActivity userRole={user.role || ''} />
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+      )}
+
+      {!isTpaUser && (
+        <div className="mt-6">
           <RecentActivity userRole={user.role || ''} />
         </div>
-      </div>
+      )}
     </div>
   );
 }

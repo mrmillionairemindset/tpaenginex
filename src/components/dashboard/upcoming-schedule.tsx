@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { usePolling } from '@/hooks/use-polling';
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek } from 'date-fns';
-import { CalendarDays, FileText, Target, Clock } from 'lucide-react';
+import { CalendarDays, FileText, Target, Clock, Plus } from 'lucide-react';
 import Link from 'next/link';
 
 interface ScheduledOrder {
@@ -145,7 +146,7 @@ export function UpcomingSchedule() {
 
   usePolling(fetchSchedule, 30000);
 
-  // Group by day
+  // Group by day — only show days that have items (plus today if empty)
   const grouped = new Map<string, ScheduleItem[]>();
   for (const item of items) {
     const key = format(item.time, 'yyyy-MM-dd');
@@ -161,77 +162,90 @@ export function UpcomingSchedule() {
 
   if (loading) {
     return (
-      <Card className="p-6">
-        <div className="h-48 animate-pulse rounded bg-muted" />
-      </Card>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <Card className="p-6 text-center text-muted-foreground">
-        <CalendarDays className="h-10 w-10 mx-auto mb-2 opacity-30" />
-        <p>Nothing scheduled this week</p>
+      <Card className="p-5">
+        <div className="space-y-3">
+          <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-16 animate-pulse rounded bg-muted" />
+          <div className="h-16 animate-pulse rounded bg-muted" />
+        </div>
       </Card>
     );
   }
 
   return (
-    <Card className="p-6">
+    <Card className="p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">This Week</h3>
+        <h3 className="font-semibold">This Week</h3>
         <Link
           href="/schedule"
-          className="text-sm text-primary hover:underline"
+          className="text-xs text-primary hover:underline"
         >
-          View full schedule
+          Full schedule
         </Link>
       </div>
 
-      <div className="space-y-5">
-        {[...grouped.entries()].map(([dateKey, dayItems]) => (
-          <div key={dateKey}>
-            <h4 className="text-sm font-medium text-muted-foreground mb-2">
-              {dayLabel(new Date(dateKey + 'T12:00:00'))}
-            </h4>
-            <div className="space-y-2">
-              {dayItems.map((item) => (
-                <Link
-                  key={`${item.type}-${item.id}`}
-                  href={item.href}
-                  className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <div className="mt-0.5">{typeIcon[item.type]}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">
-                        {item.title}
-                      </span>
-                      {item.priority === 'urgent' && (
-                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                          Urgent
-                        </Badge>
-                      )}
-                      {item.isDOT && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          DOT
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {item.subtitle}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
-                    <Clock className="h-3 w-3" />
-                    {format(item.time, 'h:mm a')}
-                  </div>
-                </Link>
-              ))}
-            </div>
+      {items.length === 0 ? (
+        <div className="py-6 text-center">
+          <CalendarDays className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground mb-3">Nothing scheduled this week</p>
+          <div className="flex justify-center gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href="/orders/new">
+                <Plus className="h-3.5 w-3.5 mr-1" /> New Order
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/events/new">
+                <Plus className="h-3.5 w-3.5 mr-1" /> New Event
+              </Link>
+            </Button>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="space-y-4 max-h-[400px] overflow-y-auto">
+          {[...grouped.entries()].map(([dateKey, dayItems]) => (
+            <div key={dateKey}>
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                {dayLabel(new Date(dateKey + 'T12:00:00'))}
+              </h4>
+              <div className="space-y-1.5">
+                {dayItems.map((item) => (
+                  <Link
+                    key={`${item.type}-${item.id}`}
+                    href={item.href}
+                    className="flex items-center gap-2.5 p-2.5 rounded-md border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="shrink-0">{typeIcon[item.type]}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-sm truncate">
+                          {item.title}
+                        </span>
+                        {item.priority === 'urgent' && (
+                          <Badge variant="destructive" className="text-[10px] px-1 py-0 leading-tight">
+                            Urgent
+                          </Badge>
+                        )}
+                        {item.isDOT && (
+                          <Badge variant="outline" className="text-[10px] px-1 py-0 leading-tight">
+                            DOT
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.subtitle}
+                      </p>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0">
+                      {format(item.time, 'h:mm a')}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
