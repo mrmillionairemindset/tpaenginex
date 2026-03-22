@@ -4,7 +4,7 @@ import { events, users } from '@/db/schema';
 import { eq, and, gt, or, lte } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
 import { sendPendingResultsReminder } from '@/lib/email';
-import { getTpaAutomationSettings } from '@/lib/tpa-settings';
+import { getTpaAutomationSettings, getTpaBranding } from '@/lib/tpa-settings';
 
 /**
  * Runs daily at 9am. For each event with totalPending > 0 and
@@ -72,6 +72,7 @@ export async function handleResultsPendingDaily(job: Job) {
     }
 
     // Email to first records staff
+    const branding = await getTpaBranding(event.tpaOrgId);
     const recipient = recordsStaff.find(u => u.email);
     if (recipient) {
       await sendPendingResultsReminder({
@@ -79,6 +80,7 @@ export async function handleResultsPendingDaily(job: Job) {
         eventNumber: event.eventNumber,
         pendingCount: event.totalPending,
         daysSinceEvent,
+        branding,
       }).catch(err => console.error('[results-pending-daily] Email failed:', err));
     }
   }

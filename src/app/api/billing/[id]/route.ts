@@ -103,6 +103,7 @@ export async function PATCH(
         where: eq(tpaSettings.tpaOrgId, existing.tpaOrgId),
       });
       const brandName = settings?.brandName || 'Your TPA';
+      const branding = { brandName: settings?.brandName, replyToEmail: settings?.replyToEmail };
 
       // Find client_admin users for this client org
       const clientAdmins = await db.query.users.findMany({
@@ -123,6 +124,7 @@ export async function PATCH(
           amount: existing.amount || 0,
           dueDate: dueDateStr,
           tpaBrandName: brandName,
+          branding,
         }).catch(err => console.error('[billing] Invoice email failed:', err));
 
         await createNotification({

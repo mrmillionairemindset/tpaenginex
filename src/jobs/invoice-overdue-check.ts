@@ -4,6 +4,7 @@ import { invoices, users, tpaSettings } from '@/db/schema';
 import { eq, and, lt, or } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
 import { sendInvoiceOverdueNotification } from '@/lib/email';
+import { getTpaBranding } from '@/lib/tpa-settings';
 
 /**
  * Runs daily. Finds invoices where status='sent' and dueDate has passed.
@@ -67,6 +68,7 @@ export async function handleInvoiceOverdueCheck(job: Job) {
     }
 
     // Email first billing staff member
+    const branding = await getTpaBranding(invoice.tpaOrgId);
     const recipient = staff.find(u => u.email);
     if (recipient) {
       await sendInvoiceOverdueNotification({
@@ -76,6 +78,7 @@ export async function handleInvoiceOverdueCheck(job: Job) {
         amount: invoice.amount || 0,
         dueDate: new Date(invoice.dueDate!).toLocaleDateString(),
         daysPastDue,
+        branding,
       }).catch(err => console.error('[invoice-overdue-check] Email failed:', err));
     }
   }

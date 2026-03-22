@@ -4,7 +4,7 @@ import { events } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
 import { sendEventCompletionEmail } from '@/lib/email';
-import { getTpaAutomationSettings } from '@/lib/tpa-settings';
+import { getTpaAutomationSettings, getTpaBranding } from '@/lib/tpa-settings';
 
 export interface EventCompletionEmailData {
   eventId: string;
@@ -37,6 +37,7 @@ export async function handleEventCompletionEmail(job: Job<EventCompletionEmailDa
 
   if (!event) return;
 
+  const branding = await getTpaBranding(tpaOrgId);
   const clientAdmins = event.clientOrg.users.filter(u => u.role === 'client_admin');
 
   for (const admin of clientAdmins) {
@@ -55,6 +56,7 @@ export async function handleEventCompletionEmail(job: Job<EventCompletionEmailDa
       totalDone: event.totalCompleted,
       totalPending: event.totalPending,
       eventDate: event.scheduledDate.toLocaleDateString(),
+      branding,
     }).catch(err => console.error('[event-completion-email] Email failed:', err));
   }
 

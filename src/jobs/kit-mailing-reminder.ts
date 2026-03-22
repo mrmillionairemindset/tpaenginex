@@ -4,7 +4,7 @@ import { events, users } from '@/db/schema';
 import { eq, or } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
 import { sendKitMailingReminder } from '@/lib/email';
-import { getTpaAutomationSettings } from '@/lib/tpa-settings';
+import { getTpaAutomationSettings, getTpaBranding } from '@/lib/tpa-settings';
 
 export interface KitMailingReminderData {
   eventId: string;
@@ -49,6 +49,7 @@ export async function handleKitMailingReminder(job: Job<KitMailingReminderData>)
   }
 
   // Send email to first staff member with an email
+  const branding = await getTpaBranding(tpaOrgId);
   const recipient = staffUsers.find(u => u.email);
   if (recipient) {
     await sendKitMailingReminder({
@@ -57,6 +58,7 @@ export async function handleKitMailingReminder(job: Job<KitMailingReminderData>)
       clientName: event.clientOrg.name,
       scheduledDate: event.scheduledDate.toLocaleDateString(),
       location: event.location,
+      branding,
     }).catch(err => console.error('[kit-mailing-reminder] Email failed:', err));
   }
 

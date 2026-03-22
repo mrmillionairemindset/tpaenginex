@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/auth/get-user";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { sendUserInviteEmail } from "@/lib/email";
+import { getTpaBranding } from "@/lib/tpa-settings";
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -91,6 +92,7 @@ export async function POST(request: Request) {
 
     // Send invitation email
     const loginUrl = `${process.env.NEXTAUTH_URL || 'https://tpaenginex.vercel.app'}/auth/signin`;
+    const branding = currentUser.tpaOrgId ? await getTpaBranding(currentUser.tpaOrgId) : undefined;
     await sendUserInviteEmail({
       to: email.toLowerCase(),
       name: fullName,
@@ -98,6 +100,7 @@ export async function POST(request: Request) {
       organizationName: currentUser.organization?.name || 'TPAEngineX',
       temporaryPassword,
       loginUrl,
+      branding,
     }).catch(err => console.error('Failed to send invite email:', err));
 
     return NextResponse.json(

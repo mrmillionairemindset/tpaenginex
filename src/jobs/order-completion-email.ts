@@ -4,7 +4,7 @@ import { orders, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
 import { sendOrderCompletionEmail } from '@/lib/email';
-import { getTpaAutomationSettings } from '@/lib/tpa-settings';
+import { getTpaAutomationSettings, getTpaBranding } from '@/lib/tpa-settings';
 
 export interface OrderCompletionEmailData {
   orderId: string;
@@ -38,6 +38,8 @@ export async function handleOrderCompletionEmail(job: Job<OrderCompletionEmailDa
 
   if (!order) return;
 
+  const branding = await getTpaBranding(tpaOrgId);
+
   // Find client admin
   const clientAdmins = order.organization.users.filter(u => u.role === 'client_admin');
 
@@ -60,6 +62,7 @@ export async function handleOrderCompletionEmail(job: Job<OrderCompletionEmailDa
       donorName: `${order.candidate.firstName} ${order.candidate.lastName}`,
       serviceType: order.serviceType || order.testType,
       reviewLink: '',
+      branding,
     }).catch(err => console.error('[order-completion-email] Email failed:', err));
   }
 

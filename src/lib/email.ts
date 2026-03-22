@@ -97,6 +97,20 @@ export async function sendAuthorizationFormEmail(options: SendAuthorizationFormE
 
 const DEFAULT_FROM = 'TPAEngineX <noreply@tpaenginex.com>';
 
+export interface TpaBranding {
+  brandName?: string | null;
+  replyToEmail?: string | null;
+}
+
+function buildFrom(branding?: TpaBranding): string {
+  const name = branding?.brandName || 'TPAEngineX';
+  return `${name} <noreply@tpaenginex.com>`;
+}
+
+function buildReplyTo(branding?: TpaBranding): string | undefined {
+  return branding?.replyToEmail || undefined;
+}
+
 /**
  * Collector assignment confirmation email to client contact
  */
@@ -107,12 +121,14 @@ export async function sendCollectorAssignedEmail(options: {
   collectorName: string;
   scheduledDate: string;
   location: string;
+  branding?: TpaBranding;
 }) {
-  const { to, orderNumber, clientName, collectorName, scheduledDate, location } = options;
+  const { to, orderNumber, clientName, collectorName, scheduledDate, location, branding } = options;
 
   const msg = {
     to,
-    from: DEFAULT_FROM,
+    from: buildFrom(branding),
+    replyTo: buildReplyTo(branding),
     subject: `Collector Confirmed for Order ${orderNumber} — ${clientName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -143,12 +159,14 @@ export async function sendOrderCompletionEmail(options: {
   donorName: string;
   serviceType: string;
   reviewLink: string;
+  branding?: TpaBranding;
 }) {
-  const { to, orderNumber, clientName, donorName, serviceType, reviewLink } = options;
+  const { to, orderNumber, clientName, donorName, serviceType, reviewLink, branding } = options;
 
   const msg = {
     to,
-    from: DEFAULT_FROM,
+    from: buildFrom(branding),
+    replyTo: buildReplyTo(branding),
     subject: `Collection Complete — Order ${orderNumber} | ${clientName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -180,12 +198,14 @@ export async function sendEventCompletionEmail(options: {
   totalDone: number;
   totalPending: number;
   eventDate: string;
+  branding?: TpaBranding;
 }) {
-  const { to, eventNumber, clientName, totalDone, totalPending, eventDate } = options;
+  const { to, eventNumber, clientName, totalDone, totalPending, eventDate, branding } = options;
 
   const msg = {
     to,
-    from: DEFAULT_FROM,
+    from: buildFrom(branding),
+    replyTo: buildReplyTo(branding),
     subject: `Collection Event Summary — ${clientName} | ${eventDate}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -215,12 +235,14 @@ export async function sendPendingResultsReminder(options: {
   eventNumber: string;
   pendingCount: number;
   daysSinceEvent: number;
+  branding?: TpaBranding;
 }) {
-  const { to, eventNumber, pendingCount, daysSinceEvent } = options;
+  const { to, eventNumber, pendingCount, daysSinceEvent, branding } = options;
 
   const msg = {
     to,
-    from: DEFAULT_FROM,
+    from: buildFrom(branding),
+    replyTo: buildReplyTo(branding),
     subject: `${pendingCount} Results Still Pending — ${eventNumber}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -245,12 +267,14 @@ export async function sendKitMailingReminder(options: {
   clientName: string;
   scheduledDate: string;
   location: string;
+  branding?: TpaBranding;
 }) {
-  const { to, eventNumber, clientName, scheduledDate, location } = options;
+  const { to, eventNumber, clientName, scheduledDate, location, branding } = options;
 
   const msg = {
     to,
-    from: DEFAULT_FROM,
+    from: buildFrom(branding),
+    replyTo: buildReplyTo(branding),
     subject: `Action Required — Mail Collection Kits for ${clientName} Event ${eventNumber}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -281,8 +305,9 @@ export async function sendUserInviteEmail(options: {
   organizationName: string;
   temporaryPassword: string;
   loginUrl: string;
+  branding?: TpaBranding;
 }) {
-  const { to, name, role, organizationName, temporaryPassword, loginUrl } = options;
+  const { to, name, role, organizationName, temporaryPassword, loginUrl, branding } = options;
 
   const roleLabel: Record<string, string> = {
     tpa_admin: 'TPA Admin',
@@ -295,7 +320,8 @@ export async function sendUserInviteEmail(options: {
 
   const msg = {
     to,
-    from: DEFAULT_FROM,
+    from: buildFrom(branding),
+    replyTo: buildReplyTo(branding),
     subject: `You've been invited to ${organizationName} on TPAEngineX`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0B0F14; color: #FFFFFF; border-radius: 8px; overflow: hidden;">
@@ -342,12 +368,14 @@ export async function sendLeadStageEmail(options: {
   to: string;
   subject: string;
   body: string; // Already has placeholders replaced
+  branding?: TpaBranding;
 }) {
-  const { to, subject, body } = options;
+  const { to, subject, body, branding } = options;
 
   const msg = {
     to,
-    from: DEFAULT_FROM,
+    from: buildFrom(branding),
+    replyTo: buildReplyTo(branding),
     subject,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -370,13 +398,15 @@ export async function sendInvoiceEmail(options: {
   amount: number; // cents
   dueDate: string;
   tpaBrandName: string;
+  branding?: TpaBranding;
 }) {
-  const { to, invoiceNumber, clientName, amount, dueDate, tpaBrandName } = options;
+  const { to, invoiceNumber, clientName, amount, dueDate, tpaBrandName, branding } = options;
   const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount / 100);
 
   const msg = {
     to,
-    from: DEFAULT_FROM,
+    from: buildFrom(branding),
+    replyTo: buildReplyTo(branding),
     subject: `Invoice ${invoiceNumber} — ${clientName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -410,13 +440,15 @@ export async function sendInvoiceOverdueNotification(options: {
   amount: number; // cents
   dueDate: string;
   daysPastDue: number;
+  branding?: TpaBranding;
 }) {
-  const { to, invoiceNumber, clientName, amount, dueDate, daysPastDue } = options;
+  const { to, invoiceNumber, clientName, amount, dueDate, daysPastDue, branding } = options;
   const formattedAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount / 100);
 
   const msg = {
     to,
-    from: DEFAULT_FROM,
+    from: buildFrom(branding),
+    replyTo: buildReplyTo(branding),
     subject: `Overdue Invoice — ${invoiceNumber} | ${clientName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

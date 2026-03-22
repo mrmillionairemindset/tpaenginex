@@ -5,7 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { sendLeadStageEmail } from '@/lib/email';
 import { scheduleReminder } from './queue';
 import { createNotification } from '@/lib/notifications';
-import { getTpaAutomationSettings } from '@/lib/tpa-settings';
+import { getTpaAutomationSettings, getTpaBranding } from '@/lib/tpa-settings';
 
 export interface LeadStageAutomationData {
   leadId: string;
@@ -102,10 +102,12 @@ export async function handleLeadStageAutomation(job: Job<LeadStageAutomationData
         console.log(`[lead-stage-automation] Email delayed by ${template.delayMinutes} minutes`);
       }
 
+      const branding = await getTpaBranding(tpaOrgId);
       await sendLeadStageEmail({
         to: lead.contactEmail,
         subject,
         body,
+        branding,
       });
 
       // 4. Log email sent activity
