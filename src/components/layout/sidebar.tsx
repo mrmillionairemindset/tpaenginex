@@ -112,6 +112,12 @@ const tpaNav: NavItem[] = [
         icon: Settings,
         roles: ['tpa_admin'],
       },
+      {
+        label: 'Pricing',
+        href: '/settings/pricing',
+        icon: DollarSign,
+        roles: ['tpa_admin'],
+      },
     ],
   },
 ];

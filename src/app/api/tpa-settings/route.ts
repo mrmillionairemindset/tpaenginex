@@ -101,6 +101,20 @@ export async function PATCH(req: NextRequest) {
     hasChanges = true;
   }
 
+  // Pricing fields
+  if (body.defaultServiceRates !== undefined && typeof body.defaultServiceRates === 'object') {
+    updateData.defaultServiceRates = body.defaultServiceRates;
+    hasChanges = true;
+  }
+  if (typeof body.dotSurchargeRate === 'number') {
+    updateData.dotSurchargeRate = body.dotSurchargeRate;
+    hasChanges = true;
+  }
+  if (typeof body.defaultPaymentTermDays === 'number') {
+    updateData.defaultPaymentTermDays = body.defaultPaymentTermDays;
+    hasChanges = true;
+  }
+
   if (!hasChanges) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
   }
