@@ -102,7 +102,7 @@ export async function handleLeadStageAutomation(job: Job<LeadStageAutomationData
         console.log(`[lead-stage-automation] Email delayed by ${template.delayMinutes} minutes`);
       }
 
-      const branding = await getTpaBranding(tpaOrgId);
+      const branding = await getTpaBranding(tpaOrgId, 'leads');
       await sendLeadStageEmail({
         to: lead.contactEmail,
         subject,

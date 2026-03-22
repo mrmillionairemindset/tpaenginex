@@ -28,6 +28,7 @@ export function TpaSettingsForm({ orgId }: TpaSettingsFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingEmails, setSavingEmails] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     contactEmail: '',
@@ -37,13 +38,23 @@ export function TpaSettingsForm({ orgId }: TpaSettingsFormProps) {
     defaultEmailFooter: '',
     website: '',
   });
+  const [emailData, setEmailData] = useState({
+    replyToEmail: '',
+    replyToOrders: '',
+    replyToBilling: '',
+    replyToLeads: '',
+  });
 
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const response = await fetch(`/api/organizations/${orgId}/settings`);
-        if (response.ok) {
-          const data = await response.json();
+        const [orgRes, tpaRes] = await Promise.all([
+          fetch(`/api/organizations/${orgId}/settings`),
+          fetch('/api/tpa-settings'),
+        ]);
+
+        if (orgRes.ok) {
+          const data = await orgRes.json();
           const settings: TpaSettings = data.settings;
           setFormData({
             name: settings.name || '',
@@ -53,6 +64,16 @@ export function TpaSettingsForm({ orgId }: TpaSettingsFormProps) {
             primaryColor: settings.primaryColor || '#3b82f6',
             defaultEmailFooter: settings.defaultEmailFooter || '',
             website: settings.website || '',
+          });
+        }
+
+        if (tpaRes.ok) {
+          const data = await tpaRes.json();
+          setEmailData({
+            replyToEmail: data.settings.replyToEmail || '',
+            replyToOrders: data.settings.replyToOrders || '',
+            replyToBilling: data.settings.replyToBilling || '',
+            replyToLeads: data.settings.replyToLeads || '',
           });
         }
       } catch (error) {
@@ -108,6 +129,46 @@ export function TpaSettingsForm({ orgId }: TpaSettingsFormProps) {
     }
   };
 
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingEmails(true);
+
+    try {
+      const response = await fetch('/api/tpa-settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          replyToEmail: emailData.replyToEmail || null,
+          replyToOrders: emailData.replyToOrders || null,
+          replyToBilling: emailData.replyToBilling || null,
+          replyToLeads: emailData.replyToLeads || null,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Email Settings Saved',
+          description: 'Reply-to addresses have been updated',
+        });
+      } else {
+        const error = await response.json();
+        toast({
+          title: 'Error',
+          description: error.error || 'Failed to save email settings',
+          variant: 'destructive',
+        });
+      }
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingEmails(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -117,6 +178,7 @@ export function TpaSettingsForm({ orgId }: TpaSettingsFormProps) {
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit}>
       <Card className="p-6 space-y-6">
         <div>
@@ -238,5 +300,83 @@ export function TpaSettingsForm({ orgId }: TpaSettingsFormProps) {
         </div>
       </Card>
     </form>
+
+      <form onSubmit={handleEmailSubmit}>
+        <Card className="p-6 space-y-6 mt-6">
+          <div>
+            <h3 className="text-lg font-semibold mb-1">Reply-To Email Addresses</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Configure where client replies go for each type of email. If a category-specific address is blank, the general reply-to address is used as a fallback.
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <Label htmlFor="replyToEmail">General (fallback for all emails)</Label>
+                <Input
+                  id="replyToEmail"
+                  type="email"
+                  placeholder="info@yourcompany.com"
+                  value={emailData.replyToEmail}
+                  onChange={(e) =>
+                    setEmailData({ ...emailData, replyToEmail: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="replyToOrders">Orders & Collections</Label>
+                <Input
+                  id="replyToOrders"
+                  type="email"
+                  placeholder="orders@yourcompany.com"
+                  value={emailData.replyToOrders}
+                  onChange={(e) =>
+                    setEmailData({ ...emailData, replyToOrders: e.target.value })
+                  }
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Collector assigned, order/event complete, kit reminders, pending results
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="replyToBilling">Billing & Invoices</Label>
+                <Input
+                  id="replyToBilling"
+                  type="email"
+                  placeholder="billing@yourcompany.com"
+                  value={emailData.replyToBilling}
+                  onChange={(e) =>
+                    setEmailData({ ...emailData, replyToBilling: e.target.value })
+                  }
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Invoice sent, overdue notices
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="replyToLeads">Leads & Sales</Label>
+                <Input
+                  id="replyToLeads"
+                  type="email"
+                  placeholder="sales@yourcompany.com"
+                  value={emailData.replyToLeads}
+                  onChange={(e) =>
+                    setEmailData({ ...emailData, replyToLeads: e.target.value })
+                  }
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Lead stage emails, follow-up outreach
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button type="submit" disabled={savingEmails}>
+              {savingEmails ? 'Saving...' : 'Save Email Settings'}
+            </Button>
+          </div>
+        </Card>
+      </form>
+    </>
   );
 }

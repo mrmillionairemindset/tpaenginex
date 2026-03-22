@@ -103,7 +103,10 @@ export async function PATCH(
         where: eq(tpaSettings.tpaOrgId, existing.tpaOrgId),
       });
       const brandName = settings?.brandName || 'Your TPA';
-      const branding = { brandName: settings?.brandName, replyToEmail: settings?.replyToEmail };
+      const branding = {
+        brandName: settings?.brandName,
+        replyToEmail: settings?.replyToBilling || settings?.replyToEmail,
+      };
 
       // Find client_admin users for this client org
       const clientAdmins = await db.query.users.findMany({

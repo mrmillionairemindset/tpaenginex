@@ -101,6 +101,15 @@ export async function PATCH(req: NextRequest) {
     hasChanges = true;
   }
 
+  // Reply-to email fields (per category)
+  const emailFields = ['replyToEmail', 'replyToOrders', 'replyToBilling', 'replyToLeads'] as const;
+  for (const field of emailFields) {
+    if (body[field] !== undefined) {
+      (updateData as any)[field] = body[field] || null;
+      hasChanges = true;
+    }
+  }
+
   // Pricing fields
   if (body.defaultServiceRates !== undefined && typeof body.defaultServiceRates === 'object') {
     updateData.defaultServiceRates = body.defaultServiceRates;

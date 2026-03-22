@@ -38,7 +38,7 @@ export async function handleOrderCompletionEmail(job: Job<OrderCompletionEmailDa
 
   if (!order) return;
 
-  const branding = await getTpaBranding(tpaOrgId);
+  const branding = await getTpaBranding(tpaOrgId, 'orders');
 
   // Find client admin
   const clientAdmins = order.organization.users.filter(u => u.role === 'client_admin');

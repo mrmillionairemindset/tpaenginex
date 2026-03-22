@@ -68,7 +68,7 @@ export async function handleInvoiceOverdueCheck(job: Job) {
     }
 
     // Email first billing staff member
-    const branding = await getTpaBranding(invoice.tpaOrgId);
+    const branding = await getTpaBranding(invoice.tpaOrgId, 'billing');
     const recipient = staff.find(u => u.email);
     if (recipient) {
       await sendInvoiceOverdueNotification({

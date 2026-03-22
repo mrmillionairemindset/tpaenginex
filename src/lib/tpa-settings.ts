@@ -33,14 +33,32 @@ export async function getTpaAutomationSettings(tpaOrgId: string): Promise<Automa
   return settings ?? { ...AUTOMATION_DEFAULTS };
 }
 
-export async function getTpaBranding(tpaOrgId: string) {
+export type EmailCategory = 'orders' | 'billing' | 'leads' | 'general';
+
+export async function getTpaBranding(tpaOrgId: string, category: EmailCategory = 'general') {
   const settings = await db.query.tpaSettings.findFirst({
     where: eq(tpaSettings.tpaOrgId, tpaOrgId),
     columns: {
       brandName: true,
       replyToEmail: true,
+      replyToOrders: true,
+      replyToBilling: true,
+      replyToLeads: true,
     },
   });
 
-  return settings ?? { brandName: null, replyToEmail: null };
+  if (!settings) return { brandName: null, replyToEmail: null };
+
+  // Use category-specific email, fall back to general replyToEmail
+  const categoryEmailMap: Record<EmailCategory, string | null | undefined> = {
+    orders: settings.replyToOrders,
+    billing: settings.replyToBilling,
+    leads: settings.replyToLeads,
+    general: settings.replyToEmail,
+  };
+
+  return {
+    brandName: settings.brandName,
+    replyToEmail: categoryEmailMap[category] || settings.replyToEmail,
+  };
 }

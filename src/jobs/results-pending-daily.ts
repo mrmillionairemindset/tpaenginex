@@ -72,7 +72,7 @@ export async function handleResultsPendingDaily(job: Job) {
     }
 
     // Email to first records staff
-    const branding = await getTpaBranding(event.tpaOrgId);
+    const branding = await getTpaBranding(event.tpaOrgId, 'orders');
     const recipient = recordsStaff.find(u => u.email);
     if (recipient) {
       await sendPendingResultsReminder({

@@ -49,7 +49,7 @@ export async function handleKitMailingReminder(job: Job<KitMailingReminderData>)
   }
 
   // Send email to first staff member with an email
-  const branding = await getTpaBranding(tpaOrgId);
+  const branding = await getTpaBranding(tpaOrgId, 'orders');
   const recipient = staffUsers.find(u => u.email);
   if (recipient) {
     await sendKitMailingReminder({
