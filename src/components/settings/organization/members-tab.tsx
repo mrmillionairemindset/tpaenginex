@@ -37,6 +37,7 @@ const roleLabels: Record<string, string> = {
   tpa_billing: 'Billing',
   client_admin: 'Client Admin',
   platform_admin: 'Platform Admin',
+  collector: 'Collector',
 };
 
 const roleColors: Record<string, string> = {
@@ -44,6 +45,7 @@ const roleColors: Record<string, string> = {
   tpa_staff: 'bg-blue-100 text-blue-800',
   tpa_records: 'bg-green-100 text-green-800',
   tpa_billing: 'bg-amber-100 text-amber-800',
+  collector: 'bg-teal-100 text-teal-800',
 };
 
 interface MembersTabProps {
