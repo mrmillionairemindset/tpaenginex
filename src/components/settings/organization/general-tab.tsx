@@ -27,7 +27,7 @@ export function GeneralTab({ orgId }: GeneralTabProps) {
   });
 
   useEffect(() => {
-    async function fetch_() {
+    async function fetchSettings() {
       try {
         const res = await fetch(`/api/organizations/${orgId}/settings`);
         if (res.ok) {
@@ -47,12 +47,10 @@ export function GeneralTab({ orgId }: GeneralTabProps) {
         setLoading(false);
       }
     }
-    fetch_();
+    fetchSettings();
   }, [orgId]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSave = async () => {
     setSaving(true);
     try {
       const res = await fetch(`/api/organizations/${orgId}/settings`, {
@@ -65,17 +63,21 @@ export function GeneralTab({ orgId }: GeneralTabProps) {
           website: formData.website || null,
         }),
       });
-      const data = await res.json().catch(() => ({ error: 'Unexpected server error' }));
+
+      const data = await res.json().catch(() => ({ error: 'Server error' }));
 
       if (res.ok) {
         toast({ title: 'Saved', description: 'General settings updated' });
       } else {
-        console.error('Save failed:', res.status, data);
-        const errorMsg = data.details?.[0]?.message || data.error || 'Failed to save';
-        toast({ title: 'Error', description: errorMsg, variant: 'destructive', duration: 8000 });
+        toast({
+          title: 'Save Failed',
+          description: data.error || `Error ${res.status}`,
+          variant: 'destructive',
+          duration: 8000,
+        });
       }
-    } catch {
-      toast({ title: 'Error', description: 'An unexpected error occurred', variant: 'destructive' });
+    } catch (err) {
+      toast({ title: 'Error', description: 'Could not reach server', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -86,38 +88,38 @@ export function GeneralTab({ orgId }: GeneralTabProps) {
   const typeLabel: Record<string, string> = { platform: 'Platform', tpa: 'TPA', client: 'Client' };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card className="p-6 space-y-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <Label htmlFor="name">Organization Name <span className="text-red-500">*</span></Label>
-            <Input id="name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-          </div>
-          <div>
-            <Label>Type</Label>
-            <div className="mt-1.5">
-              <Badge variant="secondary">{typeLabel[formData.type] || formData.type}</Badge>
-            </div>
-          </div>
-          <div>
-            <Label>Slug</Label>
-            <Input value={formData.slug} disabled className="bg-muted" />
-          </div>
-          <div>
-            <Label htmlFor="contactEmail">Contact Email</Label>
-            <Input id="contactEmail" type="email" value={formData.contactEmail} onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })} />
-          </div>
-          <div>
-            <Label htmlFor="contactPhone">Contact Phone</Label>
-            <Input id="contactPhone" type="tel" value={formData.contactPhone} onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })} />
-          </div>
-          <div className="md:col-span-2">
-            <Label htmlFor="website">Website</Label>
-            <Input id="website" type="url" placeholder="https://example.com" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} />
+    <Card className="p-6 space-y-5">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="md:col-span-2">
+          <Label htmlFor="gen-name">Organization Name <span className="text-red-500">*</span></Label>
+          <Input id="gen-name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+        </div>
+        <div>
+          <Label>Type</Label>
+          <div className="mt-1.5">
+            <Badge variant="secondary">{typeLabel[formData.type] || formData.type}</Badge>
           </div>
         </div>
-        <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save General'}</Button>
-      </Card>
-    </form>
+        <div>
+          <Label>Slug</Label>
+          <Input value={formData.slug} disabled className="bg-muted" />
+        </div>
+        <div>
+          <Label htmlFor="gen-email">Contact Email</Label>
+          <Input id="gen-email" type="email" value={formData.contactEmail} onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })} />
+        </div>
+        <div>
+          <Label htmlFor="gen-phone">Contact Phone</Label>
+          <Input id="gen-phone" type="tel" value={formData.contactPhone} onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })} />
+        </div>
+        <div className="md:col-span-2">
+          <Label htmlFor="gen-website">Website</Label>
+          <Input id="gen-website" placeholder="https://example.com" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} />
+        </div>
+      </div>
+      <Button onClick={handleSave} disabled={saving}>
+        {saving ? 'Saving...' : 'Save General'}
+      </Button>
+    </Card>
   );
 }
