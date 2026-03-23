@@ -62,8 +62,12 @@ export function MembersTab({ orgId, currentUserId }: MembersTabProps) {
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const [removing, setRemoving] = useState(false);
   const [inviteForm, setInviteForm] = useState({
-    firstName: '', lastName: '', email: '', role: '',
+    firstName: '', lastName: '', email: '', role: '', phone: '',
+    // Collector-specific fields
+    serviceArea: '', notes: '',
   });
+  const [certifications, setCertifications] = useState<string[]>([]);
+  const isCollectorRole = inviteForm.role === 'collector';
 
   const fetchMembers = useCallback(async () => {
     try {
@@ -88,11 +92,16 @@ export function MembersTab({ orgId, currentUserId }: MembersTabProps) {
       const res = await fetch('/api/invitations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...inviteForm, orgId }),
+        body: JSON.stringify({
+          ...inviteForm,
+          orgId,
+          ...(inviteForm.role === 'collector' ? { certifications, serviceArea: inviteForm.serviceArea, collectorNotes: inviteForm.notes } : {}),
+        }),
       });
       if (res.ok) {
         toast({ title: 'Invitation Sent', description: `${inviteForm.firstName} ${inviteForm.lastName} has been invited` });
-        setInviteForm({ firstName: '', lastName: '', email: '', role: '' });
+        setInviteForm({ firstName: '', lastName: '', email: '', role: '', phone: '', serviceArea: '', notes: '' });
+        setCertifications([]);
         setShowInvite(false);
         fetchMembers();
       } else {
@@ -171,7 +180,47 @@ export function MembersTab({ orgId, currentUserId }: MembersTabProps) {
                   <option value="collector">Collector</option>
                 </select>
               </div>
+              <div>
+                <Label htmlFor="invPhone">Phone</Label>
+                <Input id="invPhone" type="tel" value={inviteForm.phone} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} />
+              </div>
             </div>
+
+            {isCollectorRole && (
+              <div className="pt-2 border-t space-y-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Collector Details</p>
+                <div>
+                  <Label className="mb-2 block">Certifications</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {['DOT', 'BAT', 'Non-DOT', 'Oral Fluid', 'Hair'].map((cert) => (
+                      <button
+                        key={cert}
+                        type="button"
+                        onClick={() => setCertifications(prev => prev.includes(cert) ? prev.filter(c => c !== cert) : [...prev, cert])}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                          certifications.includes(cert)
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background border-border hover:bg-muted'
+                        }`}
+                      >
+                        {cert}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="invServiceArea">Service Area</Label>
+                    <Input id="invServiceArea" placeholder="e.g. Dallas/Fort Worth Metro" value={inviteForm.serviceArea} onChange={(e) => setInviteForm({ ...inviteForm, serviceArea: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="invNotes">Notes</Label>
+                    <Input id="invNotes" placeholder="Internal notes about this collector" value={inviteForm.notes} onChange={(e) => setInviteForm({ ...inviteForm, notes: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <Button type="submit" size="sm" disabled={inviting}>
               {inviting ? 'Sending...' : 'Send Invitation'}
             </Button>

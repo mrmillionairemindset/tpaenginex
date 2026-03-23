@@ -98,6 +98,9 @@ export async function POST(request: Request) {
         lastName,
         email: email.toLowerCase(),
         phone: body.phone || '',
+        certifications: body.certifications?.length > 0 ? body.certifications : null,
+        serviceArea: body.serviceArea || null,
+        notes: body.collectorNotes || null,
         userId: newUser.id,
       });
     }
