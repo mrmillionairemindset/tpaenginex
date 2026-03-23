@@ -9,9 +9,9 @@ export const dynamic = 'force-dynamic';
 
 const updateSettingsSchema = z.object({
   name: z.string().min(1).optional(),
-  contactEmail: z.string().email().nullable().optional(),
+  contactEmail: z.string().email().or(z.literal('')).nullable().optional(),
   contactPhone: z.string().nullable().optional(),
-  website: z.string().url().nullable().optional(),
+  website: z.string().url().or(z.literal('')).nullable().optional(),
 });
 
 // GET /api/organizations/[id]/settings
@@ -76,9 +76,9 @@ export async function PATCH(
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
 
   if (data.name !== undefined) updateData.name = data.name;
-  if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail;
-  if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone;
-  if (data.website !== undefined) updateData.website = data.website;
+  if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail || null;
+  if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone || null;
+  if (data.website !== undefined) updateData.website = data.website || null;
 
   await db.update(organizations).set(updateData).where(eq(organizations.id, id));
 
