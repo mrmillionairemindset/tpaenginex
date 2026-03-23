@@ -18,8 +18,9 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only providers can upload documents
-    if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
+    // TPA staff, collectors, and platform admins can upload documents
+    const canUpload = user.role?.startsWith('tpa_') || user.role === 'platform_admin' || user.role === 'collector';
+    if (!canUpload) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
