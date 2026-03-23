@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { organizations } from '@/db/schema';
-import { withAuth } from '@/auth/api-middleware';
+import { getCurrentUser } from '@/auth/get-user';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -15,17 +15,23 @@ const updateSettingsSchema = z.object({
 });
 
 // GET /api/organizations/[id]/settings
-export const GET = withAuth(async (req, context) => {
-  const params = await context.params;
-  const orgId = params.id;
-  const user = req.user;
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     return NextResponse.json({ error: 'Only TPA users can access organization settings' }, { status: 403 });
   }
 
+  const { id } = params;
+
   const org = await db.query.organizations.findFirst({
-    where: eq(organizations.id, orgId),
+    where: eq(organizations.id, id),
   });
 
   if (!org) {
@@ -42,18 +48,23 @@ export const GET = withAuth(async (req, context) => {
       website: org.website,
     },
   });
-});
+}
 
 // PATCH /api/organizations/[id]/settings
-export const PATCH = withAuth(async (req, context) => {
-  const params = await context.params;
-  const orgId = params.id;
-  const user = req.user;
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   if (user.role !== 'tpa_admin' && user.role !== 'platform_admin') {
     return NextResponse.json({ error: 'Only admins can update organization settings' }, { status: 403 });
   }
 
+  const { id } = params;
   const body = await req.json();
   const validation = updateSettingsSchema.safeParse(body);
 
@@ -69,10 +80,10 @@ export const PATCH = withAuth(async (req, context) => {
   if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone;
   if (data.website !== undefined) updateData.website = data.website;
 
-  await db.update(organizations).set(updateData).where(eq(organizations.id, orgId));
+  await db.update(organizations).set(updateData).where(eq(organizations.id, id));
 
   const updated = await db.query.organizations.findFirst({
-    where: eq(organizations.id, orgId),
+    where: eq(organizations.id, id),
   });
 
   return NextResponse.json({
@@ -86,4 +97,4 @@ export const PATCH = withAuth(async (req, context) => {
     },
     message: 'Settings updated successfully',
   });
-});
+}
