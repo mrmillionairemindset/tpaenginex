@@ -18,6 +18,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "tpa_records",      // TPA records — update results, manage documents
   "tpa_billing",      // TPA billing — access billing queue, invoices
   "client_admin",     // Client contact — read-only portal to their own orders
+  "collector",        // Mobile collector — view assignments, mark complete, upload docs
 ]);
 
 export const orderStatusEnum = pgEnum("order_status", [
@@ -237,6 +238,7 @@ export const collectors = pgTable("collectors", {
   serviceArea: text("service_area"),
   isAvailable: boolean("is_available").default(true).notNull(),
   notes: text("notes"),
+  userId: uuid("user_id").references(() => users.id),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

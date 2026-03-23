@@ -6,20 +6,25 @@ import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
-import { AlertCircle, UserCheck, Calendar, MapPin, Mail, Phone, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, UserCheck, Calendar, MapPin, Mail, Phone, Shield, Send, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 interface CollectorScheduleProps {
   collectorId: string;
   userRole: string;
+  canInvite?: boolean;
 }
 
-export function CollectorSchedule({ collectorId, userRole }: CollectorScheduleProps) {
+export function CollectorSchedule({ collectorId, userRole, canInvite = false }: CollectorScheduleProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     async function fetch_data() {
@@ -60,12 +65,56 @@ export function CollectorSchedule({ collectorId, userRole }: CollectorSchedulePr
 
   const { collector, schedule, stats } = data;
 
+  async function handleInvite() {
+    setInviting(true);
+    try {
+      const response = await fetch(`/api/collectors/${collectorId}/invite`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Invite sent',
+          description: `${collector.firstName} ${collector.lastName} has been invited to the portal.`,
+        });
+        // Refresh the data to show the updated portal status
+        const refreshResponse = await fetch(`/api/collectors/${collectorId}/schedule`);
+        if (refreshResponse.ok) {
+          setData(await refreshResponse.json());
+        }
+      } else {
+        toast({
+          title: 'Invite failed',
+          description: result.error || 'Failed to send invite.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Invite failed',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setInviting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{collector.firstName} {collector.lastName}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">{collector.firstName} {collector.lastName}</h1>
+            {collector.userId ? (
+              <Badge variant="default" className="text-xs bg-green-600 hover:bg-green-600">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Portal Active
+              </Badge>
+            ) : null}
+          </div>
           <div className="flex items-center gap-3 mt-1 text-muted-foreground">
             {collector.email && (
               <span className="flex items-center gap-1 text-sm">
@@ -79,9 +128,22 @@ export function CollectorSchedule({ collectorId, userRole }: CollectorSchedulePr
             )}
           </div>
         </div>
-        <Badge variant={collector.isAvailable ? 'default' : 'secondary'} className="text-sm">
-          {collector.isAvailable ? 'Available' : 'Unavailable'}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {canInvite && !collector.userId && (
+            <Button
+              onClick={handleInvite}
+              disabled={inviting}
+              size="sm"
+              variant="outline"
+            >
+              <Send className="h-3.5 w-3.5 mr-1.5" />
+              {inviting ? 'Sending...' : 'Invite to Portal'}
+            </Button>
+          )}
+          <Badge variant={collector.isAvailable ? 'default' : 'secondary'} className="text-sm">
+            {collector.isAvailable ? 'Available' : 'Unavailable'}
+          </Badge>
+        </div>
       </div>
 
       {/* Collector Info + Stats */}

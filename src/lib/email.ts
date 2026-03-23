@@ -316,6 +316,7 @@ export async function sendUserInviteEmail(options: {
     tpa_billing: 'TPA Billing',
     client_admin: 'Client Admin',
     platform_admin: 'Platform Admin',
+    collector: 'Collector',
   };
 
   const msg = {

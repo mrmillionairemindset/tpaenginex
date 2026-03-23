@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { db } from '@/db/client';
-import { users } from '@/db/schema';
+import { users, collectors } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import type { UserRole, OrganizationType } from './rbac';
 
@@ -11,6 +11,7 @@ export type CurrentUser = {
   role: UserRole | null;
   orgId: string | null;
   tpaOrgId: string | null;
+  collectorId: string | null;
   organization: {
     id: string;
     name: string;
@@ -61,6 +62,16 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     // platform type: tpaOrgId stays null (access to all)
   }
 
+  // Resolve collectorId for collector users
+  let collectorId: string | null = null;
+  if (dbUser.role === 'collector') {
+    const collector = await db.query.collectors.findFirst({
+      where: eq(collectors.userId, dbUser.id),
+      columns: { id: true },
+    });
+    collectorId = collector?.id || null;
+  }
+
   return {
     id: dbUser.id,
     email: dbUser.email,
@@ -68,6 +79,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     role: dbUser.role as UserRole | null,
     orgId: dbUser.orgId,
     tpaOrgId,
+    collectorId,
     organization: dbUser.organization ? {
       id: dbUser.organization.id,
       name: dbUser.organization.name,

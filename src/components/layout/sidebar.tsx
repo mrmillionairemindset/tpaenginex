@@ -193,6 +193,28 @@ const clientNav: NavItem[] = [
   },
 ];
 
+// Collector portal navigation
+const collectorNav: NavItem[] = [
+  {
+    label: 'My Assignments',
+    href: '/collector-portal',
+    icon: ClipboardList,
+    roles: ['collector'],
+  },
+  {
+    label: 'My Schedule',
+    href: '/collector-portal/schedule',
+    icon: CalendarDays,
+    roles: ['collector'],
+  },
+  {
+    label: 'My Documents',
+    href: '/collector-portal/documents',
+    icon: FileText,
+    roles: ['collector'],
+  },
+];
+
 interface SidebarProps {
   userRole: string;
   className?: string;
@@ -201,8 +223,9 @@ interface SidebarProps {
 export function Sidebar({ userRole, className }: SidebarProps) {
   const pathname = usePathname();
   const isPlatformAdmin = userRole === 'platform_admin';
+  const isCollector = userRole === 'collector';
   const isTpaUser = userRole.startsWith('tpa_');
-  const navItems = isPlatformAdmin ? platformNav : isTpaUser ? tpaNav : clientNav;
+  const navItems = isPlatformAdmin ? platformNav : isCollector ? collectorNav : isTpaUser ? tpaNav : clientNav;
 
   const filteredNav = navItems.filter((item) => item.roles.includes(userRole));
 

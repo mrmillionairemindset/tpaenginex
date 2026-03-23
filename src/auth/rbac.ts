@@ -6,7 +6,8 @@ export type UserRole =
   | 'tpa_staff'
   | 'tpa_records'
   | 'tpa_billing'
-  | 'client_admin';
+  | 'client_admin'
+  | 'collector';
 
 export type OrganizationType = 'platform' | 'tpa' | 'client';
 
@@ -25,7 +26,9 @@ export type Permission =
   | 'manage_leads'
   | 'manage_users'
   | 'manage_events'
-  | 'view_events';
+  | 'view_events'
+  | 'complete_collection'
+  | 'upload_documents';
 
 const permissions: Record<UserRole, Permission[]> = {
   platform_admin: [
@@ -62,6 +65,12 @@ const permissions: Record<UserRole, Permission[]> = {
   client_admin: [
     'view_orders', // own orders only — enforced at query level via orgId
   ],
+  collector: [
+    'view_orders',       // own assigned orders only — enforced via collectorId
+    'view_events',       // own assigned events only
+    'complete_collection',
+    'upload_documents',
+  ],
 };
 
 /**
@@ -79,6 +88,7 @@ export async function getCurrentUserRole(): Promise<UserRole | null> {
 export function getOrgTypeFromRole(role: UserRole): OrganizationType {
   if (role === 'platform_admin') return 'platform';
   if (role === 'client_admin') return 'client';
+  if (role === 'collector') return 'tpa';
   return 'tpa';
 }
 
