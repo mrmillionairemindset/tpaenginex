@@ -17,7 +17,7 @@ const updateSettingsSchema = z.object({
 // GET /api/organizations/[id]/settings
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getCurrentUser();
   if (!user) {
@@ -28,7 +28,7 @@ export async function GET(
     return NextResponse.json({ error: 'Only TPA users can access organization settings' }, { status: 403 });
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   const org = await db.query.organizations.findFirst({
     where: eq(organizations.id, id),
@@ -53,7 +53,7 @@ export async function GET(
 // PATCH /api/organizations/[id]/settings
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getCurrentUser();
   if (!user) {
@@ -64,7 +64,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Only admins can update organization settings' }, { status: 403 });
   }
 
-  const { id } = params;
+  const { id } = await params;
   const body = await req.json();
   const validation = updateSettingsSchema.safeParse(body);
 
