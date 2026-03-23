@@ -208,6 +208,9 @@ export function ProfileModal({ open, onOpenChange, user }: ProfileModalProps) {
                   onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                   placeholder="At least 8 characters"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Must include uppercase, lowercase, number, and special character
+                </p>
               </div>
 
               <div>
