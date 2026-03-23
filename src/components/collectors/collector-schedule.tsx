@@ -65,42 +65,6 @@ export function CollectorSchedule({ collectorId, userRole, canInvite = false }: 
 
   const { collector, schedule, stats } = data;
 
-  async function handleInvite() {
-    setInviting(true);
-    try {
-      const response = await fetch(`/api/collectors/${collectorId}/invite`, {
-        method: 'POST',
-      });
-      const result = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: 'Invite sent',
-          description: `${collector.firstName} ${collector.lastName} has been invited to the portal.`,
-        });
-        // Refresh the data to show the updated portal status
-        const refreshResponse = await fetch(`/api/collectors/${collectorId}/schedule`);
-        if (refreshResponse.ok) {
-          setData(await refreshResponse.json());
-        }
-      } else {
-        toast({
-          title: 'Invite failed',
-          description: result.error || 'Failed to send invite.',
-          variant: 'destructive',
-        });
-      }
-    } catch (err) {
-      toast({
-        title: 'Invite failed',
-        description: 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
-    } finally {
-      setInviting(false);
-    }
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -129,17 +93,6 @@ export function CollectorSchedule({ collectorId, userRole, canInvite = false }: 
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {canInvite && !collector.userId && (
-            <Button
-              onClick={handleInvite}
-              disabled={inviting}
-              size="sm"
-              variant="outline"
-            >
-              <Send className="h-3.5 w-3.5 mr-1.5" />
-              {inviting ? 'Sending...' : 'Invite to Portal'}
-            </Button>
-          )}
           <Badge variant={collector.isAvailable ? 'default' : 'secondary'} className="text-sm">
             {collector.isAvailable ? 'Available' : 'Unavailable'}
           </Badge>

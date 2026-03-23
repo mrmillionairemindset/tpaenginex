@@ -168,6 +168,7 @@ export function MembersTab({ orgId, currentUserId }: MembersTabProps) {
                   <option value="tpa_staff">Staff</option>
                   <option value="tpa_records">Records</option>
                   <option value="tpa_billing">Billing</option>
+                  <option value="collector">Collector</option>
                 </select>
               </div>
             </div>

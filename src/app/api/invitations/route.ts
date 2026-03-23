@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db/client";
-import { users, organizationMembers } from "@/db/schema";
+import { users, organizationMembers, collectors } from "@/db/schema";
 import { getCurrentUser } from "@/auth/get-user";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -89,6 +89,18 @@ export async function POST(request: Request) {
       invitedBy: currentUser.id,
       isActive: true,
     });
+
+    // If collector role, auto-create a collector record linked to this user
+    if (role === 'collector' && currentUser.tpaOrgId) {
+      await db.insert(collectors).values({
+        tpaOrgId: currentUser.tpaOrgId,
+        firstName,
+        lastName,
+        email: email.toLowerCase(),
+        phone: body.phone || '',
+        userId: newUser.id,
+      });
+    }
 
     // Send invitation email
     const loginUrl = `${process.env.NEXTAUTH_URL || 'https://tpaenginex.vercel.app'}/auth/signin`;
