@@ -7,25 +7,20 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, UserCheck, Calendar, MapPin, Mail, Phone, Shield, Send, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, UserCheck, Calendar, MapPin, Mail, Phone, Shield, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
 
 interface CollectorScheduleProps {
   collectorId: string;
   userRole: string;
-  canInvite?: boolean;
 }
 
-export function CollectorSchedule({ collectorId, userRole, canInvite = false }: CollectorScheduleProps) {
+export function CollectorSchedule({ collectorId, userRole }: CollectorScheduleProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [inviting, setInviting] = useState(false);
-
   useEffect(() => {
     async function fetch_data() {
       try {

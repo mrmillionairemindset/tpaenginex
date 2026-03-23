@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
+import { usePolling } from '@/hooks/use-polling';
 
 interface Collector {
   id: string;
@@ -15,6 +16,8 @@ interface Collector {
   serviceArea: string | null;
   isAvailable: boolean;
   isActive: boolean;
+  userId: string | null;
+  activeOrders?: number;
 }
 
 export function CollectorsTable() {
@@ -22,36 +25,48 @@ export function CollectorsTable() {
   const [collectors, setCollectors] = useState<Collector[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchCollectors() {
-      try {
-        const response = await fetch('/api/collectors');
-        if (response.ok) {
-          const data = await response.json();
-          setCollectors(data.collectors);
-        }
-      } catch (error) {
-        console.error('Failed to fetch collectors:', error);
-      } finally {
-        setLoading(false);
+  const fetchCollectors = useCallback(async () => {
+    try {
+      const response = await fetch('/api/collectors');
+      if (response.ok) {
+        const data = await response.json();
+        setCollectors(data.collectors);
       }
+    } catch (error) {
+      console.error('Failed to fetch collectors:', error);
+    } finally {
+      setLoading(false);
     }
-
-    fetchCollectors();
   }, []);
+
+  useEffect(() => {
+    fetchCollectors();
+  }, [fetchCollectors]);
+
+  usePolling(fetchCollectors);
 
   const columns = [
     {
       header: 'Name',
-      accessor: (c: Collector) => `${c.firstName} ${c.lastName}`,
+      accessor: (c: Collector) => (
+        <div>
+          <span className="font-medium">{c.firstName} {c.lastName}</span>
+          {c.userId && (
+            <Badge variant="outline" className="ml-2 text-[10px] px-1 py-0 text-green-600 border-green-300">
+              Portal
+            </Badge>
+          )}
+        </div>
+      ),
     },
     {
-      header: 'Email',
-      accessor: 'email' as const,
-    },
-    {
-      header: 'Phone',
-      accessor: 'phone' as const,
+      header: 'Contact',
+      accessor: (c: Collector) => (
+        <div className="text-sm">
+          <div>{c.email}</div>
+          <div className="text-muted-foreground">{c.phone}</div>
+        </div>
+      ),
     },
     {
       header: 'Certifications',
@@ -62,7 +77,7 @@ export function CollectorsTable() {
                 {cert}
               </Badge>
             ))
-          : <span className="text-muted-foreground">None</span>,
+          : <span className="text-muted-foreground">-</span>,
     },
     {
       header: 'Service Area',
@@ -83,7 +98,7 @@ export function CollectorsTable() {
       data={collectors}
       columns={columns}
       loading={loading}
-      emptyMessage="No collectors found. Add your first collector to get started."
+      emptyMessage="No collectors yet. Invite a team member with the Collector role from Settings > Organization > Members."
       onRowClick={(collector) => router.push(`/collectors/${collector.id}`)}
     />
   );

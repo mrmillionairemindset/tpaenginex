@@ -20,7 +20,5 @@ export default async function CollectorDetailPage({
     redirect('/dashboard');
   }
 
-  const canInvite = user.role === 'tpa_admin' || user.role === 'platform_admin';
-
-  return <CollectorSchedule collectorId={params.id} userRole={user.role || ''} canInvite={canInvite} />;
+  return <CollectorSchedule collectorId={params.id} userRole={user.role || ''} />;
 }
