@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
-import { organizationMembers, users } from "@/db/schema";
+import { organizationMembers, users, collectors } from "@/db/schema";
 import { getCurrentUser } from "@/auth/get-user";
 import { eq, and } from "drizzle-orm";
 
@@ -154,6 +154,13 @@ export async function DELETE(
           eq(organizationMembers.userId, userId)
         )
       );
+
+    // If this user is a collector, delete their collector record too
+    if (targetMember?.role === 'collector') {
+      await db
+        .delete(collectors)
+        .where(eq(collectors.userId, userId));
+    }
 
     // If this was the user's active org, set their org to null
     const targetUser = await db.query.users.findFirst({
