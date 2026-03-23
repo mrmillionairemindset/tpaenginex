@@ -33,12 +33,14 @@ export async function GET() {
     return NextResponse.json({ error: 'TPA context required' }, { status: 400 });
   }
 
-  const settings = await db.query.tpaSettings.findFirst({
+  let settings = await db.query.tpaSettings.findFirst({
     where: eq(tpaSettings.tpaOrgId, tpaOrgId),
   });
 
+  // Auto-create tpa_settings row if it doesn't exist
   if (!settings) {
-    return NextResponse.json({ error: 'TPA settings not found' }, { status: 404 });
+    const [created] = await db.insert(tpaSettings).values({ tpaOrgId }).returning();
+    settings = created;
   }
 
   return NextResponse.json({ settings });

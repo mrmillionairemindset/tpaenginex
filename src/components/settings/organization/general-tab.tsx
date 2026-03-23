@@ -53,16 +53,9 @@ export function GeneralTab({ orgId }: GeneralTabProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!orgId) {
-      toast({ title: 'Error', description: 'Organization ID is missing', variant: 'destructive' });
-      return;
-    }
-
     setSaving(true);
     try {
-      const url = `/api/organizations/${orgId}/settings`;
-      console.log('Saving to:', url, { name: formData.name, contactEmail: formData.contactEmail, contactPhone: formData.contactPhone, website: formData.website });
-      const res = await fetch(url, {
+      const res = await fetch(`/api/organizations/${orgId}/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
