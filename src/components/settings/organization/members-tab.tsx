@@ -98,6 +98,9 @@ export function MembersTab({ orgId, currentUserId }: MembersTabProps) {
           ...(inviteForm.role === 'collector' ? { certifications, serviceArea: inviteForm.serviceArea, collectorNotes: inviteForm.notes } : {}),
         }),
       });
+
+      const data = await res.json().catch(() => ({ error: 'Unexpected server error' }));
+
       if (res.ok) {
         toast({ title: 'Invitation Sent', description: `${inviteForm.firstName} ${inviteForm.lastName} has been invited` });
         setInviteForm({ firstName: '', lastName: '', email: '', role: '', phone: '', serviceArea: '', notes: '' });
@@ -105,11 +108,20 @@ export function MembersTab({ orgId, currentUserId }: MembersTabProps) {
         setShowInvite(false);
         fetchMembers();
       } else {
-        const data = await res.json();
-        toast({ title: 'Error', description: data.error || 'Failed to send invitation', variant: 'destructive' });
+        toast({
+          title: 'Invitation Failed',
+          description: data.error || 'Failed to send invitation',
+          variant: 'destructive',
+          duration: 5000,
+        });
       }
-    } catch {
-      toast({ title: 'Error', description: 'An unexpected error occurred', variant: 'destructive' });
+    } catch (err) {
+      toast({
+        title: 'Invitation Failed',
+        description: 'Could not connect to the server. Please try again.',
+        variant: 'destructive',
+        duration: 5000,
+      });
     } finally {
       setInviting(false);
     }
