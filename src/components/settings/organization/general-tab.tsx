@@ -64,11 +64,14 @@ export function GeneralTab({ orgId }: GeneralTabProps) {
           website: formData.website || null,
         }),
       });
+      const data = await res.json().catch(() => ({ error: 'Unexpected server error' }));
+
       if (res.ok) {
         toast({ title: 'Saved', description: 'General settings updated' });
       } else {
-        const err = await res.json();
-        toast({ title: 'Error', description: err.error || 'Failed to save', variant: 'destructive' });
+        console.error('Save failed:', res.status, data);
+        const errorMsg = data.details?.[0]?.message || data.error || 'Failed to save';
+        toast({ title: 'Error', description: errorMsg, variant: 'destructive', duration: 8000 });
       }
     } catch {
       toast({ title: 'Error', description: 'An unexpected error occurred', variant: 'destructive' });
