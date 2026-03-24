@@ -260,6 +260,9 @@ export const orders = pgTable("orders", {
   isDOT: boolean("is_dot").default(false).notNull(),
   priority: varchar("priority", { length: 20 }).default("standard"),
   ccfNumber: varchar("ccf_number", { length: 50 }),
+  reasonForService: varchar("reason_for_service", { length: 100 }),
+  testingAuthority: varchar("testing_authority", { length: 20 }),
+  panelCode: varchar("panel_code", { length: 50 }),
   resultStatus: varchar("result_status", { length: 30 }).default("pending"),
   urgency: varchar("urgency", { length: 30 }).default("standard"),
   jobsiteLocation: varchar("jobsite_location", { length: 255 }).notNull(),
@@ -552,6 +555,50 @@ export const tpaSettings = pgTable("tpa_settings", {
   defaultEmailFooter: text("default_email_footer"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Service Catalog — per-TPA customizable service/test types
+export const serviceCatalog = pgTable("service_catalog", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
+  category: varchar("category", { length: 30 }).notNull(), // 'drug_testing' | 'occupational_health'
+  group: varchar("group", { length: 50 }), // e.g. 'Audiogram', 'Blood/Lab', 'Vision', etc.
+  name: varchar("name", { length: 200 }).notNull(),
+  code: varchar("code", { length: 50 }),
+  isDotOnly: boolean("is_dot_only").default(false).notNull(),
+  isNonDotOnly: boolean("is_non_dot_only").default(false).notNull(),
+  requiresPanel: boolean("requires_panel").default(false).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Reason Catalog — per-TPA customizable reasons for service
+export const reasonCatalog = pgTable("reason_catalog", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
+  category: varchar("category", { length: 30 }).notNull(), // 'drug_testing' | 'occupational_health'
+  name: varchar("name", { length: 200 }).notNull(),
+  code: varchar("code", { length: 50 }),
+  isDotAllowed: boolean("is_dot_allowed").default(true).notNull(),
+  isNonDotAllowed: boolean("is_non_dot_allowed").default(true).notNull(),
+  autoUrgent: boolean("auto_urgent").default(false).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Panel Codes — drug test panel options
+export const panelCodes = pgTable("panel_codes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tpaOrgId: uuid("tpa_org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
+  code: varchar("code", { length: 20 }).notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Order Checklists — auto-generated from service type templates
@@ -927,6 +974,27 @@ export const clientChecklistTemplatesRelations = relations(clientChecklistTempla
   }),
 }));
 
+export const serviceCatalogRelations = relations(serviceCatalog, ({ one }) => ({
+  tpaOrg: one(organizations, {
+    fields: [serviceCatalog.tpaOrgId],
+    references: [organizations.id],
+  }),
+}));
+
+export const reasonCatalogRelations = relations(reasonCatalog, ({ one }) => ({
+  tpaOrg: one(organizations, {
+    fields: [reasonCatalog.tpaOrgId],
+    references: [organizations.id],
+  }),
+}));
+
+export const panelCodesRelations = relations(panelCodes, ({ one }) => ({
+  tpaOrg: one(organizations, {
+    fields: [panelCodes.tpaOrgId],
+    references: [organizations.id],
+  }),
+}));
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
@@ -957,3 +1025,6 @@ export type OrderChecklistType = typeof orderChecklists.$inferSelect;
 export type ServiceRequestType = typeof serviceRequests.$inferSelect;
 export type ClientDocumentType = typeof clientDocuments.$inferSelect;
 export type ClientChecklistTemplateType = typeof clientChecklistTemplates.$inferSelect;
+export type ServiceCatalogType = typeof serviceCatalog.$inferSelect;
+export type ReasonCatalogType = typeof reasonCatalog.$inferSelect;
+export type PanelCodeType = typeof panelCodes.$inferSelect;

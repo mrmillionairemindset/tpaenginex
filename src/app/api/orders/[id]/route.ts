@@ -18,6 +18,9 @@ const updateOrderSchema = z.object({
   testType: z.string().optional(),
   serviceType: z.string().optional(),
   isDOT: z.boolean().optional(),
+  reasonForService: z.string().optional(),
+  testingAuthority: z.string().optional(),
+  panelCode: z.string().optional(),
   priority: z.string().optional(),
   urgency: z.string().optional(),
   jobsiteLocation: z.string().optional(),
@@ -206,6 +209,9 @@ export async function PATCH(
   if (data.testType !== undefined) updateData.testType = data.testType;
   if (data.serviceType !== undefined) updateData.serviceType = data.serviceType;
   if (data.isDOT !== undefined) updateData.isDOT = data.isDOT;
+  if (data.reasonForService !== undefined) updateData.reasonForService = data.reasonForService || null;
+  if (data.testingAuthority !== undefined) updateData.testingAuthority = data.testingAuthority || null;
+  if (data.panelCode !== undefined) updateData.panelCode = data.panelCode || null;
   if (data.priority !== undefined) updateData.priority = data.priority;
   if (data.urgency !== undefined) updateData.urgency = data.urgency;
   if (data.jobsiteLocation !== undefined) updateData.jobsiteLocation = data.jobsiteLocation;

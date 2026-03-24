@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface ClientOrg {
   id: string;
@@ -30,25 +35,83 @@ interface Collector {
   lastName: string;
 }
 
+interface CatalogService {
+  id: string;
+  category: string;
+  group: string | null;
+  name: string;
+  code: string;
+  isDotOnly: boolean;
+  isNonDotOnly: boolean;
+  requiresPanel: boolean;
+}
+
+interface CatalogReason {
+  id: string;
+  category: string;
+  name: string;
+  code: string;
+  isDotAllowed: boolean;
+  isNonDotAllowed: boolean;
+  autoUrgent: boolean;
+}
+
+interface CatalogPanel {
+  id: string;
+  code: string;
+  name: string;
+}
+
+interface ServiceCatalog {
+  services: CatalogService[];
+  reasons: CatalogReason[];
+  panelCodes: CatalogPanel[];
+}
+
+type ServiceCategory = 'drug_testing' | 'occupational_health' | 'both';
+
 interface NewOrderFormProps {
   orgId: string | null;
   userRole: string;
 }
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+
+  // Client / location state
   const [clients, setClients] = useState<ClientOrg[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [clientLabel, setClientLabel] = useState<string>('');
   const [locations, setLocations] = useState<Location[]>([]);
-  const [collectors, setCollectors] = useState<Collector[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>('');
   const [useCustomLocation, setUseCustomLocation] = useState(false);
-  const isSpecialClient = selectedClientId === 'walk_in' || selectedClientId === 'other';
-  const isTpaUser = userRole.startsWith('tpa_') || userRole === 'platform_admin';
-  const canAssignCollector = userRole === 'tpa_admin' || userRole === 'tpa_staff' || userRole === 'platform_admin';
+
+  // Collector state
+  const [collectors, setCollectors] = useState<Collector[]>([]);
+
+  // Catalog state
+  const [catalog, setCatalog] = useState<ServiceCatalog | null>(null);
+
+  // Service category
+  const [serviceCategory, setServiceCategory] = useState<ServiceCategory>('drug_testing');
+
+  // Drug testing fields
+  const [drugTestReason, setDrugTestReason] = useState<string>('');
+  const [drugTestTypes, setDrugTestTypes] = useState<string[]>([]);
+  const [testingAuthority, setTestingAuthority] = useState<string>('');
+  const [panelCode, setPanelCode] = useState<string>('');
+
+  // Occ health fields
+  const [occHealthReason, setOccHealthReason] = useState<string>('');
+  const [occHealthTypes, setOccHealthTypes] = useState<string[]>([]);
+
+  // Shared form data
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -60,20 +123,92 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
     city: '',
     state: '',
     zip: '',
-    testTypes: [] as string[],
-    serviceType: 'pre_employment' as string,
     isDOT: false,
     priority: 'standard' as string,
     urgency: 'standard',
     jobsiteLocation: '',
+    scheduledFor: '',
     needsMask: 'no',
     maskSize: '',
     collectorId: '',
     notes: '',
   });
 
+  const isSpecialClient = selectedClientId === 'walk_in' || selectedClientId === 'other';
+  const isTpaUser = userRole.startsWith('tpa_') || userRole === 'platform_admin';
+  const canAssignCollector = userRole === 'tpa_admin' || userRole === 'tpa_staff' || userRole === 'platform_admin';
+
+  const showDrugTesting = serviceCategory === 'drug_testing' || serviceCategory === 'both';
+  const showOccHealth = serviceCategory === 'occupational_health' || serviceCategory === 'both';
+
+  // ---------------------------------------------------------------------------
+  // Derived catalog data
+  // ---------------------------------------------------------------------------
+
+  const drugTestReasons = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.reasons.filter((r) => {
+      if (r.category !== 'drug_testing') return false;
+      return formData.isDOT ? r.isDotAllowed : r.isNonDotAllowed;
+    });
+  }, [catalog, formData.isDOT]);
+
+  const drugTestServices = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.services.filter((s) => {
+      if (s.category !== 'drug_testing') return false;
+      return formData.isDOT ? s.isDotOnly : s.isNonDotOnly;
+    });
+  }, [catalog, formData.isDOT]);
+
+  const occHealthReasons = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.reasons.filter((r) => r.category === 'occupational_health');
+  }, [catalog]);
+
+  const occHealthServices = useMemo(() => {
+    if (!catalog) return [];
+    return catalog.services.filter((s) => s.category === 'occupational_health');
+  }, [catalog]);
+
+  const occHealthGroups = useMemo(() => {
+    const groups: Record<string, CatalogService[]> = {};
+    for (const s of occHealthServices) {
+      const key = s.group || 'Other';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(s);
+    }
+    return groups;
+  }, [occHealthServices]);
+
+  const showPanelSelector = useMemo(() => {
+    if (!catalog) return false;
+    return drugTestTypes.some((code) => {
+      const svc = catalog.services.find((s) => s.code === code);
+      return svc?.requiresPanel;
+    });
+  }, [catalog, drugTestTypes]);
+
+  // ---------------------------------------------------------------------------
+  // Data fetching
+  // ---------------------------------------------------------------------------
+
   useEffect(() => {
-    // Fetch clients for TPA users
+    const fetchCatalog = async () => {
+      try {
+        const response = await fetch('/api/service-catalog');
+        if (response.ok) {
+          const data = await response.json();
+          setCatalog(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch service catalog:', error);
+      }
+    };
+    fetchCatalog();
+  }, []);
+
+  useEffect(() => {
     if (isTpaUser) {
       const fetchClients = async () => {
         try {
@@ -124,19 +259,106 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
       }
     };
     fetchClientLocations();
-    // Reset location selection when client changes
     setSelectedLocationId('');
     setUseCustomLocation(false);
-    setFormData(prev => ({ ...prev, jobsiteLocation: '' }));
+    setFormData((prev) => ({ ...prev, jobsiteLocation: '' }));
   }, [selectedClientId]);
+
+  // Reset drug test selections when DOT changes
+  useEffect(() => {
+    setDrugTestReason('');
+    setDrugTestTypes([]);
+    setTestingAuthority('');
+    setPanelCode('');
+  }, [formData.isDOT]);
+
+  // Reset selections when service category changes
+  useEffect(() => {
+    if (!showDrugTesting) {
+      setDrugTestReason('');
+      setDrugTestTypes([]);
+      setTestingAuthority('');
+      setPanelCode('');
+      setFormData((prev) => ({ ...prev, isDOT: false }));
+    }
+    if (!showOccHealth) {
+      setOccHealthReason('');
+      setOccHealthTypes([]);
+    }
+  }, [serviceCategory]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---------------------------------------------------------------------------
+  // Handlers
+  // ---------------------------------------------------------------------------
+
+  const handleDrugReasonChange = (code: string) => {
+    setDrugTestReason(code);
+    const reason = catalog?.reasons.find((r) => r.code === code);
+    if (reason?.autoUrgent) {
+      setFormData((prev) => ({ ...prev, priority: 'urgent', urgency: 'urgent' }));
+    }
+  };
+
+  const handleOccHealthReasonChange = (code: string) => {
+    setOccHealthReason(code);
+    const reason = catalog?.reasons.find((r) => r.code === code);
+    if (reason?.autoUrgent) {
+      setFormData((prev) => ({ ...prev, priority: 'urgent', urgency: 'urgent' }));
+    }
+  };
+
+  const toggleDrugTestType = (code: string) => {
+    setDrugTestTypes((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
+  };
+
+  const toggleOccHealthType = (code: string) => {
+    setOccHealthTypes((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.testTypes.length === 0) {
-      toast({ title: 'Please select at least one test type', variant: 'destructive' });
+
+    const allSelectedTypes = [...drugTestTypes, ...occHealthTypes];
+    if (allSelectedTypes.length === 0) {
+      toast({ title: 'Please select at least one test or service type', variant: 'destructive' });
       return;
     }
+
+    if (showDrugTesting && !drugTestReason) {
+      toast({ title: 'Please select a reason for drug testing', variant: 'destructive' });
+      return;
+    }
+
+    if (showOccHealth && !occHealthReason) {
+      toast({ title: 'Please select a reason for occupational health service', variant: 'destructive' });
+      return;
+    }
+
     setLoading(true);
+
+    // Map service category to serviceType field
+    let serviceType: string;
+    switch (serviceCategory) {
+      case 'drug_testing':
+        serviceType = 'drug_screen';
+        break;
+      case 'occupational_health':
+        serviceType = 'physical';
+        break;
+      case 'both':
+        serviceType = 'drug_screen';
+        break;
+    }
+
+    // Resolve test type names from catalog codes
+    const testTypeNames = allSelectedTypes.map((code) => {
+      const svc = catalog?.services.find((s) => s.code === code);
+      return svc?.name || code;
+    });
 
     try {
       const response = await fetch('/api/orders', {
@@ -149,20 +371,29 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
             dob: formData.dob,
             ssnLast4: formData.ssnLast4,
             email: formData.email,
-            phone: formData.phone.replace(/\D/g, ''), // Strip formatting before sending
+            phone: formData.phone.replace(/\D/g, ''),
             address: formData.address,
             city: formData.city,
             state: formData.state,
             zip: formData.zip,
           },
-          clientOrgId: (selectedClientId && !isSpecialClient) ? selectedClientId : undefined,
-          clientLabel: selectedClientId === 'walk_in' ? 'Walk-In' : selectedClientId === 'other' ? clientLabel : undefined,
-          testType: formData.testTypes.join(', '),
-          serviceType: formData.serviceType,
+          clientOrgId: selectedClientId && !isSpecialClient ? selectedClientId : undefined,
+          clientLabel:
+            selectedClientId === 'walk_in'
+              ? 'Walk-In'
+              : selectedClientId === 'other'
+                ? clientLabel
+                : undefined,
+          testType: testTypeNames.join(', '),
+          serviceType,
           isDOT: formData.isDOT,
+          reasonForService: drugTestReason || occHealthReason || null,
+          testingAuthority: formData.isDOT ? testingAuthority : null,
+          panelCode: panelCode || null,
           priority: formData.priority,
           urgency: formData.urgency,
           jobsiteLocation: formData.jobsiteLocation,
+          scheduledFor: formData.scheduledFor || undefined,
           needsMask: formData.needsMask === 'yes',
           maskSize: formData.needsMask === 'yes' ? formData.maskSize : undefined,
           collectorId: formData.collectorId || undefined,
@@ -196,10 +427,17 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
     <form onSubmit={handleSubmit}>
-      <Card className="p-6 space-y-6">
-        {/* Client / Employer Selection */}
+      <Card className="p-6 space-y-8">
+
+        {/* ================================================================= */}
+        {/* SECTION 1: Client / Employer Selection                            */}
+        {/* ================================================================= */}
         {isTpaUser && (
           <div>
             <h3 className="text-lg font-semibold mb-4">Client / Employer</h3>
@@ -248,16 +486,16 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
                       if (val === 'custom') {
                         setUseCustomLocation(true);
                         setSelectedLocationId('');
-                        setFormData(prev => ({ ...prev, jobsiteLocation: '' }));
+                        setFormData((prev) => ({ ...prev, jobsiteLocation: '' }));
                       } else {
                         setUseCustomLocation(false);
                         setSelectedLocationId(val);
-                        const loc = locations.find(l => l.id === val);
+                        const loc = locations.find((l) => l.id === val);
                         if (loc) {
                           const parts = [loc.name];
                           const addr = [loc.address, loc.city, loc.state, loc.zip].filter(Boolean).join(', ');
                           if (addr) parts.push(addr);
-                          setFormData(prev => ({ ...prev, jobsiteLocation: parts.join(' - ') }));
+                          setFormData((prev) => ({ ...prev, jobsiteLocation: parts.join(' - ') }));
                         }
                       }
                     }}
@@ -295,6 +533,9 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
           </div>
         )}
 
+        {/* ================================================================= */}
+        {/* SECTION 2: Candidate Information                                  */}
+        {/* ================================================================= */}
         <div>
           <h3 className="text-lg font-semibold mb-4">Candidate Information</h3>
           <div className="grid gap-4 md:grid-cols-2">
@@ -480,109 +721,297 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
           </div>
         </div>
 
+        {/* ================================================================= */}
+        {/* SECTION 3: Service Category                                       */}
+        {/* ================================================================= */}
         <div>
-          <h3 className="text-lg font-semibold mb-4">Order Details</h3>
-          <div className="grid gap-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="serviceType">Service Type <span className="text-red-500">*</span></Label>
-                <select
-                  id="serviceType"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                  required
-                  value={formData.serviceType}
-                  onChange={(e) => {
-                    const serviceType = e.target.value;
-                    const autoUrgent = serviceType === 'post_accident' || serviceType === 'reasonable_suspicion';
-                    setFormData({
-                      ...formData,
-                      serviceType,
-                      priority: autoUrgent ? 'urgent' : formData.priority,
-                    });
-                  }}
-                >
-                  <option value="pre_employment">Pre-Employment</option>
-                  <option value="random">Random</option>
-                  <option value="post_accident">Post-Accident</option>
-                  <option value="reasonable_suspicion">Reasonable Suspicion</option>
-                  <option value="physical">Physical</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
+          <h3 className="text-lg font-semibold mb-4">Service Category <span className="text-red-500">*</span></h3>
+          <div className="flex flex-wrap gap-6">
+            {([
+              { value: 'drug_testing', label: 'Drug Testing' },
+              { value: 'occupational_health', label: 'Occupational Health' },
+              { value: 'both', label: 'Both' },
+            ] as const).map((opt) => (
+              <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="serviceCategory"
+                  className="h-4 w-4 text-primary"
+                  checked={serviceCategory === opt.value}
+                  onChange={() => setServiceCategory(opt.value)}
+                />
+                <span className="text-sm font-medium">{opt.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
-              <div>
-                <Label htmlFor="isDOT">DOT or Non-DOT <span className="text-red-500">*</span></Label>
-                <div className="flex items-center gap-4 h-10">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="isDOT"
-                      checked={!formData.isDOT}
-                      onChange={() => setFormData({ ...formData, isDOT: false })}
-                      className="h-4 w-4"
-                    />
-                    <span className="text-sm font-medium">Non-DOT</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="isDOT"
-                      checked={formData.isDOT}
-                      onChange={() => setFormData({ ...formData, isDOT: true })}
-                      className="h-4 w-4"
-                    />
-                    <span className="text-sm font-medium">DOT</span>
-                  </label>
-                </div>
-                {formData.isDOT && (
-                  <p className="text-xs text-amber-600 mt-1">MRO notification step required for DOT orders</p>
-                )}
+        {/* ================================================================= */}
+        {/* SECTION 4: Drug Testing                                           */}
+        {/* ================================================================= */}
+        {showDrugTesting && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold">Drug Testing</h3>
+
+            {/* 4a. DOT / Non-DOT Toggle */}
+            <div>
+              <Label>DOT or Non-DOT <span className="text-red-500">*</span></Label>
+              <div className="flex items-center gap-4 mt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="isDOT"
+                    checked={!formData.isDOT}
+                    onChange={() => setFormData({ ...formData, isDOT: false })}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm font-medium">Non-DOT</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="isDOT"
+                    checked={formData.isDOT}
+                    onChange={() => setFormData({ ...formData, isDOT: true })}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm font-medium">DOT</span>
+                </label>
               </div>
+              {formData.isDOT && (
+                <p className="text-xs text-amber-600 mt-1">MRO notification step required for DOT orders</p>
+              )}
             </div>
 
+            {/* 4b. Testing Authority (DOT only) */}
+            {formData.isDOT && (
+              <div>
+                <Label>Testing Authority <span className="text-red-500">*</span></Label>
+                <div className="flex items-center gap-6 mt-2">
+                  {['FMCSA', 'FTA'].map((auth) => (
+                    <label key={auth} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="testingAuthority"
+                        className="h-4 w-4"
+                        checked={testingAuthority === auth}
+                        onChange={() => setTestingAuthority(auth)}
+                      />
+                      <span className="text-sm font-medium">{auth}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 4c. Reason for Test */}
+            <div>
+              <Label>Reason for Test <span className="text-red-500">*</span></Label>
+              {catalog ? (
+                <div className="mt-2 space-y-2">
+                  {drugTestReasons.length > 0 ? (
+                    drugTestReasons.map((reason) => (
+                      <label key={reason.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="drugTestReason"
+                          className="h-4 w-4"
+                          checked={drugTestReason === reason.code}
+                          onChange={() => handleDrugReasonChange(reason.code)}
+                        />
+                        <span className="text-sm">{reason.name}</span>
+                        {reason.autoUrgent && (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">URGENT</Badge>
+                        )}
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No reasons available for current DOT selection</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground mt-2">Loading catalog...</p>
+              )}
+            </div>
+
+            {/* 4d. Type of Test */}
+            <div>
+              <Label>Type of Test <span className="text-red-500">*</span></Label>
+              {catalog ? (
+                <div className="mt-2 space-y-2">
+                  {drugTestServices.length > 0 ? (
+                    drugTestServices.map((svc) => (
+                      <label key={svc.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-input"
+                          checked={drugTestTypes.includes(svc.code)}
+                          onChange={() => toggleDrugTestType(svc.code)}
+                        />
+                        <span className="text-sm">{svc.name}</span>
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No test types available for current DOT selection</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground mt-2">Loading catalog...</p>
+              )}
+              {drugTestTypes.length === 0 && showDrugTesting && (
+                <p className="text-xs text-muted-foreground mt-1">Select at least one test type</p>
+              )}
+            </div>
+
+            {/* 4e. Panel Selection */}
+            {showPanelSelector && catalog && (
+              <div>
+                <Label htmlFor="panelCode">Panel Selection <span className="text-red-500">*</span></Label>
+                <select
+                  id="panelCode"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background mt-1"
+                  required
+                  value={panelCode}
+                  onChange={(e) => setPanelCode(e.target.value)}
+                >
+                  <option value="">Select a panel...</option>
+                  {catalog.panelCodes.map((panel) => (
+                    <option key={panel.id} value={panel.code}>
+                      {panel.code} — {panel.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* SECTION 5: Occupational Health                                    */}
+        {/* ================================================================= */}
+        {showOccHealth && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold">Occupational Health</h3>
+
+            {/* 5a. Reason for Service */}
+            <div>
+              <Label>Reason for Service <span className="text-red-500">*</span></Label>
+              {catalog ? (
+                <div className="mt-2 space-y-2">
+                  {occHealthReasons.length > 0 ? (
+                    occHealthReasons.map((reason) => (
+                      <label key={reason.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="occHealthReason"
+                          className="h-4 w-4"
+                          checked={occHealthReason === reason.code}
+                          onChange={() => handleOccHealthReasonChange(reason.code)}
+                        />
+                        <span className="text-sm">{reason.name}</span>
+                        {reason.autoUrgent && (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">URGENT</Badge>
+                        )}
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No reasons available</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground mt-2">Loading catalog...</p>
+              )}
+            </div>
+
+            {/* 5b. Type of Service (grouped) */}
+            <div>
+              <Label>Type of Service <span className="text-red-500">*</span></Label>
+              {catalog ? (
+                <div className="mt-2 space-y-4">
+                  {Object.keys(occHealthGroups).length > 0 ? (
+                    Object.entries(occHealthGroups).map(([group, services]) => (
+                      <div key={group}>
+                        <p className="text-sm font-semibold text-muted-foreground mb-2">{group}</p>
+                        <div className="space-y-2 pl-2">
+                          {services.map((svc) => (
+                            <label key={svc.id} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-input"
+                                checked={occHealthTypes.includes(svc.code)}
+                                onChange={() => toggleOccHealthType(svc.code)}
+                              />
+                              <span className="text-sm">{svc.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No services available</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground mt-2">Loading catalog...</p>
+              )}
+              {occHealthTypes.length === 0 && showOccHealth && (
+                <p className="text-xs text-muted-foreground mt-1">Select at least one service type</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* SECTION 6: Collection Details                                     */}
+        {/* ================================================================= */}
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Collection Details</h3>
+          <div className="grid gap-4">
             <div className="grid gap-4 md:grid-cols-2">
+              {/* Priority */}
               <div>
                 <Label htmlFor="priority">Priority</Label>
                 <select
                   id="priority"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                   value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value, urgency: e.target.value })}
                 >
                   <option value="standard">Standard</option>
                   <option value="urgent">Urgent</option>
                 </select>
                 {formData.priority === 'urgent' && (
-                  <span className="inline-block mt-1 text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded">URGENT</span>
+                  <Badge variant="destructive" className="mt-1">URGENT</Badge>
                 )}
               </div>
 
+              {/* Scheduled Date/Time */}
               <div>
-                <Label>Test Type(s) <span className="text-red-500">*</span></Label>
-                <div className="mt-2 space-y-2">
-                  {['Drug Screen', 'Breath Alcohol Test (BAT)', 'Physical Examination', 'PPE Exam', 'PFT', 'RFT', 'Audiogram', 'TB Test', 'TB Gold Blood Test', 'Chest X-Ray with B Read', '10 Panel Urine Drug Screen', 'OSHA Questionnaire', 'Respirator Fit Test'].map((type) => (
-                    <label key={type} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-input"
-                        checked={formData.testTypes.includes(type)}
-                        onChange={(e) => {
-                          const updated = e.target.checked
-                            ? [...formData.testTypes, type]
-                            : formData.testTypes.filter((t) => t !== type);
-                          setFormData({ ...formData, testTypes: updated });
-                        }}
-                      />
-                      <span className="text-sm">{type}</span>
-                    </label>
-                  ))}
-                </div>
-                {formData.testTypes.length === 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">Select at least one test type</p>
-                )}
+                <Label htmlFor="scheduledFor">Scheduled Date / Time</Label>
+                <Input
+                  id="scheduledFor"
+                  type="datetime-local"
+                  value={formData.scheduledFor}
+                  onChange={(e) => setFormData({ ...formData, scheduledFor: e.target.value })}
+                />
               </div>
             </div>
 
+            {/* Jobsite Location — only show manual entry if no client/location selected above */}
+            {(!isTpaUser || clients.length === 0) && (
+              <div>
+                <Label htmlFor="jobsiteLocation">Jobsite Location <span className="text-red-500">*</span></Label>
+                <Input
+                  id="jobsiteLocation"
+                  required
+                  placeholder="e.g., Main Office - 123 Business St, City, State"
+                  value={formData.jobsiteLocation}
+                  onChange={(e) => setFormData({ ...formData, jobsiteLocation: e.target.value })}
+                />
+              </div>
+            )}
+
+            {/* Collector Assignment */}
             {canAssignCollector && collectors.length > 0 && (
               <div>
                 <Label htmlFor="collectorId">Assigned Collector</Label>
@@ -602,56 +1031,46 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
               </div>
             )}
 
-            <div>
-              <Label htmlFor="needsMask">Do you need a mask? <span className="text-red-500">*</span></Label>
-              <select
-                id="needsMask"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                required
-                value={formData.needsMask}
-                onChange={(e) => {
-                  setFormData({ ...formData, needsMask: e.target.value, maskSize: e.target.value === 'no' ? '' : formData.maskSize });
-                }}
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </div>
-
-            {formData.needsMask === 'yes' && (
+            {/* Mask */}
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label htmlFor="maskSize">What size? <span className="text-red-500">*</span></Label>
+                <Label htmlFor="needsMask">Do you need a mask? <span className="text-red-500">*</span></Label>
                 <select
-                  id="maskSize"
+                  id="needsMask"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                   required
-                  value={formData.maskSize}
-                  onChange={(e) => setFormData({ ...formData, maskSize: e.target.value })}
+                  value={formData.needsMask}
+                  onChange={(e) => {
+                    setFormData({ ...formData, needsMask: e.target.value, maskSize: e.target.value === 'no' ? '' : formData.maskSize });
+                  }}
                 >
-                  <option value="">Select size...</option>
-                  <option value="Small">Small</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Large">Large</option>
-                  <option value="X-Large">X-Large</option>
-                  <option value="Unknown">Unknown</option>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
                 </select>
               </div>
-            )}
 
-            {/* Jobsite Location — only show manual entry if no client/location selected above */}
-            {(!isTpaUser || clients.length === 0) && (
-              <div>
-                <Label htmlFor="jobsiteLocation">Jobsite Location <span className="text-red-500">*</span></Label>
-                <Input
-                  id="jobsiteLocation"
-                  required
-                  placeholder="e.g., Main Office - 123 Business St, City, State"
-                  value={formData.jobsiteLocation}
-                  onChange={(e) => setFormData({ ...formData, jobsiteLocation: e.target.value })}
-                />
-              </div>
-            )}
+              {formData.needsMask === 'yes' && (
+                <div>
+                  <Label htmlFor="maskSize">What size? <span className="text-red-500">*</span></Label>
+                  <select
+                    id="maskSize"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    required
+                    value={formData.maskSize}
+                    onChange={(e) => setFormData({ ...formData, maskSize: e.target.value })}
+                  >
+                    <option value="">Select size...</option>
+                    <option value="Small">Small</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Large">Large</option>
+                    <option value="X-Large">X-Large</option>
+                    <option value="Unknown">Unknown</option>
+                  </select>
+                </div>
+              )}
+            </div>
 
+            {/* Notes */}
             <div>
               <Label htmlFor="notes">Notes</Label>
               <Textarea
@@ -664,6 +1083,9 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
           </div>
         </div>
 
+        {/* ================================================================= */}
+        {/* Submit                                                            */}
+        {/* ================================================================= */}
         <div className="flex gap-3">
           <Button type="submit" disabled={loading}>
             {loading ? 'Creating...' : 'Create Order'}
