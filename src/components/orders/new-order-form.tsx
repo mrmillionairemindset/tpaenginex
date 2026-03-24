@@ -560,7 +560,7 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
               <div>
                 <Label>Test Type(s) <span className="text-red-500">*</span></Label>
                 <div className="mt-2 space-y-2">
-                  {['Pre-Employment Drug Screen', 'DOT Drug Test', 'Physical Examination', 'PPE Exam', 'PFT', 'RFT', 'Audiogram', 'TB Test', 'TB Gold Blood Test', 'Chest X-Ray with B Read', '10 Panel Urine Drug Screen', 'OSHA Questionnaire', 'Respirator Fit Test'].map((type) => (
+                  {['Drug Screen', 'Physical Examination', 'PPE Exam', 'PFT', 'RFT', 'Audiogram', 'TB Test', 'TB Gold Blood Test', 'Chest X-Ray with B Read', '10 Panel Urine Drug Screen', 'OSHA Questionnaire', 'Respirator Fit Test'].map((type) => (
                     <label key={type} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
