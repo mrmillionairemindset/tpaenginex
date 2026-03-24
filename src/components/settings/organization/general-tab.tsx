@@ -29,7 +29,7 @@ export function GeneralTab({ orgId }: GeneralTabProps) {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const res = await fetch(`/api/organizations/${orgId}/settings`);
+        const res = await fetch(`/api/organizations/${orgId}/settings`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setFormData({
@@ -67,6 +67,17 @@ export function GeneralTab({ orgId }: GeneralTabProps) {
       const data = await res.json().catch(() => ({ error: 'Server error' }));
 
       if (res.ok) {
+        // Update form with saved values from server
+        if (data.settings) {
+          setFormData({
+            name: data.settings.name || '',
+            slug: data.settings.slug || '',
+            type: data.settings.type || '',
+            contactEmail: data.settings.contactEmail || '',
+            contactPhone: data.settings.contactPhone || '',
+            website: data.settings.website || '',
+          });
+        }
         toast({ title: 'Saved', description: 'General settings updated' });
       } else {
         toast({
