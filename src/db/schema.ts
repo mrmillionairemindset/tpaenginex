@@ -120,6 +120,7 @@ export const organizations = pgTable("organizations", {
   billingTier: varchar("billing_tier", { length: 50 }),
   contactEmail: varchar("contact_email", { length: 320 }),
   contactPhone: varchar("contact_phone", { length: 30 }),
+  website: text("website"),
   address: text("address"),
   city: varchar("city", { length: 120 }),
   state: varchar("state", { length: 2 }),
