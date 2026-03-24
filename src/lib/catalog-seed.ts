@@ -83,6 +83,7 @@ export async function seedCatalogForTpa(tpaOrgId: string) {
     // Dispatch/travel fees (both DOT and Non-DOT)
     { name: 'Onsite Collection / Travel Fee', code: 'onsite_travel', group: null, isDotOnly: false, isNonDotOnly: false, requiresPanel: false, sortOrder: 8, rate: 15000 },    // $150
     { name: 'After-Hours Dispatch Fee', code: 'after_hours', group: null, isDotOnly: false, isNonDotOnly: false, requiresPanel: false, sortOrder: 9, rate: 10000 },             // $100
+    { name: 'Shy Bladder / Extended Wait (per hour)', code: 'shy_bladder', group: null, isDotOnly: false, isNonDotOnly: false, requiresPanel: false, sortOrder: 10, rate: 5000 }, // $50/hr
   ];
 
   // Occupational Health Services (rates in cents — industry standard TPA pricing)
