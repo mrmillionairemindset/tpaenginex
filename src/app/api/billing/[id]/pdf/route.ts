@@ -33,6 +33,7 @@ export async function GET(
       clientOrg: { columns: { id: true, name: true } },
       order: { columns: { id: true, orderNumber: true, serviceType: true, testType: true } },
       event: { columns: { id: true, eventNumber: true, serviceType: true, totalOrdered: true } },
+      lineItems: true,
     },
   });
 
@@ -59,6 +60,13 @@ export async function GET(
     tpaBrandName: settings?.brandName || 'TPA',
     clientName: invoice.clientOrg?.name || 'Client',
     serviceDescription,
+    lineItems: invoice.lineItems?.map((li: any) => ({
+      serviceName: li.serviceName,
+      serviceCode: li.serviceCode,
+      quantity: li.quantity,
+      unitPrice: li.unitPrice,
+      amount: li.amount,
+    })),
     amount: invoice.amount || 0,
     invoicedAt: invoice.invoicedAt
       ? new Date(invoice.invoicedAt).toLocaleDateString()

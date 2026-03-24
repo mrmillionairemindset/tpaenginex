@@ -427,6 +427,18 @@ export const invoices = pgTable("invoices", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Invoice Line Items — per-service charges on an invoice
+export const invoiceLineItems = pgTable("invoice_line_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  invoiceId: uuid("invoice_id").references(() => invoices.id, { onDelete: "cascade" }).notNull(),
+  serviceName: varchar("service_name", { length: 200 }).notNull(),
+  serviceCode: varchar("service_code", { length: 50 }),
+  quantity: integer("quantity").default(1).notNull(),
+  unitPrice: integer("unit_price").notNull(), // cents
+  amount: integer("amount").notNull(), // quantity * unitPrice in cents
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Leads — CRM pipeline
 export const leads = pgTable("leads", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -568,6 +580,7 @@ export const serviceCatalog = pgTable("service_catalog", {
   isDotOnly: boolean("is_dot_only").default(false).notNull(),
   isNonDotOnly: boolean("is_non_dot_only").default(false).notNull(),
   requiresPanel: boolean("requires_panel").default(false).notNull(),
+  rate: integer("rate"), // price in cents per service
   isActive: boolean("is_active").default(true).notNull(),
   sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -840,7 +853,15 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
   invoices: many(invoices),
 }));
 
-export const invoicesRelations = relations(invoices, ({ one }) => ({
+export const invoiceLineItemsRelations = relations(invoiceLineItems, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceLineItems.invoiceId],
+    references: [invoices.id],
+  }),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one, many }) => ({
+  lineItems: many(invoiceLineItems),
   tpaOrg: one(organizations, {
     fields: [invoices.tpaOrgId],
     references: [organizations.id],

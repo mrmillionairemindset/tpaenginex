@@ -20,6 +20,7 @@ export const GET = withPermission('view_billing', async (req, user) => {
       clientOrg: {
         columns: { id: true, name: true },
       },
+      lineItems: true,
     },
     orderBy: [desc(invoices.createdAt)],
   });

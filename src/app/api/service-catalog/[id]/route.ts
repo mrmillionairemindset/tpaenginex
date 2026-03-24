@@ -10,8 +10,7 @@ export const dynamic = 'force-dynamic';
 const updateSchema = z.object({
   isActive: z.boolean().optional(),
   name: z.string().min(1).optional(),
-}).refine((data) => data.isActive !== undefined || data.name !== undefined, {
-  message: 'At least one field (isActive or name) must be provided',
+  rate: z.number().int().min(0).nullable().optional(),
 });
 
 // PATCH /api/service-catalog/[id] — update a service or reason catalog entry (tpa_admin only)
@@ -43,6 +42,7 @@ export const PATCH = withAdminAuth(async (req, user) => {
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if (data.isActive !== undefined) updates.isActive = data.isActive;
   if (data.name !== undefined) updates.name = data.name;
+  if (data.rate !== undefined) updates.rate = data.rate;
 
   // Try service_catalog first
   const existingService = await db.query.serviceCatalog.findFirst({

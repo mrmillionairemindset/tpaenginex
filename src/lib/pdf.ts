@@ -4,11 +4,20 @@ import PDFDocument from 'pdfkit';
 // Invoice PDF Generation
 // ============================================================================
 
+export interface InvoiceLineItem {
+  serviceName: string;
+  serviceCode?: string | null;
+  quantity: number;
+  unitPrice: number; // cents
+  amount: number; // cents
+}
+
 export interface InvoicePDFData {
   invoiceNumber: string;
   tpaBrandName: string;
   clientName: string;
   serviceDescription: string;
+  lineItems?: InvoiceLineItem[];
   amount: number; // cents
   invoicedAt: string;
   dueDate: string;
@@ -69,20 +78,36 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<Buffer> 
     const tableHeaderY = doc.y + 8;
     doc.fontSize(10).fillColor('#1e3a5f');
     doc.text('Description', 55, tableHeaderY);
-    doc.text('Amount', 450, tableHeaderY, { align: 'right', width: 107 });
+    doc.text('Qty', 360, tableHeaderY, { align: 'center', width: 40 });
+    doc.text('Unit Price', 400, tableHeaderY, { align: 'right', width: 70 });
+    doc.text('Amount', 480, tableHeaderY, { align: 'right', width: 77 });
     doc.moveTo(50, tableHeaderY + 18).lineTo(562, tableHeaderY + 18).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
 
-    // Line item
-    const itemY = tableHeaderY + 28;
-    doc.fontSize(10).fillColor('#000');
-    doc.text(data.serviceDescription, 55, itemY, { width: 380 });
-    doc.text(formattedAmount, 450, itemY, { align: 'right', width: 107 });
+    const fmtCents = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
+
+    // Line items
+    let currentY = tableHeaderY + 28;
+    if (data.lineItems && data.lineItems.length > 0) {
+      for (const item of data.lineItems) {
+        doc.fontSize(10).fillColor('#000');
+        doc.text(item.serviceName, 55, currentY, { width: 290 });
+        doc.text(String(item.quantity), 360, currentY, { align: 'center', width: 40 });
+        doc.text(item.unitPrice > 0 ? fmtCents(item.unitPrice) : '—', 400, currentY, { align: 'right', width: 70 });
+        doc.text(item.amount > 0 ? fmtCents(item.amount) : '—', 480, currentY, { align: 'right', width: 77 });
+        currentY += 18;
+      }
+    } else {
+      doc.fontSize(10).fillColor('#000');
+      doc.text(data.serviceDescription, 55, currentY, { width: 380 });
+      doc.text(formattedAmount, 480, currentY, { align: 'right', width: 77 });
+      currentY += 18;
+    }
 
     // Total
-    const totalY = itemY + 40;
+    const totalY = currentY + 10;
     doc.moveTo(350, totalY).lineTo(562, totalY).strokeColor('#e5e7eb').stroke();
     doc.fontSize(12).fillColor('#1e3a5f').text('Total Due:', 350, totalY + 10);
-    doc.fontSize(14).fillColor('#000').text(formattedAmount, 450, totalY + 8, { align: 'right', width: 107 });
+    doc.fontSize(14).fillColor('#000').text(formattedAmount, 480, totalY + 8, { align: 'right', width: 77 });
 
     // Notes
     if (data.notes) {
