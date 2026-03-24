@@ -3,8 +3,28 @@ import { db } from '@/db';
 import { organizations } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq } from 'drizzle-orm';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
+
+// Preprocess: convert empty strings to null before validation
+const emptyToNull = z.preprocess(
+  (val) => (val === '' ? null : val),
+  z.string().nullable().optional()
+);
+
+const updateSettingsSchema = z.object({
+  name: z.string().min(1, 'Organization name is required').trim().optional(),
+  contactEmail: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.string().email('Invalid email address').nullable().optional()
+  ),
+  contactPhone: emptyToNull,
+  website: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.string().url('Invalid URL — must start with https://').nullable().optional()
+  ),
+});
 
 // GET /api/organizations/[id]/settings
 export async function GET(
@@ -64,21 +84,23 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
+    const validation = updateSettingsSchema.safeParse(body);
 
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      return NextResponse.json(
+        { error: firstError.message, field: firstError.path.join('.') },
+        { status: 400 }
+      );
+    }
+
+    const data = validation.data;
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
 
-    if (typeof body.name === 'string' && body.name.trim()) {
-      updateData.name = body.name.trim();
-    }
-    if (body.contactEmail !== undefined) {
-      updateData.contactEmail = body.contactEmail || null;
-    }
-    if (body.contactPhone !== undefined) {
-      updateData.contactPhone = body.contactPhone || null;
-    }
-    if (body.website !== undefined) {
-      updateData.website = body.website || null;
-    }
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail;
+    if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone;
+    if (data.website !== undefined) updateData.website = data.website;
 
     await db.update(organizations).set(updateData).where(eq(organizations.id, id));
 
