@@ -109,6 +109,11 @@ export function CollectorAssignmentDetail({ orderId }: { orderId: string }) {
   const [completing, setCompleting] = useState(false);
   const [completeError, setCompleteError] = useState<string | null>(null);
 
+  // Shy bladder wait time state
+  const [waitHours, setWaitHours] = useState('');
+  const [addingWait, setAddingWait] = useState(false);
+  const [waitAdded, setWaitAdded] = useState(false);
+
   // Document upload state
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -191,6 +196,32 @@ export function CollectorAssignmentDetail({ orderId }: { orderId: string }) {
       );
     } finally {
       setCompleting(false);
+    }
+  };
+
+  const handleAddWaitTime = async () => {
+    const hours = parseFloat(waitHours);
+    if (!hours || hours <= 0) return;
+
+    setAddingWait(true);
+    try {
+      const res = await fetch(
+        `/api/collector-portal/assignments/${orderId}/wait-time`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hours }),
+        }
+      );
+
+      if (res.ok) {
+        setWaitAdded(true);
+        setWaitHours('');
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setAddingWait(false);
     }
   };
 
@@ -493,6 +524,51 @@ export function CollectorAssignmentDetail({ orderId }: { orderId: string }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Shy Bladder / Extended Wait */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Clock className="h-5 w-5 text-amber-500" />
+            Extended Wait Time
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {waitAdded ? (
+            <div className="flex items-center gap-2 text-sm text-green-600">
+              <CheckCircle2 className="h-4 w-4" />
+              Wait time logged successfully
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                If the donor required additional time to provide a specimen, log the wait time here.
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-24">
+                  <Input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    placeholder="Hours"
+                    value={waitHours}
+                    onChange={(e) => setWaitHours(e.target.value)}
+                  />
+                </div>
+                <span className="text-sm text-muted-foreground">hour(s)</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleAddWaitTime}
+                  disabled={addingWait || !waitHours || parseFloat(waitHours) <= 0}
+                >
+                  {addingWait ? 'Adding...' : 'Log Wait Time'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Document upload */}
       <Card>

@@ -91,6 +91,23 @@ export async function handleBillingQueueEntry(job: Job<BillingQueueEntryData>) {
   let totalAmount = 0;
 
   for (const svcNameOrCode of selectedServices) {
+    // Handle shy bladder with hours encoded in name: "Shy Bladder / Extended Wait (2hr)"
+    const shyBladderMatch = svcNameOrCode.match(/^Shy Bladder.*\((\d+\.?\d*)hr\)$/);
+    if (shyBladderMatch) {
+      const hours = parseFloat(shyBladderMatch[1]);
+      const shyRate = rateByCode.get('shy_bladder')?.rate || rateByName.get('shy bladder / extended wait (per hour)')?.rate || 5000;
+      const amount = shyRate * hours;
+      lineItems.push({
+        serviceName: 'Shy Bladder / Extended Wait',
+        serviceCode: 'shy_bladder',
+        quantity: hours,
+        unitPrice: shyRate,
+        amount,
+      });
+      totalAmount += amount;
+      continue;
+    }
+
     // Try matching by code first, then by name
     const byCode = rateByCode.get(svcNameOrCode);
     const byName = rateByName.get(svcNameOrCode.toLowerCase());
