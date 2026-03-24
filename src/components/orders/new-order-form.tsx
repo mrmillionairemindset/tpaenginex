@@ -296,6 +296,22 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
     const reason = catalog?.reasons.find((r) => r.code === code);
     if (reason?.autoUrgent) {
       setFormData((prev) => ({ ...prev, priority: 'urgent', urgency: 'urgent' }));
+
+      // Post-accident and reasonable suspicion require urine + alcohol + onsite travel
+      const requiredCodes = formData.isDOT
+        ? ['dot_urine', 'dot_bat', 'onsite_travel']
+        : ['urine', 'bat', 'onsite_travel'];
+
+      setDrugTestTypes((prev) => {
+        const updated = new Set(prev);
+        for (const c of requiredCodes) {
+          // Only add if the service exists in the catalog
+          if (catalog?.services.some((s) => s.code === c)) {
+            updated.add(c);
+          }
+        }
+        return [...updated];
+      });
     }
   };
 

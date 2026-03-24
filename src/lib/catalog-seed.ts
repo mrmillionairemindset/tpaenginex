@@ -80,6 +80,9 @@ export async function seedCatalogForTpa(tpaOrgId: string) {
     { name: 'Oral Fluid Collection for Drug Test', code: 'oral_fluid', group: null, isDotOnly: false, isNonDotOnly: true, requiresPanel: false, sortOrder: 5, rate: 5500 },    // $55
     { name: 'Hair Collection for Drug Test', code: 'hair', group: null, isDotOnly: false, isNonDotOnly: true, requiresPanel: false, sortOrder: 6, rate: 8500 },                // $85
     { name: 'Breath Alcohol Test', code: 'bat', group: null, isDotOnly: false, isNonDotOnly: true, requiresPanel: false, sortOrder: 7, rate: 4500 },                            // $45
+    // Dispatch/travel fees (both DOT and Non-DOT)
+    { name: 'Onsite Collection / Travel Fee', code: 'onsite_travel', group: null, isDotOnly: false, isNonDotOnly: false, requiresPanel: false, sortOrder: 8, rate: 15000 },    // $150
+    { name: 'After-Hours Dispatch Fee', code: 'after_hours', group: null, isDotOnly: false, isNonDotOnly: false, requiresPanel: false, sortOrder: 9, rate: 10000 },             // $100
   ];
 
   // Occupational Health Services (rates in cents — industry standard TPA pricing)
