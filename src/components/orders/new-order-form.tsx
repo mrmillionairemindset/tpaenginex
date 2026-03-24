@@ -1031,7 +1031,8 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
               </div>
             )}
 
-            {/* Mask */}
+            {/* Mask — only shown when respirator-related services are selected */}
+            {occHealthTypes.some(code => ['osha_respirator_questionnaire', 'respirator_cert', 'pulmonary_function', 'respirator_fit_qualitative', 'respirator_fit_quantitative'].includes(code)) && (
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label htmlFor="needsMask">Do you need a mask? <span className="text-red-500">*</span></Label>
@@ -1069,6 +1070,7 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
                 </div>
               )}
             </div>
+            )}
 
             {/* Notes */}
             <div>
