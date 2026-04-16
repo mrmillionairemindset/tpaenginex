@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/client";
-import { users } from "@/db/schema";
+import { users, emailVerificationTokens } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import {
+  generateSecureToken,
+  tokenExpiryDates,
+  logLoginEvent,
+  getClientIp,
+  getClientUserAgent,
+} from "@/lib/auth-security";
+import { sendEmailVerification } from "@/lib/email";
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const ipAddress = getClientIp(request.headers);
+  const userAgent = getClientUserAgent(request.headers);
+
   try {
     const { name, email, password } = await request.json();
 
@@ -26,9 +37,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedEmail = email.toLowerCase();
+
     // Check if user already exists
     const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, email.toLowerCase()),
+      where: eq(users.email, normalizedEmail),
     });
 
     if (existingUser) {
@@ -41,16 +54,48 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user — email not yet verified
     const [newUser] = await db
       .insert(users)
       .values({
         name,
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         password: hashedPassword,
-        emailVerified: new Date(), // Auto-verify for now, can add email verification later
       })
       .returning();
+
+    // Generate email verification token
+    try {
+      const { token, hash } = await generateSecureToken();
+      const { emailVerificationExpiresAt } = tokenExpiryDates();
+
+      await db.insert(emailVerificationTokens).values({
+        userId: newUser.id,
+        tokenHash: hash,
+        email: newUser.email,
+        expiresAt: emailVerificationExpiresAt,
+      });
+
+      const appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://tpaenginex.com';
+      const verifyUrl = `${appUrl}/auth/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(newUser.email)}`;
+
+      await sendEmailVerification({
+        to: newUser.email,
+        name: newUser.name,
+        verifyUrl,
+      });
+
+      await logLoginEvent({
+        userId: newUser.id,
+        email: newUser.email,
+        event: 'email_verification_sent',
+        ipAddress,
+        userAgent,
+      });
+    } catch (err) {
+      console.error('Failed to send verification email on signup:', err);
+      // Don't fail signup — user can resend verification later
+    }
 
     return NextResponse.json(
       {

@@ -10,7 +10,7 @@ const workflowSteps = [
   {
     step: '01',
     title: 'Order Intake',
-    description: 'TPA staff creates orders on behalf of clients. Candidate info, service type, DOT status, and priority are captured in one form.',
+    description: 'TPA staff creates orders on behalf of clients. Individual info, service type, DOT status, and priority are captured in one form.',
     icon: ClipboardList,
   },
   {

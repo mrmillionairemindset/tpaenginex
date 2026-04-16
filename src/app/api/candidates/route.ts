@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { candidates } from '@/db/schema';
+import { persons } from '@/db/schema';
 import { withAuth } from '@/auth/api-middleware';
-import { eq, and, or, ilike, desc } from 'drizzle-orm';
+import { eq, and, or, ilike, desc, count } from 'drizzle-orm';
+import { parsePagination } from '@/lib/pagination';
 import { z } from 'zod';
 
 // Force dynamic rendering
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic';
 // Validation Schemas
 // ============================================================================
 
-const createCandidateSchema = z.object({
+const createPersonSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   dob: z.string().optional(),
@@ -27,11 +28,10 @@ const createCandidateSchema = z.object({
 });
 
 // ============================================================================
-// GET /api/candidates - List candidates
+// GET /api/candidates - List persons
 // ============================================================================
 
 export const GET = withAuth(async (req, user) => {
-  // Only employers can access candidates (their own)
   if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     return NextResponse.json(
       { error: 'Insufficient permissions' },
@@ -41,58 +41,70 @@ export const GET = withAuth(async (req, user) => {
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('search');
+  const { page, limit, offset } = parsePagination(searchParams);
 
-  let whereClause = eq(candidates.orgId, user.organization!.id);
+  let whereClause = eq(persons.orgId, user.organization!.id);
 
-  // Add search filter if provided
   if (search) {
     const searchPattern = `%${search}%`;
     whereClause = and(
       whereClause,
       or(
-        ilike(candidates.firstName, searchPattern),
-        ilike(candidates.lastName, searchPattern),
-        ilike(candidates.email, searchPattern),
-        ilike(candidates.phone, searchPattern)
+        ilike(persons.firstName, searchPattern),
+        ilike(persons.lastName, searchPattern),
+        ilike(persons.email, searchPattern),
+        ilike(persons.phone, searchPattern)
       )
     ) as any;
   }
 
-  const candidatesList = await db.query.candidates.findMany({
-    where: whereClause,
-    with: {
-      orders: {
-        columns: {
-          id: true,
-          orderNumber: true,
-          status: true,
-          testType: true,
-          createdAt: true,
+  const [personsList, [{ count: total }]] = await Promise.all([
+    db.query.persons.findMany({
+      where: whereClause,
+      with: {
+        orders: {
+          columns: {
+            id: true,
+            orderNumber: true,
+            status: true,
+            testType: true,
+            createdAt: true,
+          },
+          orderBy: (orders, { desc }) => [desc(orders.createdAt)],
+          limit: 5,
         },
-        orderBy: (orders, { desc }) => [desc(orders.createdAt)],
-        limit: 5, // Last 5 orders per candidate
       },
-    },
-    orderBy: [desc(candidates.createdAt)],
-  });
+      orderBy: [desc(persons.createdAt)],
+      limit,
+      offset,
+    }),
+    db.select({ count: count() }).from(persons).where(whereClause),
+  ]);
 
-  // Add _count field for compatibility with UI components
-  const formattedCandidates = candidatesList.map((candidate) => ({
-    ...candidate,
+  const formattedPersons = personsList.map((person) => ({
+    ...person,
     _count: {
-      orders: candidate.orders?.length || 0,
+      orders: person.orders?.length || 0,
     },
   }));
 
-  return NextResponse.json({ candidates: formattedCandidates });
+  return NextResponse.json({
+    persons: formattedPersons,
+    pagination: {
+      page,
+      limit,
+      total: Number(total),
+      totalPages: Math.ceil(Number(total) / limit),
+      hasMore: offset + formattedPersons.length < Number(total),
+    },
+  });
 });
 
 // ============================================================================
-// POST /api/candidates - Create candidate
+// POST /api/candidates - Create person
 // ============================================================================
 
 export const POST = withAuth(async (req, user) => {
-  // Only employers can create candidates
   if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     return NextResponse.json(
       { error: 'Insufficient permissions' },
@@ -101,7 +113,7 @@ export const POST = withAuth(async (req, user) => {
   }
 
   const body = await req.json();
-  const validation = createCandidateSchema.safeParse(body);
+  const validation = createPersonSchema.safeParse(body);
 
   if (!validation.success) {
     return NextResponse.json(
@@ -112,38 +124,44 @@ export const POST = withAuth(async (req, user) => {
 
   const data = validation.data;
 
-  // Check for duplicate candidate (same first name, last name, and DOB or email)
+  // Check for duplicate person (same first name, last name, and DOB or email)
   if (data.email || data.dob) {
     let duplicateWhere = and(
-      eq(candidates.orgId, user.organization!.id),
-      eq(candidates.firstName, data.firstName),
-      eq(candidates.lastName, data.lastName)
+      eq(persons.orgId, user.organization!.id),
+      eq(persons.firstName, data.firstName),
+      eq(persons.lastName, data.lastName)
     );
 
     if (data.email) {
-      duplicateWhere = and(duplicateWhere, eq(candidates.email, data.email)) as any;
+      duplicateWhere = and(duplicateWhere, eq(persons.email, data.email)) as any;
     } else if (data.dob) {
-      duplicateWhere = and(duplicateWhere, eq(candidates.dob, data.dob)) as any;
+      duplicateWhere = and(duplicateWhere, eq(persons.dob, data.dob)) as any;
     }
 
-    const existingCandidate = await db.query.candidates.findFirst({
+    const existingPerson = await db.query.persons.findFirst({
       where: duplicateWhere,
     });
 
-    if (existingCandidate) {
+    if (existingPerson) {
       return NextResponse.json(
         {
-          error: 'A candidate with this name and email/DOB already exists',
-          candidateId: existingCandidate.id,
+          error: 'A person with this name and email/DOB already exists',
+          personId: existingPerson.id,
         },
         { status: 409 }
       );
     }
   }
 
-  // Create candidate
-  const [newCandidate] = await db.insert(candidates).values({
-    orgId: user.organization!.id,
+  const orgId = user.orgId ?? user.tpaOrgId;
+  if (!orgId || !user.tpaOrgId) {
+    return NextResponse.json({ error: 'No organization context' }, { status: 400 });
+  }
+
+  const [newPerson] = await db.insert(persons).values({
+    orgId,
+    tpaOrgId: user.tpaOrgId,
+    personType: 'candidate',
     firstName: data.firstName,
     lastName: data.lastName,
     dob: data.dob,
@@ -155,10 +173,10 @@ export const POST = withAuth(async (req, user) => {
     state: data.state,
     zip: data.zip,
     meta: data.meta,
-  }).returning();
+  } as typeof persons.$inferInsert).returning();
 
   return NextResponse.json(
-    { candidate: newCandidate, message: 'Candidate created successfully' },
+    { person: newPerson, message: 'Person created successfully' },
     { status: 201 }
   );
 });

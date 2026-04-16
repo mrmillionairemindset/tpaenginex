@@ -12,8 +12,8 @@ export const GET = withAuth(async (req, user) => {
       id: user.id,
       email: user.email,
       role: user.role,
-      organization: user.organization.name,
-      organizationType: user.organization.type,
+      organization: user.organization?.name,
+      organizationType: user.organization?.type,
     },
   });
 });

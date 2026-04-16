@@ -14,7 +14,7 @@ async function main() {
 
   // Import after env vars are loaded
   const { db } = await import('../src/db/client');
-  const { orders, candidates, organizations, users } = await import('../src/db/schema');
+  const { orders, persons, organizations, users } = await import('../src/db/schema');
   const { eq } = await import('drizzle-orm');
   const { appendOrderToSheet } = await import('../src/integrations/sheets');
 
@@ -45,8 +45,9 @@ async function main() {
 
     // Create test candidate
     console.log('📝 Creating test candidate...');
-    const [candidate] = await db.insert(candidates).values({
+    const [candidate] = await db.insert(persons).values({
       orgId: testOrg.id,
+      tpaOrgId: testOrg.tpaOrgId ?? testOrg.id,
       firstName: 'John',
       lastName: 'Doe',
       dob: '01/15/1990',
@@ -57,7 +58,7 @@ async function main() {
       city: 'Austin',
       state: 'TX',
       zip: '78701',
-    }).returning();
+    } as typeof persons.$inferInsert).returning();
 
     console.log(`✅ Created candidate: ${candidate.firstName} ${candidate.lastName}`);
 
@@ -68,7 +69,8 @@ async function main() {
     console.log('📝 Creating order...');
     const [order] = await db.insert(orders).values({
       orgId: testOrg.id,
-      candidateId: candidate.id,
+      tpaOrgId: testOrg.tpaOrgId ?? testOrg.id,
+      personId: candidate.id,
       orderNumber,
       testType: 'Drug Test - 10 Panel',
       urgency: 'standard',
@@ -78,7 +80,7 @@ async function main() {
       requestedBy: testUser.id,
       notes: 'Test order for Google Sheets integration',
       status: 'new',
-    }).returning();
+    } as typeof orders.$inferInsert).returning();
 
     console.log(`✅ Created order: ${order.orderNumber}`);
 
@@ -86,18 +88,24 @@ async function main() {
     console.log('📊 Syncing to Google Sheets...');
     const rowId = await appendOrderToSheet({
       orderNumber: order.orderNumber,
-      candidateFirstName: candidate.firstName,
-      candidateLastName: candidate.lastName,
-      candidateEmail: candidate.email,
-      candidatePhone: candidate.phone,
+      personFirstName: candidate.firstName,
+      personLastName: candidate.lastName,
+      personDOB: candidate.dob,
+      personSSNLast4: candidate.ssnLast4,
+      personEmail: candidate.email,
+      personPhone: candidate.phone,
+      personAddress: candidate.address ?? '',
+      personCity: candidate.city ?? '',
+      personState: candidate.state ?? '',
+      personZip: candidate.zip ?? '',
       testType: order.testType,
       urgency: order.urgency || 'standard',
       jobsiteLocation: order.jobsiteLocation,
       needsMask: order.needsMask,
-      maskSize: order.maskSize,
+      maskSize: order.maskSize ?? undefined,
       status: order.status,
       createdAt: order.createdAt.toISOString(),
-      notes: order.notes,
+      notes: order.notes ?? undefined,
     });
 
     if (rowId) {
@@ -105,7 +113,7 @@ async function main() {
 
       // Update order with external row ID
       await db.update(orders)
-        .set({ externalRowId: rowId })
+        .set({ externalRowId: rowId } as Partial<typeof orders.$inferInsert>)
         .where(eq(orders.id, order.id));
 
       console.log(`✅ Updated order with externalRowId: ${rowId}`);

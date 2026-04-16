@@ -5,7 +5,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 
-interface Candidate {
+interface Person {
   id: string;
   firstName: string;
   lastName: string;
@@ -21,68 +21,68 @@ interface Candidate {
 
 export function CandidatesTable() {
   const router = useRouter();
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [persons, setPersons] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchCandidates() {
+    async function fetchPersons() {
       try {
         const response = await fetch('/api/candidates');
         if (response.ok) {
           const data = await response.json();
-          setCandidates(data.candidates);
+          setPersons(data.persons || data.candidates);
         }
       } catch (error) {
-        console.error('Failed to fetch candidates:', error);
+        console.error('Failed to fetch persons:', error);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchCandidates();
+    fetchPersons();
   }, []);
 
   const columns = [
     {
       header: 'Name',
-      accessor: (candidate: Candidate) =>
-        `${candidate.firstName} ${candidate.lastName}`,
+      accessor: (person: Person) =>
+        `${person.firstName} ${person.lastName}`,
     },
     {
       header: 'Email',
-      accessor: (candidate: Candidate) => candidate.email || '—',
+      accessor: (person: Person) => person.email || '—',
     },
     {
       header: 'Phone',
-      accessor: (candidate: Candidate) => candidate.phone || '—',
+      accessor: (person: Person) => person.phone || '—',
     },
     {
       header: 'Location',
-      accessor: (candidate: Candidate) => {
-        if (candidate.city && candidate.state) {
-          return `${candidate.city}, ${candidate.state}`;
+      accessor: (person: Person) => {
+        if (person.city && person.state) {
+          return `${person.city}, ${person.state}`;
         }
         return '—';
       },
     },
     {
       header: 'Orders',
-      accessor: (candidate: Candidate) => candidate._count.orders,
+      accessor: (person: Person) => person._count.orders,
     },
     {
       header: 'Added',
-      accessor: (candidate: Candidate) =>
-        formatDistanceToNow(new Date(candidate.createdAt), { addSuffix: true }),
+      accessor: (person: Person) =>
+        formatDistanceToNow(new Date(person.createdAt), { addSuffix: true }),
     },
   ];
 
   return (
     <DataTable
-      data={candidates}
+      data={persons}
       columns={columns}
       loading={loading}
-      emptyMessage="No candidates found. Create an order to add your first candidate."
-      onRowClick={(candidate) => router.push(`/candidates/${candidate.id}`)}
+      emptyMessage="No persons found. Create an order to add your first person."
+      onRowClick={(person) => router.push(`/candidates/${person.id}`)}
     />
   );
 }

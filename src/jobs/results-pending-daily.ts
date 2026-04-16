@@ -66,7 +66,7 @@ export async function handleResultsPendingDaily(job: Job) {
         userId: user.id,
         type: 'results_pending_followup',
         title: `${event.totalPending} Results Pending — ${event.eventNumber}`,
-        message: `${event.totalPending} results still pending for ${event.clientOrg.name} (${daysSinceEvent} days since collection)`,
+        message: `${event.totalPending} results still pending for ${event.clientOrg?.name ?? 'Unknown Client'} (${daysSinceEvent} days since collection)`,
         tpaOrgId: event.tpaOrgId,
       });
     }

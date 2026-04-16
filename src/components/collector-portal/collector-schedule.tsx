@@ -25,7 +25,7 @@ interface ScheduledOrder {
   status: string;
   jobsiteLocation: string;
   scheduledFor: string | null;
-  candidate: {
+  person: {
     id: string;
     firstName: string;
     lastName: string;
@@ -183,12 +183,12 @@ export function CollectorSchedule() {
                             </Badge>
                           )}
                         </div>
-                        {order.candidate && (
+                        {order.person && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <User className="h-3.5 w-3.5" />
                             <span>
-                              {order.candidate.firstName}{' '}
-                              {order.candidate.lastName}
+                              {order.person.firstName}{' '}
+                              {order.person.lastName}
                             </span>
                           </div>
                         )}

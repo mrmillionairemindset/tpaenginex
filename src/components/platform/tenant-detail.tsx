@@ -9,8 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Building2, Users, FileText, CalendarDays, Pencil, X, Save } from 'lucide-react';
+import { ArrowLeft, Building2, Users, FileText, CalendarDays, Pencil, X, Save, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 interface TenantDetailProps {
   tenantId: string;
@@ -70,6 +79,10 @@ export function TenantDetail({ tenantId }: TenantDetailProps) {
   const [toggling, setToggling] = useState(false);
 
   // Edit states
+  const [impersonateTarget, setImpersonateTarget] = useState<{ id: string; name: string | null; email: string } | null>(null);
+  const [impersonateReason, setImpersonateReason] = useState('');
+  const [impersonateDuration, setImpersonateDuration] = useState('60');
+  const [impersonating, setImpersonating] = useState(false);
   const [editingInfo, setEditingInfo] = useState(false);
   const [editingSettings, setEditingSettings] = useState(false);
   const [savingInfo, setSavingInfo] = useState(false);
@@ -200,6 +213,38 @@ export function TenantDetail({ tenantId }: TenantDetailProps) {
       toast({ title: 'Error', description: 'Failed to update', variant: 'destructive' });
     } finally {
       setSavingSettings(false);
+    }
+  };
+
+  const submitImpersonate = async () => {
+    if (!impersonateTarget) return;
+    if (impersonateReason.trim().length < 10) {
+      toast({ title: 'Reason must be at least 10 characters', variant: 'destructive' });
+      return;
+    }
+    setImpersonating(true);
+    try {
+      const res = await fetch('/api/platform/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserId: impersonateTarget.id,
+          reason: impersonateReason.trim(),
+          durationMinutes: parseInt(impersonateDuration, 10) || 60,
+        }),
+      });
+      if (res.ok) {
+        toast({ title: 'Impersonation started' });
+        router.push('/dashboard');
+        router.refresh();
+      } else {
+        const err = await res.json();
+        toast({ title: 'Error', description: err.error || 'Failed to start impersonation', variant: 'destructive' });
+        setImpersonating(false);
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to start impersonation', variant: 'destructive' });
+      setImpersonating(false);
     }
   };
 
@@ -508,6 +553,7 @@ export function TenantDetail({ tenantId }: TenantDetailProps) {
                   <th className="pb-2 font-medium">Role</th>
                   <th className="pb-2 font-medium">Status</th>
                   <th className="pb-2 font-medium">Last Login</th>
+                  <th className="pb-2 font-medium"></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -533,6 +579,22 @@ export function TenantDetail({ tenantId }: TenantDetailProps) {
                     </td>
                     <td className="py-2 text-muted-foreground">
                       {m.lastLoginAt ? format(new Date(m.lastLoginAt), 'MMM d, yyyy') : 'Never'}
+                    </td>
+                    <td className="py-2 text-right">
+                      {m.isActive && m.role !== 'platform_admin' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setImpersonateTarget({ id: m.id, name: m.name, email: m.email });
+                            setImpersonateReason('');
+                            setImpersonateDuration('60');
+                          }}
+                        >
+                          <UserCheck className="h-3 w-3 mr-1" />
+                          Impersonate
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -586,6 +648,55 @@ export function TenantDetail({ tenantId }: TenantDetailProps) {
           </div>
         )}
       </Card>
+
+      {/* Impersonate dialog */}
+      <Dialog open={!!impersonateTarget} onOpenChange={(o) => { if (!o) setImpersonateTarget(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Impersonate user</DialogTitle>
+            <DialogDescription>
+              You are about to sign in as{' '}
+              <strong>{impersonateTarget?.name || impersonateTarget?.email}</strong>.
+              This is logged for audit. Use only when necessary for support.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="imp-reason">Reason (required, min 10 chars)</Label>
+              <Textarea
+                id="imp-reason"
+                rows={3}
+                placeholder="Supporting ticket #1234 — user reports missing orders"
+                value={impersonateReason}
+                onChange={(e) => setImpersonateReason(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="imp-duration">Duration</Label>
+              <select
+                id="imp-duration"
+                value={impersonateDuration}
+                onChange={(e) => setImpersonateDuration(e.target.value)}
+                className="w-full mt-1 border rounded-md px-3 py-2 text-sm bg-background"
+              >
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="60">60 minutes</option>
+                <option value="120">2 hours</option>
+                <option value="240">4 hours (max)</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setImpersonateTarget(null)} disabled={impersonating}>
+              Cancel
+            </Button>
+            <Button onClick={submitImpersonate} disabled={impersonating}>
+              {impersonating ? 'Starting…' : 'Start impersonation'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

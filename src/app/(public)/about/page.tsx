@@ -77,13 +77,13 @@ export default function AboutPage() {
 
         <h3>For Client Companies</h3>
         <ol>
-          <li>Submit screening orders with candidate information</li>
+          <li>Submit screening orders with individual information</li>
           <li>Receive automated status updates throughout the process</li>
           <li>Access results securely through the client portal</li>
           <li>Maintain centralized records for compliance</li>
         </ol>
 
-        <h3>For Candidates</h3>
+        <h3>For Individuals</h3>
         <ol>
           <li>Receive clear appointment information via email/SMS</li>
           <li>Complete screenings at convenient locations</li>

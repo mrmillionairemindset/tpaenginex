@@ -4,6 +4,7 @@ import { events, orders } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+import { sendCollectorEventPush } from '@/lib/push-notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +44,7 @@ export async function GET(
       collector: true,
       orders: {
         with: {
-          candidate: true,
+          person: true,
         },
       },
     },
@@ -110,6 +111,20 @@ export async function PATCH(
   if (data.pendingFollowUpUntil) updateData.pendingFollowUpUntil = new Date(data.pendingFollowUpUntil);
 
   await db.update(events).set(updateData).where(eq(events.id, id));
+
+  // If a collector was newly assigned, send push notification
+  if (data.collectorId && data.collectorId !== existing.collectorId) {
+    const scheduledDate = data.scheduledDate
+      ? new Date(data.scheduledDate).toLocaleDateString()
+      : existing.scheduledDate.toLocaleDateString();
+
+    sendCollectorEventPush(
+      data.collectorId,
+      existing.eventNumber,
+      data.location || existing.location,
+      scheduledDate
+    ).catch((err) => console.error('[push] Failed to send event assignment push:', err));
+  }
 
   const updated = await db.query.events.findFirst({
     where: eq(events.id, id),

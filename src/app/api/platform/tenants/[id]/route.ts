@@ -56,7 +56,7 @@ export const GET = withPlatformAuth(async (req, user, { params }: { params: Prom
     .innerJoin(users, eq(users.id, organizationMembers.userId))
     .where(eq(organizationMembers.organizationId, id));
 
-  // Get client orgs — name and contact only. No orders/candidates.
+  // Get client orgs — name and contact only. No orders/persons.
   const clientOrgs = await db.query.organizations.findMany({
     where: and(eq(organizations.tpaOrgId, id), eq(organizations.type, 'client')),
     columns: {

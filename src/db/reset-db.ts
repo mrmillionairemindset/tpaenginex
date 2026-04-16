@@ -23,7 +23,7 @@ async function resetDatabase() {
     await sql`DROP TABLE IF EXISTS appointments CASCADE`;
     await sql`DROP TABLE IF EXISTS orders CASCADE`;
     await sql`DROP TABLE IF EXISTS sites CASCADE`;
-    await sql`DROP TABLE IF EXISTS candidates CASCADE`;
+    await sql`DROP TABLE IF EXISTS persons CASCADE`;
     await sql`DROP TABLE IF EXISTS verification_tokens CASCADE`;
     await sql`DROP TABLE IF EXISTS sessions CASCADE`;
     await sql`DROP TABLE IF EXISTS accounts CASCADE`;

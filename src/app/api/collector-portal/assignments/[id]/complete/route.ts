@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/auth/get-user';
 import { db } from '@/db';
-import { orders } from '@/db/schema';
+import { orders, specimens } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
@@ -80,11 +80,22 @@ export async function POST(
 
     await db.update(orders).set(updateData).where(eq(orders.id, orderId));
 
+    // Auto-create a specimen record for this collection
+    await db.insert(specimens).values({
+      orderId: order.id,
+      tpaOrgId: order.tpaOrgId,
+      specimenType: 'primary',
+      ccfNumber: body.ccfNumber || null,
+      collectorId: user.collectorId,
+      collectedAt: new Date(),
+      status: 'collected',
+    } as typeof specimens.$inferInsert);
+
     // Fetch updated order with relations (strip internalNotes)
     const updatedOrder = await db.query.orders.findFirst({
       where: eq(orders.id, orderId),
       with: {
-        candidate: {
+        person: {
           columns: {
             id: true,
             firstName: true,

@@ -11,39 +11,39 @@ import { AlertCircle, User, MapPin, FileText, ClipboardList, Trash2 } from 'luci
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
-interface CandidateDetailsProps {
-  candidateId: string;
+interface PersonDetailsProps {
+  personId: string;
   userRole?: string;
 }
 
-export function CandidateDetails({ candidateId, userRole = '' }: CandidateDetailsProps) {
+export function CandidateDetails({ personId, userRole = '' }: PersonDetailsProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [candidate, setCandidate] = useState<any>(null);
+  const [person, setPerson] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const isAdmin = userRole === 'tpa_admin' || userRole === 'platform_admin';
 
   useEffect(() => {
-    async function fetchCandidate() {
+    async function fetchPerson() {
       try {
-        const response = await fetch(`/api/candidates/${candidateId}`);
+        const response = await fetch(`/api/candidates/${personId}`);
         if (response.ok) {
           const data = await response.json();
-          setCandidate(data.candidate);
+          setPerson(data.person || data.candidate);
         } else {
-          setError('Candidate not found');
+          setError('Person not found');
         }
       } catch (err) {
-        setError('Failed to load candidate');
+        setError('Failed to load person');
       } finally {
         setLoading(false);
       }
     }
 
-    fetchCandidate();
-  }, [candidateId]);
+    fetchPerson();
+  }, [personId]);
 
   if (loading) {
     return (
@@ -53,12 +53,12 @@ export function CandidateDetails({ candidateId, userRole = '' }: CandidateDetail
     );
   }
 
-  if (error || !candidate) {
+  if (error || !person) {
     return (
       <EmptyState
         icon={AlertCircle}
-        title="Candidate Not Found"
-        description={error || 'The candidate you are looking for does not exist'}
+        title="Person Not Found"
+        description={error || 'The person you are looking for does not exist'}
       />
     );
   }
@@ -69,10 +69,10 @@ export function CandidateDetails({ candidateId, userRole = '' }: CandidateDetail
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">
-            {candidate.firstName} {candidate.lastName}
+            {person.firstName} {person.lastName}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Added {format(new Date(candidate.createdAt), 'PPP')}
+            Added {format(new Date(person.createdAt), 'PPP')}
           </p>
         </div>
         {isAdmin && (
@@ -82,32 +82,32 @@ export function CandidateDetails({ candidateId, userRole = '' }: CandidateDetail
             className="border-destructive text-destructive hover:bg-destructive/10"
             disabled={deleting}
             onClick={async () => {
-              if (!confirm(`Delete ${candidate.firstName} ${candidate.lastName}? This cannot be undone.`)) return;
+              if (!confirm(`Delete ${person.firstName} ${person.lastName}? This cannot be undone.`)) return;
               setDeleting(true);
               try {
-                const res = await fetch(`/api/candidates/${candidateId}`, { method: 'DELETE' });
+                const res = await fetch(`/api/candidates/${personId}`, { method: 'DELETE' });
                 if (res.ok) {
-                  toast({ title: 'Candidate Deleted' });
+                  toast({ title: 'Person Deleted' });
                   router.push('/candidates');
                 } else {
                   const err = await res.json();
                   toast({ title: 'Error', description: err.error, variant: 'destructive' });
                 }
               } catch {
-                toast({ title: 'Error', description: 'Failed to delete candidate', variant: 'destructive' });
+                toast({ title: 'Error', description: 'Failed to delete person', variant: 'destructive' });
               } finally {
                 setDeleting(false);
               }
             }}
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            {deleting ? 'Deleting...' : 'Delete Candidate'}
+            {deleting ? 'Deleting...' : 'Delete Person'}
           </Button>
         )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Candidate Information */}
+        {/* Person Information */}
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <User className="h-5 w-5 text-muted-foreground" />
@@ -117,19 +117,19 @@ export function CandidateDetails({ candidateId, userRole = '' }: CandidateDetail
             <div>
               <dt className="text-sm text-muted-foreground">Name</dt>
               <dd className="font-medium">
-                {candidate.firstName} {candidate.lastName}
+                {person.firstName} {person.lastName}
               </dd>
             </div>
-            {candidate.email && (
+            {person.email && (
               <div>
                 <dt className="text-sm text-muted-foreground">Email</dt>
-                <dd className="font-medium">{candidate.email}</dd>
+                <dd className="font-medium">{person.email}</dd>
               </div>
             )}
-            {candidate.phone && (
+            {person.phone && (
               <div>
                 <dt className="text-sm text-muted-foreground">Phone</dt>
-                <dd className="font-medium">{candidate.phone}</dd>
+                <dd className="font-medium">{person.phone}</dd>
               </div>
             )}
           </dl>
@@ -142,34 +142,34 @@ export function CandidateDetails({ candidateId, userRole = '' }: CandidateDetail
             <h2 className="text-lg font-semibold">Address</h2>
           </div>
           <dl className="space-y-2">
-            {candidate.address && (
+            {person.address && (
               <div>
                 <dt className="text-sm text-muted-foreground">Street Address</dt>
-                <dd className="font-medium">{candidate.address}</dd>
+                <dd className="font-medium">{person.address}</dd>
               </div>
             )}
-            {candidate.city && (
+            {person.city && (
               <div>
                 <dt className="text-sm text-muted-foreground">City</dt>
-                <dd className="font-medium">{candidate.city}</dd>
+                <dd className="font-medium">{person.city}</dd>
               </div>
             )}
-            {candidate.state && (
+            {person.state && (
               <div>
                 <dt className="text-sm text-muted-foreground">State</dt>
-                <dd className="font-medium">{candidate.state}</dd>
+                <dd className="font-medium">{person.state}</dd>
               </div>
             )}
-            {candidate.zip && (
+            {person.zip && (
               <div>
                 <dt className="text-sm text-muted-foreground">ZIP Code</dt>
-                <dd className="font-medium">{candidate.zip}</dd>
+                <dd className="font-medium">{person.zip}</dd>
               </div>
             )}
-            {!candidate.address &&
-              !candidate.city &&
-              !candidate.state &&
-              !candidate.zip && (
+            {!person.address &&
+              !person.city &&
+              !person.state &&
+              !person.zip && (
                 <p className="text-sm text-muted-foreground">No address on file</p>
               )}
           </dl>
@@ -184,14 +184,14 @@ export function CandidateDetails({ candidateId, userRole = '' }: CandidateDetail
             <h2 className="text-lg font-semibold">Order History</h2>
           </div>
           <span className="text-sm text-muted-foreground">
-            {candidate.orders.length}{' '}
-            {candidate.orders.length === 1 ? 'order' : 'orders'}
+            {person.orders.length}{' '}
+            {person.orders.length === 1 ? 'order' : 'orders'}
           </span>
         </div>
 
-        {candidate.orders.length > 0 ? (
+        {person.orders.length > 0 ? (
           <div className="space-y-3">
-            {candidate.orders.map((order: any) => (
+            {person.orders.map((order: any) => (
               <div
                 key={order.id}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
@@ -217,7 +217,7 @@ export function CandidateDetails({ candidateId, userRole = '' }: CandidateDetail
           <EmptyState
             icon={FileText}
             title="No Orders Yet"
-            description="This candidate has no screening orders"
+            description="This person has no screening orders"
           />
         )}
       </Card>

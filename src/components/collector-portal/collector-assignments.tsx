@@ -27,7 +27,7 @@ interface Assignment {
   jobsiteLocation: string;
   scheduledFor: string | null;
   notes: string | null;
-  candidate: {
+  person: {
     id: string;
     firstName: string;
     lastName: string;
@@ -178,12 +178,12 @@ export function CollectorAssignments() {
               </div>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              {assignment.candidate && (
+              {assignment.person && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <User className="h-4 w-4 shrink-0" />
                   <span>
-                    {assignment.candidate.firstName}{' '}
-                    {assignment.candidate.lastName}
+                    {assignment.person.firstName}{' '}
+                    {assignment.person.lastName}
                   </span>
                 </div>
               )}

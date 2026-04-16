@@ -118,8 +118,8 @@ export function OrganizationDetails({ organizationId }: OrganizationDetailsProps
               <dd className="font-medium text-2xl">{organization._count?.orders || 0}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Total Candidates</dt>
-              <dd className="font-medium text-2xl">{organization._count?.candidates || 0}</dd>
+              <dt className="text-sm text-muted-foreground">Total Persons</dt>
+              <dd className="font-medium text-2xl">{organization._count?.persons || 0}</dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">Total Users</dt>

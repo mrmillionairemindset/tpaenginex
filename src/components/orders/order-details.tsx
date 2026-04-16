@@ -9,7 +9,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { AlertCircle, User, FileText, CheckCircle, XCircle, UserCheck, ClipboardCheck, Pencil } from 'lucide-react';
+import { AlertCircle, User, FileText, CheckCircle, XCircle, UserCheck, ClipboardCheck, Pencil, Download } from 'lucide-react';
+import { SpecimensResultsPanel } from '@/components/orders/specimens-results-panel';
+import { OrderTimeline } from '@/components/orders/order-timeline';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 
@@ -129,16 +131,16 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
       needsMask: order.needsMask || false,
       maskSize: order.maskSize || '',
       collectorId: order.collectorId || '',
-      candidateFirstName: order.candidate?.firstName || '',
-      candidateLastName: order.candidate?.lastName || '',
-      candidateEmail: order.candidate?.email || '',
-      candidatePhone: order.candidate?.phone || '',
-      candidateDob: order.candidate?.dob || '',
-      candidateSsnLast4: order.candidate?.ssnLast4 || '',
-      candidateAddress: order.candidate?.address || '',
-      candidateCity: order.candidate?.city || '',
-      candidateState: order.candidate?.state || '',
-      candidateZip: order.candidate?.zip || '',
+      personFirstName: order.person?.firstName || '',
+      personLastName: order.person?.lastName || '',
+      personEmail: order.person?.email || '',
+      personPhone: order.person?.phone || '',
+      personDob: order.person?.dob || '',
+      personSsnLast4: order.person?.ssnLast4 || '',
+      personAddress: order.person?.address || '',
+      personCity: order.person?.city || '',
+      personState: order.person?.state || '',
+      personZip: order.person?.zip || '',
     });
     setEditing(true);
   };
@@ -162,17 +164,17 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
           needsMask: editForm.needsMask,
           maskSize: editForm.maskSize,
           collectorId: editForm.collectorId || null,
-          candidate: {
-            firstName: editForm.candidateFirstName,
-            lastName: editForm.candidateLastName,
-            email: editForm.candidateEmail,
-            phone: editForm.candidatePhone,
-            dob: editForm.candidateDob,
-            ssnLast4: editForm.candidateSsnLast4,
-            address: editForm.candidateAddress,
-            city: editForm.candidateCity,
-            state: editForm.candidateState,
-            zip: editForm.candidateZip,
+          person: {
+            firstName: editForm.personFirstName,
+            lastName: editForm.personLastName,
+            email: editForm.personEmail,
+            phone: editForm.personPhone,
+            dob: editForm.personDob,
+            ssnLast4: editForm.personSsnLast4,
+            address: editForm.personAddress,
+            city: editForm.personCity,
+            state: editForm.personState,
+            zip: editForm.personZip,
           },
         }),
       });
@@ -387,6 +389,16 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
           ) : (
             <StatusBadge status={order.status} />
           )}
+          {isTpaUser && (
+            <Button
+              onClick={() => { window.location.href = `/api/orders/${orderId}/pdf`; }}
+              variant="outline"
+              size="sm"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download PDF
+            </Button>
+          )}
           {isTpaUser && !editing && order.status !== 'cancelled' && (
             <Button onClick={startEditing} variant="outline" size="sm">
               <Pencil className="mr-2 h-4 w-4" />
@@ -421,50 +433,50 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
         <Card className="p-6">
           <h2 className="text-lg font-semibold mb-4">Edit Order</h2>
           <div className="space-y-6">
-            {/* Candidate Section */}
+            {/* Person Section */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Candidate</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Person</h3>
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">First Name</label>
-                  <Input value={editForm.candidateFirstName} onChange={(e) => setEditForm({ ...editForm, candidateFirstName: e.target.value })} />
+                  <Input value={editForm.personFirstName} onChange={(e) => setEditForm({ ...editForm, personFirstName: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Last Name</label>
-                  <Input value={editForm.candidateLastName} onChange={(e) => setEditForm({ ...editForm, candidateLastName: e.target.value })} />
+                  <Input value={editForm.personLastName} onChange={(e) => setEditForm({ ...editForm, personLastName: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Email</label>
-                  <Input type="email" value={editForm.candidateEmail} onChange={(e) => setEditForm({ ...editForm, candidateEmail: e.target.value })} />
+                  <Input type="email" value={editForm.personEmail} onChange={(e) => setEditForm({ ...editForm, personEmail: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Phone</label>
-                  <Input value={editForm.candidatePhone} onChange={(e) => setEditForm({ ...editForm, candidatePhone: e.target.value })} />
+                  <Input value={editForm.personPhone} onChange={(e) => setEditForm({ ...editForm, personPhone: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Date of Birth</label>
-                  <Input value={editForm.candidateDob} onChange={(e) => setEditForm({ ...editForm, candidateDob: e.target.value })} placeholder="MM/DD/YYYY" />
+                  <Input value={editForm.personDob} onChange={(e) => setEditForm({ ...editForm, personDob: e.target.value })} placeholder="MM/DD/YYYY" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">SSN Last 4</label>
-                  <Input value={editForm.candidateSsnLast4} maxLength={4} onChange={(e) => setEditForm({ ...editForm, candidateSsnLast4: e.target.value })} />
+                  <Input value={editForm.personSsnLast4} maxLength={4} onChange={(e) => setEditForm({ ...editForm, personSsnLast4: e.target.value })} />
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-xs text-muted-foreground block mb-1">Address</label>
-                  <Input value={editForm.candidateAddress} onChange={(e) => setEditForm({ ...editForm, candidateAddress: e.target.value })} />
+                  <Input value={editForm.personAddress} onChange={(e) => setEditForm({ ...editForm, personAddress: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">City</label>
-                  <Input value={editForm.candidateCity} onChange={(e) => setEditForm({ ...editForm, candidateCity: e.target.value })} />
+                  <Input value={editForm.personCity} onChange={(e) => setEditForm({ ...editForm, personCity: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-muted-foreground block mb-1">State</label>
-                    <Input value={editForm.candidateState} maxLength={2} onChange={(e) => setEditForm({ ...editForm, candidateState: e.target.value.toUpperCase() })} />
+                    <Input value={editForm.personState} maxLength={2} onChange={(e) => setEditForm({ ...editForm, personState: e.target.value.toUpperCase() })} />
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground block mb-1">ZIP</label>
-                    <Input value={editForm.candidateZip} onChange={(e) => setEditForm({ ...editForm, candidateZip: e.target.value })} />
+                    <Input value={editForm.personZip} onChange={(e) => setEditForm({ ...editForm, personZip: e.target.value })} />
                   </div>
                 </div>
               </div>
@@ -578,51 +590,51 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
 
       {!editing && (
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Candidate Information */}
+        {/* Person Information */}
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <User className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">Candidate Information</h2>
+            <h2 className="text-lg font-semibold">Person Information</h2>
           </div>
           <dl className="space-y-2">
             <div>
               <dt className="text-sm text-muted-foreground">Name</dt>
               <dd className="font-medium">
-                {order.candidate.firstName} {order.candidate.lastName}
+                {order.person.firstName} {order.person.lastName}
               </dd>
             </div>
-            {order.candidate.dob && (
+            {order.person.dob && (
               <div>
                 <dt className="text-sm text-muted-foreground">Date of Birth</dt>
-                <dd className="font-medium">{order.candidate.dob}</dd>
+                <dd className="font-medium">{order.person.dob}</dd>
               </div>
             )}
-            {order.candidate.ssnLast4 && (
+            {order.person.ssnLast4 && (
               <div>
                 <dt className="text-sm text-muted-foreground">SSN Last 4</dt>
-                <dd className="font-medium">{order.candidate.ssnLast4}</dd>
+                <dd className="font-medium">{order.person.ssnLast4}</dd>
               </div>
             )}
-            {order.candidate.email && (
+            {order.person.email && (
               <div>
                 <dt className="text-sm text-muted-foreground">Email</dt>
-                <dd className="font-medium">{order.candidate.email}</dd>
+                <dd className="font-medium">{order.person.email}</dd>
               </div>
             )}
-            {order.candidate.phone && (
+            {order.person.phone && (
               <div>
                 <dt className="text-sm text-muted-foreground">Phone</dt>
-                <dd className="font-medium">{order.candidate.phone}</dd>
+                <dd className="font-medium">{order.person.phone}</dd>
               </div>
             )}
-            {order.candidate.address && (
+            {order.person.address && (
               <div>
                 <dt className="text-sm text-muted-foreground">Address</dt>
                 <dd className="font-medium">
-                  {order.candidate.address}
-                  {order.candidate.city && `, ${order.candidate.city}`}
-                  {order.candidate.state && `, ${order.candidate.state}`}
-                  {order.candidate.zip && ` ${order.candidate.zip}`}
+                  {order.person.address}
+                  {order.person.city && `, ${order.person.city}`}
+                  {order.person.state && `, ${order.person.state}`}
+                  {order.person.zip && ` ${order.person.zip}`}
                 </dd>
               </div>
             )}
@@ -919,6 +931,9 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
         </Card>
       )}
 
+      {/* Order Timeline */}
+      <OrderTimeline orderId={orderId} />
+
       {/* Documents */}
       {order.documents && order.documents.length > 0 && (
         <Card className="p-6">
@@ -942,6 +957,9 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
           </div>
         </Card>
       )}
+
+      {/* Specimens, Results & Signatures */}
+      <SpecimensResultsPanel orderId={orderId} userRole={userRole} />
 
       {/* Client Review Section */}
       {!isTpaUser && order.status === 'pending_review' && (
@@ -1036,7 +1054,7 @@ export function OrderDetails({ orderId, userRole }: OrderDetailsProps) {
                 <textarea
                   value={deleteReason}
                   onChange={(e) => setDeleteReason(e.target.value)}
-                  placeholder="e.g., Duplicate order, entered wrong candidate, test order..."
+                  placeholder="e.g., Duplicate order, entered wrong person, test order..."
                   rows={2}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />

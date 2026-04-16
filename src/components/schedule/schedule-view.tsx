@@ -38,7 +38,7 @@ interface ScheduledOrder {
   priority: string;
   scheduledFor: string;
   clientLabel?: string | null;
-  candidate: { firstName: string; lastName: string } | null;
+  person: { firstName: string; lastName: string } | null;
   collector: { id: string; firstName: string; lastName: string } | null;
   clientOrg: { id: string; name: string } | null;
 }
@@ -118,7 +118,7 @@ export function ScheduleView() {
           id: o.id,
           title: `Order ${o.orderNumber}`,
           subtitle: [
-            o.candidate ? `${o.candidate.firstName} ${o.candidate.lastName}` : '',
+            o.person ? `${o.person.firstName} ${o.person.lastName}` : '',
             o.clientOrg?.name || o.clientLabel || '',
             o.collector ? `${o.collector.firstName} ${o.collector.lastName}` : '',
           ].filter(Boolean).join(' \u00b7 '),

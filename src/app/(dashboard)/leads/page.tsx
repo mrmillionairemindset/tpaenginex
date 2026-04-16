@@ -25,7 +25,7 @@ export default async function LeadsPage() {
       />
 
       <div className="mt-6">
-        <LeadsTable />
+        <LeadsTable userRole={user.role || undefined} />
       </div>
     </div>
   );

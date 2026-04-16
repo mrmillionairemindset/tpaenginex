@@ -31,7 +31,7 @@ export async function handleKitMailingReminder(job: Job<KitMailingReminderData>)
     },
   });
 
-  if (!event || event.status === 'cancelled') return;
+  if (!event || !event.clientOrg || event.status === 'cancelled') return;
 
   // Find TPA staff to notify
   const staffUsers = await db.query.users.findMany({

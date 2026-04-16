@@ -104,7 +104,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   // Branding fields
-  const brandingFields = ['brandName', 'logoUrl', 'primaryColor', 'defaultEmailFooter'] as const;
+  const brandingFields = ['brandName', 'logoUrl', 'primaryColor', 'defaultEmailFooter', 'customDomain', 'faviconUrl', 'loginMessage'] as const;
   for (const field of brandingFields) {
     if (body[field] !== undefined) {
       (updateData as any)[field] = body[field] || null;

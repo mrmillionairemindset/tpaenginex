@@ -1,7 +1,7 @@
 import { Queue } from 'bullmq';
 import { redis } from '@/lib/redis';
 
-const connection = redis ? { connection: redis } : undefined;
+const connection = redis ? { connection: redis as any } : undefined;
 
 export const reminderQueue = connection
   ? new Queue('reminders', connection)

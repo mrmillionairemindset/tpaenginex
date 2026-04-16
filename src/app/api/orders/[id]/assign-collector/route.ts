@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { notifyCollectorAssigned } from '@/lib/notifications';
 import { scheduleReminder } from '@/jobs/queue';
 import { getTpaAutomationSettings } from '@/lib/tpa-settings';
+import { sendCollectorAssignmentPush } from '@/lib/push-notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +77,13 @@ export async function POST(
   const collectorName = `${collector.firstName} ${collector.lastName}`;
   await notifyCollectorAssigned(id, order.orderNumber, collectorName);
 
+  // Send push notification to the collector's mobile app
+  await sendCollectorAssignmentPush(
+    collector.id,
+    order.orderNumber,
+    order.jobsiteLocation
+  ).catch((err) => console.error('[push] Failed to send assignment push:', err));
+
   // Schedule 48-hr reminder jobs (if enabled)
   if (order.scheduledFor) {
     const automationSettings = await getTpaAutomationSettings(tpaOrgId);
@@ -103,7 +111,7 @@ export async function POST(
     where: eq(orders.id, id),
     with: {
       collector: true,
-      candidate: true,
+      person: true,
       organization: {
         columns: { id: true, name: true, type: true },
       },

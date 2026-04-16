@@ -93,26 +93,26 @@ export default function FAQPage() {
         <h3>How quickly can screenings be scheduled?</h3>
         <p>
           Most screenings are scheduled within 24-48 hours of order creation, depending on
-          candidate availability and collector scheduling.
+          individual availability and collector scheduling.
         </p>
 
-        <h3>Can candidates choose their testing location?</h3>
+        <h3>Can individuals choose their testing location?</h3>
         <p>
-          Your TPA will coordinate with a collector based on the candidate's location. While
-          candidates can request alternatives, the TPA makes the final assignment based
+          Your TPA will coordinate with a collector based on the individual's location. While
+          individuals can request alternatives, the TPA makes the final assignment based
           on availability and scheduling.
         </p>
 
-        <h3>What if a candidate misses their appointment?</h3>
+        <h3>What if an individual misses their appointment?</h3>
         <p>
-          Candidates can reschedule through the notification link or by contacting the TPA.
+          Individuals can reschedule through the notification link or by contacting the TPA.
           Repeated no-shows may result in order cancellation at the client company's discretion.
         </p>
 
         <h3>How are results delivered?</h3>
         <p>
           Results are securely uploaded to the platform and made available to the client company.
-          Client contacts receive an email notification when results are ready. Candidates do not
+          Client contacts receive an email notification when results are ready. Individuals do not
           receive results directly (results go to the client company only).
         </p>
       </section>
@@ -171,7 +171,7 @@ export default function FAQPage() {
           <li>Creating and managing orders programmatically</li>
           <li>Retrieving order status and results</li>
           <li>Webhook notifications for status changes</li>
-          <li>Candidate management</li>
+          <li>Person management</li>
         </ul>
         <p>
           Contact <a href="mailto:sales@tpaenginex.com">sales@tpaenginex.com</a> for API documentation.

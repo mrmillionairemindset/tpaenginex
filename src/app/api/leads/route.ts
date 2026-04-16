@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { leads } from '@/db/schema';
 import { withPermission } from '@/auth/api-middleware';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, count } from 'drizzle-orm';
+import { parsePagination } from '@/lib/pagination';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -30,17 +31,35 @@ export const GET = withPermission('view_leads', async (req, user) => {
     return NextResponse.json({ error: 'TPA context required' }, { status: 400 });
   }
 
-  const leadList = await db.query.leads.findMany({
-    where: tpaOrgId ? eq(leads.tpaOrgId, tpaOrgId) : undefined,
-    with: {
-      owner: {
-        columns: { id: true, name: true, email: true },
-      },
-    },
-    orderBy: [desc(leads.createdAt)],
-  });
+  const { searchParams } = new URL(req.url);
+  const { page, limit, offset } = parsePagination(searchParams);
+  const whereClause = tpaOrgId ? eq(leads.tpaOrgId, tpaOrgId) : undefined;
 
-  return NextResponse.json({ leads: leadList });
+  const [leadList, [{ count: total }]] = await Promise.all([
+    db.query.leads.findMany({
+      where: whereClause,
+      with: {
+        owner: {
+          columns: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: [desc(leads.createdAt)],
+      limit,
+      offset,
+    }),
+    db.select({ count: count() }).from(leads).where(whereClause),
+  ]);
+
+  return NextResponse.json({
+    leads: leadList,
+    pagination: {
+      page,
+      limit,
+      total: Number(total),
+      totalPages: Math.ceil(Number(total) / limit),
+      hasMore: offset + leadList.length < Number(total),
+    },
+  });
 });
 
 // POST /api/leads — create a new lead

@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Plus, Download, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 type LeadStage =
@@ -69,13 +69,68 @@ const US_STATES = [
   'DC',
 ];
 
-export function LeadsTable() {
+const BULK_STAGE_OPTIONS: Array<{ value: LeadStage; label: string }> = [
+  { value: 'new_lead', label: 'New Lead' },
+  { value: 'outreach_sent', label: 'Outreach Sent' },
+  { value: 'proposal_sent', label: 'Proposal Sent' },
+  { value: 'follow_up', label: 'Follow Up' },
+  { value: 'contract_sent', label: 'Contract Sent' },
+  { value: 'closed_won', label: 'Closed Won' },
+  { value: 'closed_lost', label: 'Closed Lost' },
+];
+
+interface LeadsTableProps {
+  userRole?: string;
+}
+
+export function LeadsTable({ userRole }: LeadsTableProps = {}) {
   const router = useRouter();
   const { toast } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkStage, setBulkStage] = useState<string>('');
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
+  const canBulkUpdate =
+    userRole === 'tpa_admin' ||
+    userRole === 'tpa_staff' ||
+    userRole === 'platform_admin' ||
+    userRole === undefined; // default: allow (parent page gates via permission)
+
+  const handleBulkStageUpdate = async () => {
+    if (!bulkStage || selectedIds.length === 0) return;
+    setBulkSubmitting(true);
+    try {
+      const res = await fetch('/api/leads/bulk-stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadIds: selectedIds, stage: bulkStage }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to update leads');
+      }
+      const data = await res.json();
+      toast({
+        title: 'Leads updated',
+        description: `${data.updated} lead(s) updated.`,
+      });
+      setSelectedIds([]);
+      setBulkStage('');
+      await fetchLeads();
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to update leads',
+        variant: 'destructive',
+      });
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
   const [formData, setFormData] = useState({
     companyName: '',
     contactName: '',
@@ -238,12 +293,55 @@ export function LeadsTable() {
 
   return (
     <div>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex justify-end gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => (window.location.href = '/api/leads/export')}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export CSV
+        </Button>
         <Button onClick={() => setShowAddDialog(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Lead
         </Button>
       </div>
+
+      {canBulkUpdate && selectedIds.length > 0 && (
+        <div className="mb-3 flex items-center gap-3 rounded-md border bg-muted/40 px-4 py-2">
+          <span className="text-sm font-medium">
+            ({selectedIds.length} selected)
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
+            Clear
+          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <Select value={bulkStage} onValueChange={setBulkStage}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Change stage..." />
+              </SelectTrigger>
+              <SelectContent>
+                {BULK_STAGE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              onClick={handleBulkStageUpdate}
+              disabled={!bulkStage || bulkSubmitting}
+            >
+              {bulkSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Apply
+            </Button>
+          </div>
+        </div>
+      )}
 
       <DataTable
         data={leads}
@@ -251,6 +349,9 @@ export function LeadsTable() {
         loading={loading}
         emptyMessage="No leads found. Add your first lead to get started."
         onRowClick={(lead) => router.push(`/leads/${lead.id}`)}
+        selectable={canBulkUpdate}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
       />
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>

@@ -5,6 +5,12 @@ import type { NextAuthConfig } from "next-auth";
 export const authConfig: NextAuthConfig = {
   session: {
     strategy: "jwt",
+    // HIPAA session policy
+    maxAge: 8 * 60 * 60,      // 8 hours absolute max session lifetime
+    updateAge: 15 * 60,       // idle timeout — token must be refreshed within 15 min
+  },
+  jwt: {
+    maxAge: 8 * 60 * 60,      // 8 hours absolute max — matches session.maxAge
   },
 
   pages: {
@@ -23,14 +29,25 @@ export const authConfig: NextAuthConfig = {
         "/auth/signin",
         "/auth/signup",
         "/auth/error",
+        "/auth/sso-callback",
         "/privacy",
         "/terms",
         "/hipaa",
         "/baa",
+        "/developers",
       ];
 
-      // API routes that don't require authentication
-      const publicApiRoutes = ["/api/auth", "/api/webhooks"];
+      // API routes that don't require authentication.
+      // /api/sso/authorize, /api/sso/saml/acs, /api/sso/lookup must be reachable
+      // before the user has a session. The admin routes under /api/sso/connections
+      // still run withAuth() and enforce their own role checks.
+      const publicApiRoutes = [
+        "/api/auth",
+        "/api/webhooks",
+        "/api/sso/authorize",
+        "/api/sso/saml",
+        "/api/sso/lookup",
+      ];
 
       const isPublicRoute = publicRoutes.some((route) =>
         pathname.startsWith(route)
@@ -56,6 +73,10 @@ export const authConfig: NextAuthConfig = {
         token.orgId = user.orgId;
         token.tpaOrgId = user.tpaOrgId;
         token.role = user.role;
+        // Session token for device tracking / remote revocation
+        if ((user as any).sessionToken) {
+          token.sessionId = (user as any).sessionToken;
+        }
       }
       return token;
     },
@@ -67,6 +88,9 @@ export const authConfig: NextAuthConfig = {
         session.user.orgId = token.orgId as string | null;
         session.user.tpaOrgId = token.tpaOrgId as string | null;
         session.user.role = token.role as string | null;
+      }
+      if (token?.sessionId) {
+        (session as any).sessionId = token.sessionId;
       }
       return session;
     },

@@ -55,7 +55,7 @@ export async function GET() {
         lte(orders.scheduledFor, weekEnd)
       ),
       with: {
-        candidate: {
+        person: {
           columns: {
             id: true,
             firstName: true,

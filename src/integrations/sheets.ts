@@ -21,16 +21,16 @@ const SPREADSHEET_ID = process.env.SHEETS_SPREADSHEET_ID;
 
 export interface OrderSheetData {
   orderNumber: string;
-  candidateFirstName: string;
-  candidateLastName: string;
-  candidateDOB: string;
-  candidateSSNLast4: string;
-  candidateEmail: string;
-  candidatePhone: string;
-  candidateAddress: string;
-  candidateCity: string;
-  candidateState: string;
-  candidateZip: string;
+  personFirstName: string;
+  personLastName: string;
+  personDOB: string;
+  personSSNLast4: string;
+  personEmail: string;
+  personPhone: string;
+  personAddress: string;
+  personCity: string;
+  personState: string;
+  personZip: string;
   testType: string;
   urgency: string;
   jobsiteLocation: string;
@@ -55,16 +55,16 @@ export async function appendOrderToSheet(order: OrderSheetData): Promise<string 
 
   const values = [[
     order.orderNumber,
-    order.candidateFirstName,
-    order.candidateLastName,
-    order.candidateDOB,
-    order.candidateSSNLast4,
-    order.candidateEmail,
-    order.candidatePhone,
-    order.candidateAddress,
-    order.candidateCity,
-    order.candidateState,
-    order.candidateZip,
+    order.personFirstName,
+    order.personLastName,
+    order.personDOB,
+    order.personSSNLast4,
+    order.personEmail,
+    order.personPhone,
+    order.personAddress,
+    order.personCity,
+    order.personState,
+    order.personZip,
     order.testType,
     order.urgency,
     order.jobsiteLocation,
@@ -108,10 +108,10 @@ export async function updateSheetRow(rowId: string, order: OrderSheetData): Prom
 
   const values = [[
     order.orderNumber,
-    order.candidateFirstName,
-    order.candidateLastName,
-    order.candidateEmail,
-    order.candidatePhone,
+    order.personFirstName,
+    order.personLastName,
+    order.personEmail,
+    order.personPhone,
     order.testType,
     order.urgency,
     order.jobsiteLocation,

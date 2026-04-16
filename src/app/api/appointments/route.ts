@@ -117,7 +117,7 @@ export const POST = withTpaAuth(async (req, user) => {
     with: {
       order: {
         with: {
-          candidate: true,
+          person: true,
         },
       },
       site: true,

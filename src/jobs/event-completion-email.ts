@@ -35,7 +35,7 @@ export async function handleEventCompletionEmail(job: Job<EventCompletionEmailDa
     },
   });
 
-  if (!event) return;
+  if (!event || !event.clientOrg) return;
 
   const branding = await getTpaBranding(tpaOrgId, 'orders');
   const clientAdmins = event.clientOrg.users.filter(u => u.role === 'client_admin');

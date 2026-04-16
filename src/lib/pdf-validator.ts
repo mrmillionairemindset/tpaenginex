@@ -1,4 +1,5 @@
-import * as pdfParse from 'pdf-parse';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pdfParse = require('pdf-parse');
 
 interface PDFValidationResult {
   isValid: boolean;
@@ -9,8 +10,8 @@ interface PDFValidationResult {
 
 interface ValidateConcentraAuthOptions {
   pdfBuffer: Buffer;
-  candidateFirstName: string;
-  candidateLastName: string;
+  personFirstName: string;
+  personLastName: string;
   orderNumber?: string;
 }
 
@@ -18,13 +19,13 @@ interface ValidateConcentraAuthOptions {
  * Validates that a PDF is a legitimate Concentra authorization form
  * Checks for:
  * 1. Concentra branding/markers
- * 2. Candidate name match
+ * 2. Person name match
  * 3. Key authorization fields
  */
 export async function validateConcentraAuthForm(
   options: ValidateConcentraAuthOptions
 ): Promise<PDFValidationResult> {
-  const { pdfBuffer, candidateFirstName, candidateLastName, orderNumber } = options;
+  const { pdfBuffer, personFirstName, personLastName, orderNumber } = options;
 
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -51,14 +52,14 @@ export async function validateConcentraAuthForm(
       errors.push('PDF does not appear to be a Concentra authorization form. Missing expected Concentra branding or authorization form markers.');
     }
 
-    // Check 2: Verify candidate name appears in the document
+    // Check 2: Verify person name appears in the document
     const firstNameVariations = [
-      candidateFirstName.toLowerCase(),
-      candidateFirstName.toLowerCase().substring(0, 1), // First initial
+      personFirstName.toLowerCase(),
+      personFirstName.toLowerCase().substring(0, 1), // First initial
     ];
 
     const lastNameVariations = [
-      candidateLastName.toLowerCase(),
+      personLastName.toLowerCase(),
     ];
 
     // Look for full name, last name first, or first name first
@@ -66,11 +67,11 @@ export async function validateConcentraAuthForm(
     const hasLastName = lastNameVariations.some(variation => text.includes(variation));
 
     if (!hasFirstName && !hasLastName) {
-      errors.push(`Candidate name "${candidateFirstName} ${candidateLastName}" not found in the PDF. Please verify this is the correct authorization form for this candidate.`);
+      errors.push(`Person name "${personFirstName} ${personLastName}" not found in the PDF. Please verify this is the correct authorization form for this person.`);
     } else if (!hasFirstName) {
-      warnings.push(`First name "${candidateFirstName}" not found in PDF. Found last name "${candidateLastName}". Please verify the name is correct.`);
+      warnings.push(`First name "${personFirstName}" not found in PDF. Found last name "${personLastName}". Please verify the name is correct.`);
     } else if (!hasLastName) {
-      warnings.push(`Last name "${candidateLastName}" not found in PDF. Found first name "${candidateFirstName}". Please verify the name is correct.`);
+      warnings.push(`Last name "${personLastName}" not found in PDF. Found first name "${personFirstName}". Please verify the name is correct.`);
     }
 
     // Check 3: Look for key authorization fields/terms
@@ -134,7 +135,7 @@ export async function validateConcentraAuthForm(
 export async function validateCustomAuthForm(
   options: ValidateConcentraAuthOptions
 ): Promise<PDFValidationResult> {
-  const { pdfBuffer, candidateFirstName, candidateLastName } = options;
+  const { pdfBuffer, personFirstName, personLastName } = options;
 
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -143,12 +144,12 @@ export async function validateCustomAuthForm(
     const data = await pdfParse(pdfBuffer);
     const text = data.text.toLowerCase();
 
-    // Check candidate name
-    const hasFirstName = text.includes(candidateFirstName.toLowerCase());
-    const hasLastName = text.includes(candidateLastName.toLowerCase());
+    // Check person name
+    const hasFirstName = text.includes(personFirstName.toLowerCase());
+    const hasLastName = text.includes(personLastName.toLowerCase());
 
     if (!hasFirstName || !hasLastName) {
-      errors.push(`Candidate name "${candidateFirstName} ${candidateLastName}" not found in the PDF.`);
+      errors.push(`Person name "${personFirstName} ${personLastName}" not found in the PDF.`);
     }
 
     // Check minimum content

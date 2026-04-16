@@ -13,7 +13,7 @@ interface Organization {
   _count: {
     orders: number;
     users: number;
-    candidates: number;
+    persons: number;
   };
 }
 
@@ -56,8 +56,8 @@ export function OrganizationsTable() {
       accessor: (org: Organization) => org._count.orders,
     },
     {
-      header: 'Candidates',
-      accessor: (org: Organization) => org._count.candidates,
+      header: 'Persons',
+      accessor: (org: Organization) => org._count.persons,
     },
     {
       header: 'Users',

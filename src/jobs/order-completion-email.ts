@@ -27,7 +27,7 @@ export async function handleOrderCompletionEmail(job: Job<OrderCompletionEmailDa
   const order = await db.query.orders.findFirst({
     where: eq(orders.id, orderId),
     with: {
-      candidate: true,
+      person: true,
       organization: {
         with: {
           users: true,
@@ -59,7 +59,7 @@ export async function handleOrderCompletionEmail(job: Job<OrderCompletionEmailDa
       to: admin.email,
       orderNumber: order.orderNumber,
       clientName: order.organization.name,
-      donorName: `${order.candidate.firstName} ${order.candidate.lastName}`,
+      donorName: `${order.person.firstName} ${order.person.lastName}`,
       serviceType: order.serviceType || order.testType,
       reviewLink: '',
       branding,

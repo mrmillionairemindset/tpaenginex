@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Bell, Menu, LogOut, User, Settings, HelpCircle, FileText, Scale, Shield } from 'lucide-react';
+import { Bell, Menu, LogOut, User, Settings, HelpCircle, FileText, Scale, Shield, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { OrganizationSwitcher } from '@/components/organization-switcher';
 import { ProfileModal } from '@/components/profile-modal';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useBranding } from '@/components/layout/branding-provider';
 import { signOut } from 'next-auth/react';
 
 interface HeaderProps {
@@ -45,6 +46,7 @@ interface Notification {
 }
 
 export function Header({ user, onMobileMenuToggle }: HeaderProps) {
+  const branding = useBranding();
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,11 +134,17 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
 
-        {/* Logo */}
+        {/* Logo — uses TPA branding when available */}
         <Link href="/dashboard" className="flex items-center gap-2">
-          <img src="/tpa-engine-x-logo.png" alt="TPAEngineX" className="h-8" />
+          {branding.logoUrl ? (
+            <img src={branding.logoUrl} alt={branding.brandName || 'Portal'} className="h-8 max-w-[160px] object-contain" />
+          ) : (
+            <img src="/tpa-engine-x-logo.png" alt="TPAEngineX" className="h-8" />
+          )}
           <span className="hidden font-semibold sm:inline-block">
-            TPAEngine<span className="bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] bg-clip-text text-transparent">X</span>
+            {branding.brandName || (
+              <>TPAEngine<span className="bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] bg-clip-text text-transparent">X</span></>
+            )}
           </span>
         </Link>
 
@@ -145,6 +153,28 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
 
           {/* Theme Toggle */}
           <ThemeToggle />
+
+          {/* Command palette hint */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden sm:inline-flex items-center gap-2 text-xs text-muted-foreground"
+            onClick={() => {
+              const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform);
+              window.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                  key: 'k',
+                  metaKey: isMac,
+                  ctrlKey: !isMac,
+                  bubbles: true,
+                })
+              );
+            }}
+            aria-label="Open command palette"
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span className="font-mono">⌘K</span>
+          </Button>
 
           {/* Notifications */}
           <DropdownMenu>
@@ -275,7 +305,19 @@ export function Header({ user, onMobileMenuToggle }: HeaderProps) {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                onClick={async () => {
+                  try {
+                    await fetch('/api/auth/log-logout', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ reason: 'manual' }),
+                      keepalive: true,
+                    });
+                  } catch {
+                    // swallow — never block signOut on logging failure
+                  }
+                  signOut({ callbackUrl: '/auth/signin' });
+                }}
                 className="cursor-pointer text-red-600"
               >
                 <LogOut className="mr-2 h-4 w-4" />

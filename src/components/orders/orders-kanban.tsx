@@ -13,7 +13,7 @@ interface Order {
   testType: string;
   serviceType: string;
   priority: string;
-  candidate: {
+  person: {
     firstName: string;
     lastName: string;
   };
@@ -255,11 +255,11 @@ export function OrdersKanban({ userRole }: OrdersKanbanProps) {
                   )}
                 </div>
                 <p className="text-sm font-medium truncate">
-                  {order.candidate.firstName} {order.candidate.lastName}
+                  {order.person.firstName} {order.person.lastName}
                 </p>
                 <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                   <ServiceTypeBadge serviceType={order.serviceType} />
-                  <StatusBadge status={order.status} />
+                  <StatusBadge status={order.status as any} />
                 </div>
                 {isTpaUser && (order.clientOrg || order.clientLabel || order.organization) && (
                   <p className="text-xs text-muted-foreground mt-1.5 truncate">

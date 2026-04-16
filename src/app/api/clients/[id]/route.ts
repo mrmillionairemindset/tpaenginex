@@ -56,7 +56,7 @@ export async function GET(
   const recentOrders = await db.query.orders.findMany({
     where: eq(orders.orgId, id),
     with: {
-      candidate: {
+      person: {
         columns: { firstName: true, lastName: true },
       },
       documents: {

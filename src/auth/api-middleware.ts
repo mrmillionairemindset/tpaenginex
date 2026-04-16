@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from './get-user';
-import { hasPermission, roleHasPermission, type Permission, type UserRole } from './rbac';
+import { hasPermission, isTenantModuleEnabled, roleHasPermission, type Permission, type UserRole } from './rbac';
+import type { ModuleId } from '@/modules/registry';
 
 export type AuthenticatedUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
@@ -29,7 +30,7 @@ export function withAuth(
  */
 export function withPermission(
   permission: Permission,
-  handler: (req: NextRequest, user: AuthenticatedUser) => Promise<Response>
+  handler: (req: NextRequest, user: AuthenticatedUser, context?: any) => Promise<Response>
 ) {
   return async (req: NextRequest, context?: any) => {
     const user = await getCurrentUser();
@@ -53,7 +54,7 @@ export function withPermission(
       );
     }
 
-    return handler(req, user);
+    return handler(req, user, context);
   };
 }
 
@@ -165,6 +166,36 @@ export function withPlatformAuth(
     if (user.role !== 'platform_admin') {
       return NextResponse.json(
         { error: 'Forbidden: Platform admin access only' },
+        { status: 403 }
+      );
+    }
+
+    return handler(req, user, context);
+  };
+}
+
+/**
+ * Protect API routes — require module to be enabled for the user's TPA tenant.
+ * Platform admins bypass this check.
+ */
+export function withModuleAuth(
+  moduleId: ModuleId,
+  handler: (req: NextRequest, user: AuthenticatedUser, context?: any) => Promise<Response>
+) {
+  return async (req: NextRequest, context?: any) => {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const enabled = await isTenantModuleEnabled(user.tpaOrgId, moduleId);
+    if (!enabled) {
+      return NextResponse.json(
+        { error: 'Forbidden: Module not enabled for this tenant', module: moduleId },
         { status: 403 }
       );
     }

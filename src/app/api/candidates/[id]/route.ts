@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { candidates, orders } from '@/db/schema';
+import { persons, orders } from '@/db/schema';
 import { withAuth } from '@/auth/api-middleware';
 import { eq, and, count } from 'drizzle-orm';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 // Validation Schemas
 // ============================================================================
 
-const updateCandidateSchema = z.object({
+const updatePersonSchema = z.object({
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
   dob: z.string().optional(),
@@ -27,13 +27,12 @@ const updateCandidateSchema = z.object({
 });
 
 // ============================================================================
-// GET /api/candidates/[id] - Get single candidate
+// GET /api/candidates/[id] - Get single person
 // ============================================================================
 
 export const GET = withAuth(async (req, user, context) => {
   const { id } = context.params;
 
-  // Only employers can access candidates
   if (!user.role?.startsWith('tpa_') && user.role !== 'platform_admin') {
     return NextResponse.json(
       { error: 'Insufficient permissions' },
@@ -41,10 +40,10 @@ export const GET = withAuth(async (req, user, context) => {
     );
   }
 
-  const candidate = await db.query.candidates.findFirst({
+  const person = await db.query.persons.findFirst({
     where: and(
-      eq(candidates.id, id),
-      eq(candidates.orgId, user.organization!.id)
+      eq(persons.id, id),
+      eq(persons.orgId, user.organization!.id)
     ),
     with: {
       orders: {
@@ -60,24 +59,24 @@ export const GET = withAuth(async (req, user, context) => {
     },
   });
 
-  if (!candidate) {
+  if (!person) {
     return NextResponse.json(
-      { error: 'Candidate not found' },
+      { error: 'Person not found' },
       { status: 404 }
     );
   }
 
-  return NextResponse.json({ candidate });
+  return NextResponse.json({ person });
 });
 
 // ============================================================================
-// PATCH /api/candidates/[id] - Update candidate
+// PATCH /api/candidates/[id] - Update person
 // ============================================================================
 
 export const PATCH = withAuth(async (req, user, context) => {
   const { id } = context.params;
   const body = await req.json();
-  const validation = updateCandidateSchema.safeParse(body);
+  const validation = updatePersonSchema.safeParse(body);
 
   if (!validation.success) {
     return NextResponse.json(
@@ -88,30 +87,27 @@ export const PATCH = withAuth(async (req, user, context) => {
 
   const data = validation.data;
 
-  // Only employer admins can update candidates
   if (user.role !== 'tpa_admin' && user.role !== 'tpa_staff' && user.role !== 'platform_admin') {
     return NextResponse.json(
-      { error: 'Only employer admins can update candidates' },
+      { error: 'Only admins can update persons' },
       { status: 403 }
     );
   }
 
-  // Verify candidate belongs to user's org
-  const existingCandidate = await db.query.candidates.findFirst({
+  const existingPerson = await db.query.persons.findFirst({
     where: and(
-      eq(candidates.id, id),
-      eq(candidates.orgId, user.organization!.id)
+      eq(persons.id, id),
+      eq(persons.orgId, user.organization!.id)
     ),
   });
 
-  if (!existingCandidate) {
+  if (!existingPerson) {
     return NextResponse.json(
-      { error: 'Candidate not found' },
+      { error: 'Person not found' },
       { status: 404 }
     );
   }
 
-  // Build update object
   const updateData: any = { updatedAt: new Date() };
 
   if (data.firstName) updateData.firstName = data.firstName;
@@ -126,20 +122,19 @@ export const PATCH = withAuth(async (req, user, context) => {
   if (data.zip !== undefined) updateData.zip = data.zip;
   if (data.meta !== undefined) updateData.meta = data.meta;
 
-  // Update candidate
-  const [updatedCandidate] = await db
-    .update(candidates)
+  const [updatedPerson] = await db
+    .update(persons)
     .set(updateData)
-    .where(eq(candidates.id, id))
+    .where(eq(persons.id, id))
     .returning();
 
   return NextResponse.json(
-    { candidate: updatedCandidate, message: 'Candidate updated successfully' }
+    { person: updatedPerson, message: 'Person updated successfully' }
   );
 });
 
 // ============================================================================
-// DELETE /api/candidates/[id] - Delete candidate (admin only)
+// DELETE /api/candidates/[id] - Delete person (admin only)
 // ============================================================================
 
 export const DELETE = withAuth(async (req, user, context) => {
@@ -147,36 +142,34 @@ export const DELETE = withAuth(async (req, user, context) => {
 
   if (user.role !== 'tpa_admin' && user.role !== 'platform_admin') {
     return NextResponse.json(
-      { error: 'Only admins can delete candidates' },
+      { error: 'Only admins can delete persons' },
       { status: 403 }
     );
   }
 
-  // Verify candidate exists and belongs to TPA scope
-  const candidate = await db.query.candidates.findFirst({
+  const person = await db.query.persons.findFirst({
     where: user.tpaOrgId
-      ? and(eq(candidates.id, id), eq(candidates.tpaOrgId, user.tpaOrgId))
-      : eq(candidates.id, id),
+      ? and(eq(persons.id, id), eq(persons.tpaOrgId, user.tpaOrgId))
+      : eq(persons.id, id),
   });
 
-  if (!candidate) {
-    return NextResponse.json({ error: 'Candidate not found' }, { status: 404 });
+  if (!person) {
+    return NextResponse.json({ error: 'Person not found' }, { status: 404 });
   }
 
-  // Check for linked orders
   const [orderCount] = await db
     .select({ count: count() })
     .from(orders)
-    .where(eq(orders.candidateId, id));
+    .where(eq(orders.personId, id));
 
   if (orderCount.count > 0) {
     return NextResponse.json(
-      { error: `Cannot delete: candidate has ${orderCount.count} linked order(s). Delete the orders first.` },
+      { error: `Cannot delete: person has ${orderCount.count} linked order(s). Delete the orders first.` },
       { status: 409 }
     );
   }
 
-  await db.delete(candidates).where(eq(candidates.id, id));
+  await db.delete(persons).where(eq(persons.id, id));
 
-  return NextResponse.json({ message: 'Candidate deleted' });
+  return NextResponse.json({ message: 'Person deleted' });
 });

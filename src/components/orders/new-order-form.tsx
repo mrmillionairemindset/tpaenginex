@@ -381,7 +381,7 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          candidate: {
+          person: {
             firstName: formData.firstName,
             lastName: formData.lastName,
             dob: formData.dob,
@@ -550,10 +550,10 @@ export function NewOrderForm({ orgId, userRole }: NewOrderFormProps) {
         )}
 
         {/* ================================================================= */}
-        {/* SECTION 2: Candidate Information                                  */}
+        {/* SECTION 2: Person Information                                      */}
         {/* ================================================================= */}
         <div>
-          <h3 className="text-lg font-semibold mb-4">Candidate Information</h3>
+          <h3 className="text-lg font-semibold mb-4">Person Information</h3>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>

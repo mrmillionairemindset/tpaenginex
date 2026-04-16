@@ -1,4 +1,4 @@
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle, NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import * as schema from './schema';
 
@@ -13,10 +13,12 @@ if (typeof window === 'undefined' && !process.env.NEXT_RUNTIME) {
   }
 }
 
-// Lazy database initialization to avoid build-time errors
-let _db: ReturnType<typeof drizzle> | null = null;
+type DbWithSchema = NeonHttpDatabase<typeof schema>;
 
-function getDb() {
+// Lazy database initialization to avoid build-time errors
+let _db: DbWithSchema | null = null;
+
+function getDb(): DbWithSchema {
   if (!_db) {
     // During build time, use a dummy database URL to prevent errors
     const dbUrl = process.env.DATABASE_URL || 'postgres://dummy:dummy@localhost:5432/dummy';
@@ -30,7 +32,7 @@ function getDb() {
 }
 
 // Export a proxy that lazily initializes the database
-export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+export const db = new Proxy({} as DbWithSchema, {
   get(target, prop) {
     // At runtime (not build time), verify DATABASE_URL is set
     if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build' && !process.env.DATABASE_URL) {

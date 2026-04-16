@@ -29,7 +29,7 @@ export async function GET(
       where: eq(organizations.id, params.id),
       with: {
         orders: true,
-        candidates: true,
+        persons: true,
         users: true,
       },
     });
@@ -46,12 +46,12 @@ export async function GET(
       ...organization,
       _count: {
         orders: organization.orders?.length || 0,
-        candidates: organization.candidates?.length || 0,
+        persons: organization.persons?.length || 0,
         users: organization.users?.length || 0,
       },
       // Remove the actual arrays from response
       orders: undefined,
-      candidates: undefined,
+      persons: undefined,
       users: undefined,
     };
 
@@ -68,9 +68,11 @@ export async function GET(
 // PATCH /api/organizations/[id] - Update organization
 export const PATCH = withAdminAuth(async (
   request,
-  user,
-  { params }: { params: { id: string } }
+  user
 ) => {
+  const url = new URL(request.url);
+  const pathParts = url.pathname.split('/');
+  const params = { id: pathParts[pathParts.length - 1] };
   try {
     // Ensure user is admin of THIS organization
     if (user.orgId !== params.id) {
@@ -110,18 +112,19 @@ export const PATCH = withAdminAuth(async (
 // DELETE /api/organizations/[id] - Delete organization
 export const DELETE = withAdminAuth(async (
   request,
-  user,
-  { params }: { params: { id: string } }
+  user
 ) => {
   try {
-    const orgId = params.id;
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const orgId = pathParts[pathParts.length - 1];
 
     // Check if organization exists
     const org = await db.query.organizations.findFirst({
       where: eq(organizations.id, orgId),
       with: {
         orders: true,
-        candidates: true,
+        persons: true,
         members: true,
       },
     });
@@ -150,9 +153,9 @@ export const DELETE = withAdminAuth(async (
       );
     }
 
-    if (org.candidates && org.candidates.length > 0) {
+    if (org.persons && org.persons.length > 0) {
       return NextResponse.json(
-        { error: "Cannot delete organization with existing candidates. Please contact support." },
+        { error: "Cannot delete organization with existing persons. Please contact support." },
         { status: 400 }
       );
     }

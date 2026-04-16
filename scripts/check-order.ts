@@ -18,7 +18,7 @@ async function main() {
     const order = await db.query.orders.findFirst({
       where: eq(orders.orderNumber, 'ORD-1761409751280-MRX01'),
       with: {
-        candidate: true,
+        person: true,
       },
     });
 
@@ -29,7 +29,7 @@ async function main() {
 
     console.log('\n📋 Order Details:\n');
     console.log(`Order Number: ${order.orderNumber}`);
-    console.log(`Candidate: ${order.candidate?.firstName} ${order.candidate?.lastName}`);
+    console.log(`Candidate: ${order.person?.firstName} ${order.person?.lastName}`);
     console.log(`Status: ${order.status}`);
     console.log(`Notes: ${order.notes || '(none)'}`);
     console.log(`External Row ID: ${order.externalRowId || '(none)'}`);

@@ -3,6 +3,8 @@ import { getCurrentUser } from '@/auth/get-user';
 import { db } from '@/db';
 import { documents, orders } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { uploadFile, isStorageConfigured } from '@/lib/storage';
+import { randomUUID } from 'crypto';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -37,7 +39,7 @@ export async function POST(
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const kind = formData.get('kind') as string;
+    const kind = formData.get('kind') as 'result' | 'chain_of_custody' | 'consent' | 'authorization' | 'other';
     const notes = formData.get('notes') as string | null;
 
     if (!file) {
@@ -54,19 +56,37 @@ export async function POST(
       );
     }
 
-    // For now, we'll just store metadata without actual file storage
-    // In Module 8, this will be enhanced to upload to S3/R2
+    // Upload file to storage (S3/R2/Supabase)
+    let storageUrl = '';
+    const tpaOrgId = order.tpaOrgId || 'unknown';
+    const uniqueFilename = `${randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const storagePath = `documents/${tpaOrgId}/${orderId}/${uniqueFilename}`;
+
+    if (isStorageConfigured()) {
+      try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        await uploadFile(storagePath, buffer, file.type);
+        storageUrl = storagePath;
+      } catch (uploadError) {
+        console.error('Storage upload failed, storing placeholder:', uploadError);
+        storageUrl = `pending-upload://${storagePath}`;
+      }
+    } else {
+      console.warn('Storage not configured — file metadata saved without upload');
+      storageUrl = `pending-upload://${storagePath}`;
+    }
+
     const [document] = await db
       .insert(documents)
       .values({
         orderId: orderId,
         kind: kind,
         fileName: file.name,
+        storageUrl,
         fileSize: file.size,
         mimeType: file.type,
-        notes: notes || undefined,
         uploadedBy: user.id,
-        uploadedAt: new Date(),
+        meta: notes ? { notes } : undefined,
       })
       .returning();
 

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { orders, candidates, organizations, orderChecklists, clientChecklistTemplates } from '@/db/schema';
+import { orders, persons, organizations, orderChecklists, clientChecklistTemplates } from '@/db/schema';
 import { withAuth } from '@/auth/api-middleware';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, count, ilike, or, inArray, gte, lte, sql } from 'drizzle-orm';
+import { parsePagination } from '@/lib/pagination';
 import { z } from 'zod';
 import { notifyOrderCreated } from '@/lib/notifications';
 import { appendOrderToSheet } from '@/integrations/sheets';
 import { SERVICE_TYPE_CHECKLISTS } from '@/lib/service-templates';
 import { getTpaAutomationSettings } from '@/lib/tpa-settings';
+import { enqueueWebhookEvent } from '@/lib/webhooks';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -17,9 +19,9 @@ export const dynamic = 'force-dynamic';
 // ============================================================================
 
 const createOrderSchema = z.object({
-  candidateId: z.string().uuid().optional(), // Existing candidate
-  // OR create new candidate inline
-  candidate: z.object({
+  personId: z.string().uuid().optional(), // Existing person
+  // OR create new person inline
+  person: z.object({
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
     dob: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, "Date of birth must be in MM/DD/YYYY format"),
@@ -58,72 +60,119 @@ const createOrderSchema = z.object({
 export const GET = withAuth(async (req, user) => {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status');
-  const candidateId = searchParams.get('candidateId');
+  const personId = searchParams.get('personId');
+  const search = searchParams.get('search')?.trim();
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
+  const { page, limit, offset } = parsePagination(searchParams);
 
   const isTpaUser = user.role?.startsWith('tpa_') || user.role === 'platform_admin';
   const tpaOrgId = user.tpaOrgId;
 
-  let whereClause;
+  // Build tenant/scope base clause
+  const conditions: any[] = [];
   if (user.role === 'platform_admin') {
-    // Platform admin sees all orders
-    whereClause = status ? eq(orders.status, status as any) : undefined;
+    // no scope restriction
   } else if (isTpaUser && tpaOrgId) {
-    // TPA staff sees orders scoped to their TPA
-    const baseWhere = eq(orders.tpaOrgId, tpaOrgId);
-    if (status) {
-      whereClause = and(baseWhere, eq(orders.status, status as any));
-    } else {
-      whereClause = baseWhere;
-    }
+    conditions.push(eq(orders.tpaOrgId, tpaOrgId));
   } else {
-    // Client users see only their own org's orders
-    const baseWhere = eq(orders.orgId, user.organization!.id);
-    if (status) {
-      whereClause = and(baseWhere, eq(orders.status, status as any));
-    } else if (candidateId) {
-      whereClause = and(baseWhere, eq(orders.candidateId, candidateId));
-    } else {
-      whereClause = baseWhere;
+    conditions.push(eq(orders.orgId, user.organization!.id));
+    if (personId) conditions.push(eq(orders.personId, personId));
+  }
+
+  if (status) conditions.push(eq(orders.status, status as any));
+
+  if (startDate) {
+    const d = new Date(startDate);
+    if (!isNaN(d.getTime())) conditions.push(gte(orders.createdAt, d));
+  }
+  if (endDate) {
+    const d = new Date(endDate);
+    if (!isNaN(d.getTime())) {
+      // Include the entire end day
+      d.setHours(23, 59, 59, 999);
+      conditions.push(lte(orders.createdAt, d));
     }
   }
 
-  const ordersList = await db.query.orders.findMany({
-    where: whereClause,
-    with: {
-      candidate: true,
-      organization: {
-        columns: {
-          id: true,
-          name: true,
-          type: true,
-        },
-      },
-      clientOrg: {
-        columns: {
-          id: true,
-          name: true,
-        },
-      },
-      collector: {
-        columns: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
-      },
-      requestedByUser: {
-        columns: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      documents: true,
-    },
-    orderBy: [desc(orders.createdAt)],
-  });
+  if (search) {
+    const searchPattern = `%${search}%`;
+    // Find person IDs matching the search in name fields, scoped by tpa if applicable
+    const personWhere = tpaOrgId && user.role !== 'platform_admin'
+      ? and(
+          eq(persons.tpaOrgId, tpaOrgId),
+          or(ilike(persons.firstName, searchPattern), ilike(persons.lastName, searchPattern)),
+        )
+      : or(ilike(persons.firstName, searchPattern), ilike(persons.lastName, searchPattern));
 
-  return NextResponse.json({ orders: ordersList });
+    const matchingPersons = await db
+      .select({ id: persons.id })
+      .from(persons)
+      .where(personWhere);
+    const personIds = matchingPersons.map(p => p.id);
+
+    conditions.push(
+      or(
+        ilike(orders.orderNumber, searchPattern),
+        ilike(orders.jobsiteLocation, searchPattern),
+        personIds.length > 0 ? inArray(orders.personId, personIds) : sql`false`,
+      ),
+    );
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [ordersList, [{ count: total }]] = await Promise.all([
+    db.query.orders.findMany({
+      where: whereClause,
+      with: {
+        person: true,
+        organization: {
+          columns: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        clientOrg: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+        collector: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        requestedByUser: {
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        documents: true,
+      },
+      orderBy: [desc(orders.createdAt)],
+      limit,
+      offset,
+    }),
+    db.select({ count: count() }).from(orders).where(whereClause),
+  ]);
+
+  return NextResponse.json({
+    orders: ordersList,
+    pagination: {
+      page,
+      limit,
+      total: Number(total),
+      totalPages: Math.ceil(Number(total) / limit),
+      hasMore: offset + ordersList.length < Number(total),
+    },
+  });
 });
 
 // ============================================================================
@@ -131,7 +180,6 @@ export const GET = withAuth(async (req, user) => {
 // ============================================================================
 
 export const POST = withAuth(async (req, user) => {
-  // TPA staff and admins can create orders on behalf of clients
   const canCreate = user.role?.startsWith('tpa_') && ['tpa_admin', 'tpa_staff'].includes(user.role!)
     || user.role === 'platform_admin';
 
@@ -162,47 +210,47 @@ export const POST = withAuth(async (req, user) => {
     );
   }
 
-  // Determine or create candidate
-  let candidateId: string;
+  // Determine or create person
+  let personId: string;
 
-  if (data.candidateId) {
-    // Use existing candidate - verify it belongs to this TPA's scope
-    const existingCandidate = await db.query.candidates.findFirst({
+  if (data.personId) {
+    // Use existing person - verify it belongs to this TPA's scope
+    const existingPerson = await db.query.persons.findFirst({
       where: and(
-        eq(candidates.id, data.candidateId),
-        eq(candidates.tpaOrgId, tpaOrgId)
+        eq(persons.id, data.personId),
+        eq(persons.tpaOrgId, tpaOrgId)
       ),
     });
 
-    if (!existingCandidate) {
+    if (!existingPerson) {
       return NextResponse.json(
-        { error: 'Candidate not found' },
+        { error: 'Person not found' },
         { status: 404 }
       );
     }
 
-    candidateId = existingCandidate.id;
-  } else if (data.candidate) {
-    // Create new candidate scoped to TPA
-    const [newCandidate] = await db.insert(candidates).values({
+    personId = existingPerson.id;
+  } else if (data.person) {
+    // Create new person scoped to TPA
+    const [newPerson] = await db.insert(persons).values({
       orgId: user.organization!.id,
       tpaOrgId,
-      firstName: data.candidate.firstName,
-      lastName: data.candidate.lastName,
-      dob: data.candidate.dob,
-      ssnLast4: data.candidate.ssnLast4,
-      phone: data.candidate.phone,
-      email: data.candidate.email,
-      address: data.candidate.address,
-      city: data.candidate.city,
-      state: data.candidate.state,
-      zip: data.candidate.zip,
+      firstName: data.person.firstName,
+      lastName: data.person.lastName,
+      dob: data.person.dob,
+      ssnLast4: data.person.ssnLast4,
+      phone: data.person.phone,
+      email: data.person.email,
+      address: data.person.address,
+      city: data.person.city,
+      state: data.person.state,
+      zip: data.person.zip,
     }).returning();
 
-    candidateId = newCandidate.id;
+    personId = newPerson.id;
   } else {
     return NextResponse.json(
-      { error: 'Either candidateId or candidate data must be provided' },
+      { error: 'Either personId or person data must be provided' },
       { status: 400 }
     );
   }
@@ -216,7 +264,7 @@ export const POST = withAuth(async (req, user) => {
     tpaOrgId,
     clientOrgId: data.clientOrgId || null,
     clientLabel: data.clientLabel || null,
-    candidateId,
+    personId,
     orderNumber,
     testType: data.testType,
     serviceType: data.serviceType,
@@ -239,7 +287,6 @@ export const POST = withAuth(async (req, user) => {
   }).returning();
 
   // Auto-populate checklist from service type template
-  // Check for client-specific checklist template override
   let checklistItems = SERVICE_TYPE_CHECKLISTS[data.serviceType] || [];
 
   try {
@@ -272,7 +319,7 @@ export const POST = withAuth(async (req, user) => {
   const fullOrder = await db.query.orders.findFirst({
     where: eq(orders.id, newOrder.id),
     with: {
-      candidate: true,
+      person: true,
       organization: {
         columns: {
           id: true,
@@ -300,29 +347,46 @@ export const POST = withAuth(async (req, user) => {
   // Send notification
   await notifyOrderCreated(newOrder.id, orderNumber);
 
+  // Emit webhook event for external integrations
+  await enqueueWebhookEvent({
+    tpaOrgId,
+    event: 'order.created',
+    payload: {
+      id: newOrder.id,
+      orderNumber: newOrder.orderNumber,
+      status: newOrder.status,
+      serviceType: newOrder.serviceType,
+      isDOT: newOrder.isDOT,
+      priority: newOrder.priority,
+      personId: newOrder.personId,
+      clientOrgId: newOrder.clientOrgId,
+      createdAt: newOrder.createdAt,
+    },
+  });
+
   // Sync to Google Sheets (async, don't block response)
   const automationSettings = await getTpaAutomationSettings(tpaOrgId);
-  if (automationSettings.enableSheetsSync && fullOrder?.candidate) {
+  if (automationSettings.enableSheetsSync && fullOrder?.person) {
     appendOrderToSheet({
       orderNumber: fullOrder.orderNumber,
-      candidateFirstName: fullOrder.candidate.firstName,
-      candidateLastName: fullOrder.candidate.lastName,
-      candidateDOB: fullOrder.candidate.dob,
-      candidateSSNLast4: fullOrder.candidate.ssnLast4,
-      candidateEmail: fullOrder.candidate.email,
-      candidatePhone: fullOrder.candidate.phone,
-      candidateAddress: fullOrder.candidate.address,
-      candidateCity: fullOrder.candidate.city,
-      candidateState: fullOrder.candidate.state,
-      candidateZip: fullOrder.candidate.zip,
+      personFirstName: fullOrder.person.firstName,
+      personLastName: fullOrder.person.lastName,
+      personDOB: fullOrder.person.dob,
+      personSSNLast4: fullOrder.person.ssnLast4,
+      personEmail: fullOrder.person.email,
+      personPhone: fullOrder.person.phone,
+      personAddress: fullOrder.person.address || '',
+      personCity: fullOrder.person.city || '',
+      personState: fullOrder.person.state || '',
+      personZip: fullOrder.person.zip || '',
       testType: fullOrder.testType,
       urgency: fullOrder.urgency || 'standard',
       jobsiteLocation: fullOrder.jobsiteLocation,
       needsMask: fullOrder.needsMask,
-      maskSize: fullOrder.maskSize,
+      maskSize: fullOrder.maskSize ?? undefined,
       status: fullOrder.status,
       createdAt: fullOrder.createdAt.toISOString(),
-      notes: fullOrder.notes,
+      notes: fullOrder.notes ?? undefined,
     })
       .then((rowId) => {
         if (rowId) {

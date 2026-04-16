@@ -46,7 +46,7 @@ export async function GET() {
         ne(orders.status, 'cancelled')
       ),
       with: {
-        candidate: {
+        person: {
           columns: {
             id: true,
             firstName: true,

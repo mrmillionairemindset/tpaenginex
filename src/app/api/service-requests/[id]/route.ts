@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { serviceRequests, candidates, orders, orderChecklists } from '@/db/schema';
+import { serviceRequests, persons, orders, orderChecklists } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
@@ -173,8 +173,8 @@ export async function PATCH(
   }
 
   if (data.status === 'converted') {
-    // 1. Create candidate from donor info
-    const [newCandidate] = await db.insert(candidates).values({
+    // 1. Create person from donor info
+    const [newPerson] = await db.insert(persons).values({
       orgId: existing.clientOrgId,
       tpaOrgId: existing.tpaOrgId,
       firstName: existing.donorFirstName,
@@ -211,7 +211,7 @@ export async function PATCH(
     const [newOrder] = await db.insert(orders).values({
       orgId: existing.clientOrgId,
       tpaOrgId: existing.tpaOrgId,
-      candidateId: newCandidate.id,
+      personId: newPerson.id,
       orderNumber,
       testType: testTypeMap[existing.serviceType] || 'drug_screen',
       serviceType: serviceTypeMap[existing.serviceType] || 'drug_screen',

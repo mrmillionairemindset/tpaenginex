@@ -21,6 +21,7 @@ import { LucideIcon } from 'lucide-react';
 
 interface DashboardStatsProps {
   userRole: string;
+  enabledModules?: string[];
 }
 
 interface Stats {
@@ -28,7 +29,7 @@ interface Stats {
   completedOrders?: number;
   openOrders?: number;
   thisMonthOrders?: number;
-  activeCandidates?: number;
+  activePersons?: number;
   eventsThisWeek?: number;
   pendingResults?: number;
   billingQueue?: number;
@@ -36,6 +37,11 @@ interface Stats {
   openLeads?: number;
   totalClients?: number;
   totalTpas?: number;
+  // DQF
+  activeDrivers?: number;
+  expiringQualifications?: number;
+  upcomingReviews?: number;
+  avgComplianceScore?: number;
 }
 
 function PrimaryStat({
@@ -97,7 +103,8 @@ function SecondaryStat({
   );
 }
 
-export function DashboardStats({ userRole }: DashboardStatsProps) {
+export function DashboardStats({ userRole, enabledModules }: DashboardStatsProps) {
+  const hasDqf = enabledModules?.includes('dqf') ?? false;
   const [stats, setStats] = useState<Stats>({});
   const [loading, setLoading] = useState(true);
 
@@ -150,7 +157,7 @@ export function DashboardStats({ userRole }: DashboardStatsProps) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <PrimaryStat title="Total Orders" value={stats.totalOrders || 0} icon={FileText} href="/client-portal/orders" accent="bg-blue-500" />
-        <PrimaryStat title="Active Candidates" value={stats.activeCandidates || 0} icon={Users} href="/client-portal/orders" accent="bg-green-500" />
+        <PrimaryStat title="Active Persons" value={stats.activePersons || 0} icon={Users} href="/client-portal/orders" accent="bg-green-500" />
         <PrimaryStat title="Completed" value={stats.completedOrders || 0} icon={CheckCircle} href="/client-portal/orders" accent="bg-emerald-500" />
         <PrimaryStat title="This Month" value={stats.thisMonthOrders || 0} icon={CalendarDays} href="/client-portal/orders" accent="bg-purple-500" />
       </div>
@@ -194,6 +201,16 @@ export function DashboardStats({ userRole }: DashboardStatsProps) {
         <SecondaryStat title="Active Collectors" value={stats.activeCollectors || 0} icon={UserCheck} />
         <SecondaryStat title="Open Leads" value={stats.openLeads || 0} icon={Target} />
       </div>
+
+      {/* DQF stats — only shown when module is enabled */}
+      {hasDqf && (
+        <div className="grid gap-3 md:grid-cols-4">
+          <SecondaryStat title="Active Drivers" value={stats.activeDrivers || 0} icon={Users} />
+          <SecondaryStat title="Expiring Qualifications" value={stats.expiringQualifications || 0} icon={Clock} />
+          <SecondaryStat title="Upcoming Reviews" value={stats.upcomingReviews || 0} icon={CalendarDays} />
+          <SecondaryStat title="Avg Compliance" value={stats.avgComplianceScore || 0} icon={CheckCircle} />
+        </div>
+      )}
     </div>
   );
 }

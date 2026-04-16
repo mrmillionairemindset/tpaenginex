@@ -733,9 +733,9 @@ export function ClientDetail({ clientOrgId, userRole }: ClientDetailProps) {
               >
                 <div>
                   <p className="font-medium text-sm">{order.orderNumber}</p>
-                  {order.candidate && (
+                  {order.person && (
                     <p className="text-xs text-muted-foreground">
-                      {order.candidate.firstName} {order.candidate.lastName}
+                      {order.person.firstName} {order.person.lastName}
                     </p>
                   )}
                 </div>

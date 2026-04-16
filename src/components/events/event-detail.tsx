@@ -236,9 +236,9 @@ export function EventDetail({ eventId, userRole }: EventDetailProps) {
               >
                 <div>
                   <p className="font-medium">{order.orderNumber}</p>
-                  {order.candidate && (
+                  {order.person && (
                     <p className="text-sm text-muted-foreground">
-                      {order.candidate.firstName} {order.candidate.lastName}
+                      {order.person.firstName} {order.person.lastName}
                     </p>
                   )}
                 </div>

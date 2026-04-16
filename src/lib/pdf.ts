@@ -1,4 +1,8 @@
 import PDFDocument from 'pdfkit';
+import { db } from '@/db/client';
+import { orders, tpaSettings } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { classifyOsha300Row, type InjurySeverity } from './injury';
 
 // ============================================================================
 // Invoice PDF Generation
@@ -127,6 +131,150 @@ export async function generateInvoicePDF(data: InvoicePDFData): Promise<Buffer> 
   });
 }
 
+// ============================================================================
+// DOT Compliance Report PDF
+// ============================================================================
+
+export interface DotCompliancePDFData {
+  tpaBrandName: string;
+  period: { start: string; end: string };
+  generatedAt: string;
+  summary: {
+    totalTests: number;
+    completed: number;
+    pending: number;
+    cancelled: number;
+    passRate: number;
+    avgCompletionDays: number;
+  };
+  byClient: Array<{
+    clientName: string;
+    totalTests: number;
+    completed: number;
+    pending: number;
+    passRate: number;
+  }>;
+}
+
+export async function generateDotCompliancePDF(
+  data: DotCompliancePDFData
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+    const chunks: Buffer[] = [];
+
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    // Header
+    doc.fontSize(22).fillColor('#1e3a5f').text(data.tpaBrandName, { align: 'left' });
+    doc.moveDown(0.2);
+    doc.fontSize(18).fillColor('#000').text('DOT Compliance Report', { align: 'left' });
+    doc.moveDown(0.3);
+    doc.fontSize(10).fillColor('#666').text(
+      `Period: ${data.period.start} to ${data.period.end}`,
+      { align: 'left' }
+    );
+    doc.moveDown(0.5);
+
+    // Divider
+    doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor('#e5e7eb').stroke();
+    doc.moveDown(1);
+
+    // Summary
+    doc.fontSize(13).fillColor('#1e3a5f').text('Summary');
+    doc.moveDown(0.5);
+
+    const summaryY = doc.y;
+    const col1X = 50;
+    const col2X = 220;
+    const col3X = 390;
+    const rowH = 18;
+
+    doc.fontSize(10).fillColor('#666');
+    doc.text('Total DOT Tests:', col1X, summaryY);
+    doc.fillColor('#000').text(String(data.summary.totalTests), col1X + 110, summaryY);
+
+    doc.fillColor('#666').text('Completed:', col2X, summaryY);
+    doc.fillColor('#000').text(String(data.summary.completed), col2X + 80, summaryY);
+
+    doc.fillColor('#666').text('Pending:', col3X, summaryY);
+    doc.fillColor('#000').text(String(data.summary.pending), col3X + 70, summaryY);
+
+    doc.fillColor('#666').text('Cancelled:', col1X, summaryY + rowH);
+    doc.fillColor('#000').text(String(data.summary.cancelled), col1X + 110, summaryY + rowH);
+
+    doc.fillColor('#666').text('Pass Rate:', col2X, summaryY + rowH);
+    doc.fillColor('#000').text(`${data.summary.passRate}%`, col2X + 80, summaryY + rowH);
+
+    doc.fillColor('#666').text('Avg Completion:', col3X, summaryY + rowH);
+    doc.fillColor('#000').text(
+      `${data.summary.avgCompletionDays} days`,
+      col3X + 70,
+      summaryY + rowH
+    );
+
+    doc.y = summaryY + rowH * 2 + 10;
+    doc.moveDown(1);
+
+    // Per-client table
+    doc.fontSize(13).fillColor('#1e3a5f').text('Client Breakdown');
+    doc.moveDown(0.5);
+
+    doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor('#1e3a5f').lineWidth(1).stroke();
+    const headerY = doc.y + 6;
+    doc.fontSize(10).fillColor('#1e3a5f');
+    doc.text('Client', 55, headerY, { width: 230 });
+    doc.text('Total', 290, headerY, { align: 'right', width: 60 });
+    doc.text('Completed', 355, headerY, { align: 'right', width: 70 });
+    doc.text('Pending', 430, headerY, { align: 'right', width: 60 });
+    doc.text('Pass Rate', 495, headerY, { align: 'right', width: 62 });
+    doc.moveTo(50, headerY + 16)
+      .lineTo(562, headerY + 16)
+      .strokeColor('#e5e7eb')
+      .lineWidth(0.5)
+      .stroke();
+
+    let rowY = headerY + 24;
+
+    if (data.byClient.length === 0) {
+      doc.fontSize(10).fillColor('#999').text(
+        'No DOT tests found for the selected period.',
+        55,
+        rowY,
+        { width: 500 }
+      );
+      rowY += 18;
+    } else {
+      for (const c of data.byClient) {
+        if (rowY > 700) {
+          doc.addPage();
+          rowY = 60;
+        }
+        doc.fontSize(10).fillColor('#000');
+        doc.text(c.clientName, 55, rowY, { width: 230 });
+        doc.text(String(c.totalTests), 290, rowY, { align: 'right', width: 60 });
+        doc.text(String(c.completed), 355, rowY, { align: 'right', width: 70 });
+        doc.text(String(c.pending), 430, rowY, { align: 'right', width: 60 });
+        doc.text(`${c.passRate}%`, 495, rowY, { align: 'right', width: 62 });
+        rowY += 18;
+      }
+    }
+
+    // Footer
+    doc.fontSize(9).fillColor('#999');
+    doc.text(
+      `Generated on ${new Date(data.generatedAt).toLocaleString()}`,
+      50,
+      740,
+      { align: 'center', width: 512 }
+    );
+
+    doc.end();
+  });
+}
+
 export interface ConcentraAuthData {
   orderNumber: string;
   companyName: string;
@@ -135,11 +283,11 @@ export interface ConcentraAuthData {
   concentraAddress?: string; // Step 2: Center address
   concentraPhone?: string; // Step 2: Center phone number
   geographicArea?: string; // Step 2b: If no specific center, geographic area
-  candidateFirstName: string; // Step 6: Employee first name
-  candidateLastName: string; // Step 6: Employee last name
-  candidateDOB?: string; // Step 6: Date of birth (optional but recommended)
-  candidatePhone?: string; // Step 7: Mobile number for online check-in (optional)
-  candidateEmail?: string; // Step 7: Email for online check-in (optional)
+  personFirstName: string; // Step 6: Employee first name
+  personLastName: string; // Step 6: Employee last name
+  personDOB?: string; // Step 6: Date of birth (optional but recommended)
+  personPhone?: string; // Step 7: Mobile number for online check-in (optional)
+  personEmail?: string; // Step 7: Email for online check-in (optional)
   servicePackage: string; // Step 4: Service package name
   serviceComponents: string[]; // Step 4a: Service components to be performed
   validityDays: number; // Step 5: Number of days authorization is valid from creation date
@@ -199,18 +347,18 @@ export async function generateConcentraAuthPDF(data: ConcentraAuthData): Promise
     doc.fontSize(13).text('EMPLOYEE INFORMATION', { underline: true });
     doc.moveDown(0.5);
     doc.fontSize(10);
-    doc.text(`Name: ${data.candidateFirstName} ${data.candidateLastName}`);
-    if (data.candidateDOB) {
-      doc.text(`Date of Birth: ${data.candidateDOB}`);
+    doc.text(`Name: ${data.personFirstName} ${data.personLastName}`);
+    if (data.personDOB) {
+      doc.text(`Date of Birth: ${data.personDOB}`);
     }
-    if (data.candidatePhone) {
-      doc.text(`Mobile Phone: ${data.candidatePhone}`);
+    if (data.personPhone) {
+      doc.text(`Mobile Phone: ${data.personPhone}`);
       doc.fontSize(9).fillColor('#666').text('(For online check-in)', { indent: 20 });
       doc.fillColor('#000').fontSize(10);
     }
-    if (data.candidateEmail) {
-      doc.text(`Email: ${data.candidateEmail}`);
-      if (!data.candidatePhone) {
+    if (data.personEmail) {
+      doc.text(`Email: ${data.personEmail}`);
+      if (!data.personPhone) {
         doc.fontSize(9).fillColor('#666').text('(For online check-in)', { indent: 20 });
         doc.fillColor('#000').fontSize(10);
       }
@@ -260,6 +408,1384 @@ export async function generateConcentraAuthPDF(data: ConcentraAuthData): Promise
     doc.moveDown(0.5);
     doc.fontSize(8).fillColor('#999');
     doc.text('Generated by TPAEngineX', { align: 'center' });
+
+    doc.end();
+  });
+}
+
+// ============================================================================
+// DQF Compliance Report PDF
+// ============================================================================
+
+export interface ComplianceReportRow {
+  driverName: string;
+  clientName: string | null;
+  score: number;
+  breakdownSummary: string;
+  lastCalculated: string;
+}
+
+export interface ComplianceReportPDFData {
+  tpaBrandName: string;
+  generatedAt: string;
+  clientFilterName?: string | null;
+  summary: {
+    averageScore: number;
+    totalDrivers: number;
+    excellent: number; // >= 90
+    good: number;      // 70-89
+    fair: number;      // 50-69
+    poor: number;      // < 50
+  };
+  rows: ComplianceReportRow[];
+  includeClient: boolean;
+}
+
+export async function generateComplianceReportPDF(
+  tpaOrgId: string,
+  clientOrgId?: string
+): Promise<Buffer> {
+  const { db } = await import('@/db/client');
+  const { complianceScores, tpaSettings, organizations } = await import('@/db/schema');
+  const { and, eq, desc } = await import('drizzle-orm');
+
+  const conditions = [eq(complianceScores.tpaOrgId, tpaOrgId)];
+  if (clientOrgId) conditions.push(eq(complianceScores.clientOrgId, clientOrgId));
+
+  const scores = await db.query.complianceScores.findMany({
+    where: and(...conditions),
+    with: {
+      person: { columns: { id: true, firstName: true, lastName: true } },
+      clientOrg: { columns: { id: true, name: true } },
+    },
+    orderBy: [desc(complianceScores.calculatedAt)],
+  });
+
+  const settings = await db.query.tpaSettings.findFirst({
+    where: eq(tpaSettings.tpaOrgId, tpaOrgId),
+  });
+  const brandName = settings?.brandName || 'TPAEngineX';
+
+  let clientFilterName: string | null = null;
+  if (clientOrgId) {
+    const client = await db.query.organizations.findFirst({
+      where: eq(organizations.id, clientOrgId),
+      columns: { name: true },
+    });
+    clientFilterName = client?.name || null;
+  }
+
+  const totalDrivers = scores.length;
+  const averageScore =
+    totalDrivers > 0
+      ? Math.round(scores.reduce((sum, s) => sum + (s.score || 0), 0) / totalDrivers)
+      : 0;
+  let excellent = 0, good = 0, fair = 0, poor = 0;
+  for (const s of scores) {
+    const v = s.score || 0;
+    if (v >= 90) excellent++;
+    else if (v >= 70) good++;
+    else if (v >= 50) fair++;
+    else poor++;
+  }
+
+  const fmtBreakdown = (b: unknown): string => {
+    if (!b || typeof b !== 'object') return '—';
+    const entries = Object.entries(b as Record<string, unknown>);
+    if (entries.length === 0) return '—';
+    return entries.map(([k, v]) => `${k}: ${v}`).join(', ');
+  };
+
+  const rows: ComplianceReportRow[] = scores.map((s) => ({
+    driverName: s.person ? `${s.person.firstName} ${s.person.lastName}` : '—',
+    clientName: s.clientOrg?.name || null,
+    score: s.score || 0,
+    breakdownSummary: fmtBreakdown(s.breakdown),
+    lastCalculated: s.calculatedAt ? new Date(s.calculatedAt).toLocaleString() : '—',
+  }));
+
+  const data: ComplianceReportPDFData = {
+    tpaBrandName: brandName,
+    generatedAt: new Date().toISOString(),
+    clientFilterName,
+    summary: { averageScore, totalDrivers, excellent, good, fair, poor },
+    rows,
+    includeClient: !clientOrgId,
+  };
+
+  return renderComplianceReportPDF(data);
+}
+
+function renderComplianceReportPDF(data: ComplianceReportPDFData): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+    const chunks: Buffer[] = [];
+
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    // Header
+    doc.fontSize(22).fillColor('#1e3a5f').text(data.tpaBrandName, { align: 'left' });
+    doc.moveDown(0.2);
+    doc.fontSize(18).fillColor('#000').text('Compliance Report', { align: 'left' });
+    doc.moveDown(0.3);
+    doc.fontSize(10).fillColor('#666').text(
+      `Generated: ${new Date(data.generatedAt).toLocaleString()}`,
+      { align: 'left' }
+    );
+    if (data.clientFilterName) {
+      doc.text(`Client: ${data.clientFilterName}`);
+    }
+    doc.moveDown(0.5);
+
+    doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor('#e5e7eb').stroke();
+    doc.moveDown(1);
+
+    // Summary
+    doc.fontSize(13).fillColor('#1e3a5f').text('Summary');
+    doc.moveDown(0.5);
+
+    const summaryY = doc.y;
+    const col1X = 50;
+    const col2X = 220;
+    const col3X = 390;
+    const rowH = 18;
+
+    doc.fontSize(10).fillColor('#666');
+    doc.text('Total Drivers:', col1X, summaryY);
+    doc.fillColor('#000').text(String(data.summary.totalDrivers), col1X + 110, summaryY);
+
+    doc.fillColor('#666').text('Average Score:', col2X, summaryY);
+    doc.fillColor('#000').text(`${data.summary.averageScore}%`, col2X + 90, summaryY);
+
+    doc.fillColor('#666').text('Excellent (90+):', col3X, summaryY);
+    doc.fillColor('#000').text(String(data.summary.excellent), col3X + 100, summaryY);
+
+    doc.fillColor('#666').text('Good (70-89):', col1X, summaryY + rowH);
+    doc.fillColor('#000').text(String(data.summary.good), col1X + 110, summaryY + rowH);
+
+    doc.fillColor('#666').text('Fair (50-69):', col2X, summaryY + rowH);
+    doc.fillColor('#000').text(String(data.summary.fair), col2X + 90, summaryY + rowH);
+
+    doc.fillColor('#666').text('Poor (<50):', col3X, summaryY + rowH);
+    doc.fillColor('#000').text(String(data.summary.poor), col3X + 100, summaryY + rowH);
+
+    doc.y = summaryY + rowH * 2 + 10;
+    doc.moveDown(1);
+
+    // Per-driver table
+    doc.fontSize(13).fillColor('#1e3a5f').text('Driver Scores');
+    doc.moveDown(0.5);
+
+    doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor('#1e3a5f').lineWidth(1).stroke();
+    let headerY = doc.y + 6;
+    doc.fontSize(10).fillColor('#1e3a5f');
+
+    const includeClient = data.includeClient;
+    if (includeClient) {
+      doc.text('Driver', 55, headerY, { width: 130 });
+      doc.text('Client', 190, headerY, { width: 120 });
+      doc.text('Score', 315, headerY, { align: 'right', width: 45 });
+      doc.text('Breakdown', 365, headerY, { width: 120 });
+      doc.text('Calculated', 490, headerY, { width: 72 });
+    } else {
+      doc.text('Driver', 55, headerY, { width: 180 });
+      doc.text('Score', 240, headerY, { align: 'right', width: 50 });
+      doc.text('Breakdown', 295, headerY, { width: 180 });
+      doc.text('Calculated', 480, headerY, { width: 82 });
+    }
+    doc.moveTo(50, headerY + 16)
+      .lineTo(562, headerY + 16)
+      .strokeColor('#e5e7eb')
+      .lineWidth(0.5)
+      .stroke();
+
+    let rowY = headerY + 24;
+
+    if (data.rows.length === 0) {
+      doc.fontSize(10).fillColor('#999').text(
+        'No compliance scores calculated yet.',
+        55,
+        rowY,
+        { width: 500 }
+      );
+      rowY += 18;
+    } else {
+      for (const r of data.rows) {
+        if (rowY > 700) {
+          doc.addPage();
+          rowY = 60;
+        }
+        doc.fontSize(10).fillColor('#000');
+        if (includeClient) {
+          doc.text(r.driverName, 55, rowY, { width: 130 });
+          doc.text(r.clientName || '—', 190, rowY, { width: 120 });
+          const scoreColor = r.score >= 80 ? '#16a34a' : r.score >= 60 ? '#d97706' : '#dc2626';
+          doc.fillColor(scoreColor).text(`${r.score}%`, 315, rowY, { align: 'right', width: 45 });
+          doc.fillColor('#000').text(r.breakdownSummary, 365, rowY, { width: 120 });
+          doc.text(r.lastCalculated, 490, rowY, { width: 72 });
+        } else {
+          doc.text(r.driverName, 55, rowY, { width: 180 });
+          const scoreColor = r.score >= 80 ? '#16a34a' : r.score >= 60 ? '#d97706' : '#dc2626';
+          doc.fillColor(scoreColor).text(`${r.score}%`, 240, rowY, { align: 'right', width: 50 });
+          doc.fillColor('#000').text(r.breakdownSummary, 295, rowY, { width: 180 });
+          doc.text(r.lastCalculated, 480, rowY, { width: 82 });
+        }
+        rowY += 22;
+      }
+    }
+
+    // Footer
+    doc.fontSize(9).fillColor('#999');
+    doc.text(
+      `Generated by ${data.tpaBrandName} on ${new Date(data.generatedAt).toLocaleString()}`,
+      50,
+      740,
+      { align: 'center', width: 512 }
+    );
+
+    doc.end();
+  });
+}
+
+// ============================================================================
+// Order Summary PDF
+// ============================================================================
+
+export async function generateOrderSummaryPDF(orderId: string): Promise<Buffer> {
+  const order = await db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+    with: {
+      person: true,
+      clientOrg: { columns: { id: true, name: true } },
+      collector: {
+        columns: { id: true, firstName: true, lastName: true, email: true, phone: true },
+      },
+      specimens: {
+        with: {
+          collector: { columns: { firstName: true, lastName: true } },
+        },
+      },
+      results: true,
+      signatures: true,
+    },
+  });
+
+  if (!order) {
+    throw new Error(`Order ${orderId} not found`);
+  }
+
+  const settings = order.tpaOrgId
+    ? await db.query.tpaSettings.findFirst({
+        where: eq(tpaSettings.tpaOrgId, order.tpaOrgId),
+      })
+    : null;
+
+  const brandName = settings?.brandName || 'TPAEngineX';
+
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+    const chunks: Buffer[] = [];
+
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const fmtDate = (d: Date | string | null | undefined) =>
+      d ? new Date(d).toLocaleString() : '—';
+    const fmtShort = (d: Date | string | null | undefined) =>
+      d ? new Date(d).toLocaleDateString() : '—';
+
+    // Header
+    doc.fontSize(22).fillColor('#1e3a5f').text(brandName, { align: 'left' });
+    doc.moveDown(0.2);
+    doc.fontSize(18).fillColor('#000').text('Order Summary');
+    doc.moveDown(0.3);
+    doc.fontSize(10).fillColor('#666').text(`Order Number: ${order.orderNumber}`);
+    doc.text(`Generated: ${new Date().toLocaleString()}`);
+    doc.moveDown(0.5);
+
+    // Divider
+    doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor('#e5e7eb').stroke();
+    doc.moveDown(1);
+
+    // Person Info
+    doc.fontSize(13).fillColor('#1e3a5f').text('Person Information');
+    doc.moveDown(0.5);
+    doc.fontSize(10).fillColor('#000');
+    if (order.person) {
+      doc.text(`Name: ${order.person.firstName} ${order.person.lastName}`);
+      doc.text(`Date of Birth: ${order.person.dob || '—'}`);
+      doc.text(`Phone: ${order.person.phone || '—'}`);
+      doc.text(`Email: ${order.person.email || '—'}`);
+      const addressParts = [
+        order.person.address,
+        order.person.city,
+        order.person.state,
+        order.person.zip,
+      ].filter(Boolean);
+      doc.text(`Address: ${addressParts.length ? addressParts.join(', ') : '—'}`);
+    } else {
+      doc.fillColor('#999').text('No person on file');
+      doc.fillColor('#000');
+    }
+    doc.moveDown(1);
+
+    // Order Info
+    doc.fontSize(13).fillColor('#1e3a5f').text('Order Information');
+    doc.moveDown(0.5);
+    doc.fontSize(10).fillColor('#000');
+    doc.text(`Client: ${order.clientOrg?.name || order.clientLabel || '—'}`);
+    doc.text(`Service Type: ${(order.serviceType || '').replace(/_/g, ' ')}`);
+    doc.text(`Test Type: ${order.testType || '—'}`);
+    doc.text(`DOT: ${order.isDOT ? 'Yes' : 'No'}`);
+    doc.text(`Priority: ${order.priority || 'standard'}`);
+    doc.text(`Status: ${order.status}`);
+    doc.text(`Jobsite: ${order.jobsiteLocation || '—'}`);
+    doc.text(`Scheduled For: ${fmtDate(order.scheduledFor)}`);
+    doc.text(`Created: ${fmtDate(order.createdAt)}`);
+    if (order.completedAt) {
+      doc.text(`Completed: ${fmtDate(order.completedAt)}`);
+    }
+    doc.moveDown(1);
+
+    // Collector
+    doc.fontSize(13).fillColor('#1e3a5f').text('Collector');
+    doc.moveDown(0.5);
+    doc.fontSize(10).fillColor('#000');
+    if (order.collector) {
+      doc.text(`Name: ${order.collector.firstName} ${order.collector.lastName}`);
+      doc.text(`Phone: ${order.collector.phone || '—'}`);
+      doc.text(`Email: ${order.collector.email || '—'}`);
+    } else {
+      doc.fillColor('#999').text('No collector assigned');
+      doc.fillColor('#000');
+    }
+    doc.moveDown(1);
+
+    const checkPage = (needed = 80) => {
+      if (doc.y > 720 - needed) {
+        doc.addPage();
+      }
+    };
+
+    // Specimens table
+    checkPage(100);
+    doc.fontSize(13).fillColor('#1e3a5f').text('Specimens');
+    doc.moveDown(0.5);
+    doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor('#1e3a5f').lineWidth(1).stroke();
+    let hdrY = doc.y + 6;
+    doc.fontSize(10).fillColor('#1e3a5f');
+    doc.text('Type', 55, hdrY, { width: 90 });
+    doc.text('CCF Number', 150, hdrY, { width: 130 });
+    doc.text('Collected At', 285, hdrY, { width: 150 });
+    doc.text('Status', 440, hdrY, { width: 120 });
+    doc.moveTo(50, hdrY + 16).lineTo(562, hdrY + 16).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+    let rowY = hdrY + 22;
+
+    if (!order.specimens || order.specimens.length === 0) {
+      doc.fontSize(10).fillColor('#999').text('No specimens recorded.', 55, rowY);
+      rowY += 16;
+    } else {
+      for (const s of order.specimens) {
+        if (rowY > 720) { doc.addPage(); rowY = 60; }
+        doc.fontSize(10).fillColor('#000');
+        doc.text(s.specimenType || '—', 55, rowY, { width: 90 });
+        doc.text(s.ccfNumber || '—', 150, rowY, { width: 130 });
+        doc.text(fmtDate(s.collectedAt), 285, rowY, { width: 150 });
+        doc.text(s.status || '—', 440, rowY, { width: 120 });
+        rowY += 16;
+      }
+    }
+    doc.y = rowY + 10;
+
+    // Results table
+    checkPage(100);
+    doc.fontSize(13).fillColor('#1e3a5f').text('Results');
+    doc.moveDown(0.5);
+    doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor('#1e3a5f').lineWidth(1).stroke();
+    hdrY = doc.y + 6;
+    doc.fontSize(10).fillColor('#1e3a5f');
+    doc.text('Panel', 55, hdrY, { width: 110 });
+    doc.text('Result', 170, hdrY, { width: 100 });
+    doc.text('MRO Decision', 275, hdrY, { width: 130 });
+    doc.text('Reported At', 410, hdrY, { width: 150 });
+    doc.moveTo(50, hdrY + 16).lineTo(562, hdrY + 16).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+    rowY = hdrY + 22;
+
+    if (!order.results || order.results.length === 0) {
+      doc.fontSize(10).fillColor('#999').text('No results recorded.', 55, rowY);
+      rowY += 16;
+    } else {
+      for (const r of order.results) {
+        if (rowY > 720) { doc.addPage(); rowY = 60; }
+        doc.fontSize(10).fillColor('#000');
+        doc.text(r.panelType || '—', 55, rowY, { width: 110 });
+        doc.text(r.resultValue || '—', 170, rowY, { width: 100 });
+        doc.text((r.mroDecision || '—').toString().replace(/_/g, ' '), 275, rowY, { width: 130 });
+        doc.text(fmtDate(r.reportedAt), 410, rowY, { width: 150 });
+        rowY += 16;
+      }
+    }
+    doc.y = rowY + 10;
+
+    // Signatures
+    checkPage(80);
+    doc.fontSize(13).fillColor('#1e3a5f').text('Signatures');
+    doc.moveDown(0.5);
+    doc.fontSize(10).fillColor('#000');
+    if (!order.signatures || order.signatures.length === 0) {
+      doc.fillColor('#999').text('No signatures on file.');
+      doc.fillColor('#000');
+    } else {
+      for (const sig of order.signatures) {
+        if (doc.y > 730) { doc.addPage(); }
+        doc.text(
+          `Signed by ${sig.signerName} as ${sig.signerRole} on ${fmtShort(sig.signedAt)}`,
+        );
+      }
+    }
+
+    // Footer
+    doc.fontSize(9).fillColor('#999');
+    doc.text(
+      `Generated on ${new Date().toLocaleString()}`,
+      50,
+      740,
+      { align: 'center', width: 512 }
+    );
+
+    doc.end();
+  });
+}
+
+// ============================================================================
+// Random Selection Report — DOT 49 CFR Part 382 compliance audit document
+// ============================================================================
+
+export interface RandomSelectionReportRow {
+  personName: string;
+  selectionType: 'drug' | 'alcohol' | 'both';
+  notifiedAt: string | null;
+  scheduledAt: string | null;
+  completedAt: string | null;
+}
+
+export interface RandomSelectionReportData {
+  tpaBrandName: string;
+  programName: string;
+  programType: string;
+  periodStart: string;
+  periodEnd: string;
+  generatedAt: string;
+  totalEligible: number;
+  totalSelectedDrug: number;
+  totalSelectedAlcohol: number;
+  drugRatePercent: string;
+  alcoholRatePercent: string;
+  periodType: string;
+  selectionSeedHash: string | null;
+  selectedByName: string | null;
+  selectedAt: string | null;
+  rows: RandomSelectionReportRow[];
+}
+
+export async function generateRandomSelectionReport(poolId: string): Promise<Buffer> {
+  const { db } = await import('@/db/client');
+  const { randomPools, tpaSettings } = await import('@/db/schema');
+  const { eq } = await import('drizzle-orm');
+
+  const pool = await db.query.randomPools.findFirst({
+    where: eq(randomPools.id, poolId),
+    with: {
+      program: true,
+      selectedByUser: { columns: { name: true, email: true } },
+      selections: {
+        with: {
+          person: { columns: { firstName: true, lastName: true } },
+        },
+      },
+    },
+  });
+
+  if (!pool) {
+    throw new Error(`Pool ${poolId} not found`);
+  }
+
+  const settings = await db.query.tpaSettings.findFirst({
+    where: eq(tpaSettings.tpaOrgId, pool.tpaOrgId),
+  });
+  const brandName = settings?.brandName || 'TPAEngineX';
+
+  const rows: RandomSelectionReportRow[] = pool.selections.map((s) => ({
+    personName: s.person ? `${s.person.firstName} ${s.person.lastName}` : '—',
+    selectionType: s.selectionType,
+    notifiedAt: s.notifiedAt ? new Date(s.notifiedAt).toLocaleString() : null,
+    scheduledAt: s.scheduledAt ? new Date(s.scheduledAt).toLocaleString() : null,
+    completedAt: s.completedAt ? new Date(s.completedAt).toLocaleString() : null,
+  }));
+
+  const data: RandomSelectionReportData = {
+    tpaBrandName: brandName,
+    programName: pool.program.name,
+    programType: pool.program.programType,
+    periodStart: new Date(pool.periodStartsAt).toLocaleDateString(),
+    periodEnd: new Date(pool.periodEndsAt).toLocaleDateString(),
+    generatedAt: new Date().toISOString(),
+    totalEligible: pool.totalEligible,
+    totalSelectedDrug: pool.totalSelectedDrug,
+    totalSelectedAlcohol: pool.totalSelectedAlcohol,
+    drugRatePercent: (pool.program.drugTestRate / 100).toFixed(2),
+    alcoholRatePercent: (pool.program.alcoholTestRate / 100).toFixed(2),
+    periodType: pool.program.periodType,
+    selectionSeedHash: pool.selectionSeedHash,
+    selectedByName: pool.selectedByUser?.name || pool.selectedByUser?.email || null,
+    selectedAt: pool.selectedAt ? new Date(pool.selectedAt).toLocaleString() : null,
+    rows,
+  };
+
+  return renderRandomSelectionReport(data);
+}
+
+function renderRandomSelectionReport(data: RandomSelectionReportData): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+    const chunks: Buffer[] = [];
+
+    doc.on('data', (c) => chunks.push(c));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    doc.fontSize(22).fillColor('#1e3a5f').text(data.tpaBrandName, { align: 'left' });
+    doc.moveDown(0.2);
+    doc.fontSize(18).fillColor('#000').text('Random Selection Report', { align: 'left' });
+    doc.moveDown(0.3);
+    doc.fontSize(10).fillColor('#666').text(
+      `Program: ${data.programName} (${data.programType.toUpperCase()})`,
+    );
+    doc.text(`Period: ${data.periodStart} - ${data.periodEnd} (${data.periodType})`);
+    doc.text(`Generated: ${new Date(data.generatedAt).toLocaleString()}`);
+    doc.moveDown(0.5);
+
+    doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor('#e5e7eb').stroke();
+    doc.moveDown(1);
+
+    doc.fontSize(13).fillColor('#1e3a5f').text('Summary');
+    doc.moveDown(0.5);
+
+    const sY = doc.y;
+    const c1 = 50, c2 = 220, c3 = 390;
+    const rowH = 18;
+
+    doc.fontSize(10).fillColor('#666').text('Total Eligible:', c1, sY);
+    doc.fillColor('#000').text(String(data.totalEligible), c1 + 110, sY);
+
+    doc.fillColor('#666').text('Drug Rate (Annual):', c2, sY);
+    doc.fillColor('#000').text(`${data.drugRatePercent}%`, c2 + 120, sY);
+
+    doc.fillColor('#666').text('Alcohol Rate:', c3, sY);
+    doc.fillColor('#000').text(`${data.alcoholRatePercent}%`, c3 + 85, sY);
+
+    doc.fillColor('#666').text('Selected (Drug):', c1, sY + rowH);
+    doc.fillColor('#000').text(String(data.totalSelectedDrug), c1 + 110, sY + rowH);
+
+    doc.fillColor('#666').text('Selected (Alcohol):', c2, sY + rowH);
+    doc.fillColor('#000').text(String(data.totalSelectedAlcohol), c2 + 120, sY + rowH);
+
+    doc.fillColor('#666').text('Total Rows:', c3, sY + rowH);
+    doc.fillColor('#000').text(String(data.rows.length), c3 + 85, sY + rowH);
+
+    doc.y = sY + rowH * 2 + 10;
+    doc.moveDown(1);
+
+    // Integrity
+    doc.fontSize(13).fillColor('#1e3a5f').text('Selection Integrity');
+    doc.moveDown(0.3);
+    doc.fontSize(9).fillColor('#666').text(
+      'This selection was generated using a cryptographically secure random number generator (Fisher-Yates shuffle with OS CSPRNG entropy). The seed hash below is reproducibility evidence for audit review.',
+      50,
+      doc.y,
+      { width: 512 },
+    );
+    doc.moveDown(0.5);
+    doc.fontSize(10).fillColor('#666').text('Seed Hash (SHA-256):', 50, doc.y);
+    doc.fontSize(8).fillColor('#000').font('Courier').text(
+      data.selectionSeedHash || '(not recorded)',
+      50,
+      doc.y + 2,
+      { width: 512 },
+    );
+    doc.font('Helvetica');
+    doc.moveDown(0.5);
+
+    if (data.selectedByName) {
+      doc.fontSize(10).fillColor('#666').text(
+        `Executed By: ${data.selectedByName} at ${data.selectedAt || '—'}`,
+        50,
+        doc.y,
+      );
+    }
+
+    doc.moveDown(1);
+
+    // Table
+    doc.fontSize(13).fillColor('#1e3a5f').text('Selected Persons');
+    doc.moveDown(0.5);
+
+    doc.moveTo(50, doc.y).lineTo(562, doc.y).strokeColor('#1e3a5f').lineWidth(1).stroke();
+    let headerY = doc.y + 6;
+    doc.fontSize(10).fillColor('#1e3a5f');
+    doc.text('Name', 55, headerY, { width: 180 });
+    doc.text('Type', 240, headerY, { width: 70 });
+    doc.text('Notified', 315, headerY, { width: 80 });
+    doc.text('Scheduled', 400, headerY, { width: 80 });
+    doc.text('Completed', 485, headerY, { width: 77 });
+    doc.moveTo(50, headerY + 16)
+      .lineTo(562, headerY + 16)
+      .strokeColor('#e5e7eb')
+      .lineWidth(0.5)
+      .stroke();
+
+    let rowY = headerY + 24;
+
+    if (data.rows.length === 0) {
+      doc.fontSize(10).fillColor('#999').text('No persons selected.', 55, rowY);
+      rowY += 18;
+    } else {
+      for (const r of data.rows) {
+        if (rowY > 700) {
+          doc.addPage();
+          rowY = 60;
+        }
+        doc.fontSize(10).fillColor('#000');
+        doc.text(r.personName, 55, rowY, { width: 180 });
+        const typeColor =
+          r.selectionType === 'both' ? '#7c3aed' : r.selectionType === 'alcohol' ? '#d97706' : '#2563eb';
+        doc.fillColor(typeColor).text(r.selectionType.toUpperCase(), 240, rowY, { width: 70 });
+        doc.fillColor('#000');
+        doc.text(r.notifiedAt || '—', 315, rowY, { width: 80 });
+        doc.text(r.scheduledAt || '—', 400, rowY, { width: 80 });
+        doc.text(r.completedAt || '—', 485, rowY, { width: 77 });
+        rowY += 18;
+      }
+    }
+
+    doc.fontSize(9).fillColor('#999').text(
+      'This document is a compliance audit artifact. Retain per DOT recordkeeping requirements (49 CFR 382.401).',
+      50,
+      730,
+      { align: 'center', width: 512 },
+    );
+    doc.text(
+      `Generated by ${data.tpaBrandName} on ${new Date(data.generatedAt).toLocaleString()}`,
+      50,
+      748,
+      { align: 'center', width: 512 },
+    );
+
+    doc.end();
+  });
+}
+
+// ============================================================================
+// Consortium Certificate — annual participation certificate
+// ============================================================================
+
+export interface ConsortiumCertificateData {
+  tpaBrandName: string;
+  programName: string;
+  year: number;
+  totalTestsConducted: number;
+  totalDrugTests: number;
+  totalAlcoholTests: number;
+  annualDrugRatePercent: string;
+  annualAlcoholRatePercent: string;
+  minimumDrugRate: string;
+  minimumAlcoholRate: string;
+  inCompliance: boolean;
+  generatedAt: string;
+}
+
+export async function generateConsortiumCertificate(
+  programId: string,
+  year: number,
+): Promise<Buffer> {
+  const { db } = await import('@/db/client');
+  const {
+    randomPrograms,
+    randomPools,
+    tpaSettings,
+  } = await import('@/db/schema');
+  const { eq, and, gte, lt } = await import('drizzle-orm');
+
+  const program = await db.query.randomPrograms.findFirst({
+    where: eq(randomPrograms.id, programId),
+  });
+  if (!program) throw new Error(`Program ${programId} not found`);
+
+  const yearStart = new Date(Date.UTC(year, 0, 1));
+  const yearEnd = new Date(Date.UTC(year + 1, 0, 1));
+
+  const pools = await db.query.randomPools.findMany({
+    where: and(
+      eq(randomPools.programId, programId),
+      gte(randomPools.periodStartsAt, yearStart),
+      lt(randomPools.periodStartsAt, yearEnd),
+    ),
+    columns: { id: true, totalSelectedDrug: true, totalSelectedAlcohol: true },
+  });
+
+  const totalDrug = pools.reduce((sum, p) => sum + (p.totalSelectedDrug || 0), 0);
+  const totalAlcohol = pools.reduce((sum, p) => sum + (p.totalSelectedAlcohol || 0), 0);
+  const totalTests = totalDrug + totalAlcohol;
+
+  const settings = await db.query.tpaSettings.findFirst({
+    where: eq(tpaSettings.tpaOrgId, program.tpaOrgId),
+  });
+  const brandName = settings?.brandName || 'TPAEngineX';
+
+  // DOT FMCSA minimums: 50% drug, 10% alcohol
+  const minDrugRateBp = 5000;
+  const minAlcoholRateBp = 1000;
+
+  const inCompliance =
+    program.drugTestRate >= minDrugRateBp && program.alcoholTestRate >= minAlcoholRateBp;
+
+  const data: ConsortiumCertificateData = {
+    tpaBrandName: brandName,
+    programName: program.name,
+    year,
+    totalTestsConducted: totalTests,
+    totalDrugTests: totalDrug,
+    totalAlcoholTests: totalAlcohol,
+    annualDrugRatePercent: (program.drugTestRate / 100).toFixed(2),
+    annualAlcoholRatePercent: (program.alcoholTestRate / 100).toFixed(2),
+    minimumDrugRate: (minDrugRateBp / 100).toFixed(2),
+    minimumAlcoholRate: (minAlcoholRateBp / 100).toFixed(2),
+    inCompliance,
+    generatedAt: new Date().toISOString(),
+  };
+
+  return renderConsortiumCertificate(data);
+}
+
+function renderConsortiumCertificate(data: ConsortiumCertificateData): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'LETTER', margin: 60 });
+    const chunks: Buffer[] = [];
+
+    doc.on('data', (c) => chunks.push(c));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    doc.fontSize(10).fillColor('#666').text(data.tpaBrandName, { align: 'center' });
+    doc.moveDown(0.5);
+
+    doc.fontSize(26).fillColor('#1e3a5f').text('Certificate of Participation', { align: 'center' });
+    doc.moveDown(0.3);
+    doc.fontSize(13).fillColor('#666').text(
+      'DOT Random Drug & Alcohol Testing Consortium',
+      { align: 'center' },
+    );
+    doc.moveDown(2);
+
+    doc.rect(50, doc.y - 10, 512, 400).strokeColor('#1e3a5f').lineWidth(1).stroke();
+    doc.moveDown(0.5);
+
+    doc.fontSize(12).fillColor('#000').text('This certifies that', 70, doc.y + 10, {
+      align: 'center',
+      width: 472,
+    });
+    doc.moveDown(0.5);
+    doc.fontSize(18).fillColor('#1e3a5f').text(data.programName, {
+      align: 'center',
+      width: 472,
+    });
+    doc.moveDown(0.5);
+    doc.fontSize(12).fillColor('#000').text(
+      `participated in a compliant DOT random testing program during calendar year ${data.year}, in accordance with 49 CFR Part 382 and Part 40.`,
+      70,
+      doc.y,
+      { align: 'center', width: 472 },
+    );
+    doc.moveDown(1);
+
+    const statsY = doc.y + 10;
+    doc.fontSize(11).fillColor('#666').text('Total Tests Conducted:', 100, statsY);
+    doc.fillColor('#000').text(String(data.totalTestsConducted), 300, statsY);
+
+    doc.fillColor('#666').text('Drug Tests:', 100, statsY + 22);
+    doc.fillColor('#000').text(
+      `${data.totalDrugTests}  (Rate: ${data.annualDrugRatePercent}%, min ${data.minimumDrugRate}%)`,
+      200,
+      statsY + 22,
+    );
+
+    doc.fillColor('#666').text('Alcohol Tests:', 100, statsY + 44);
+    doc.fillColor('#000').text(
+      `${data.totalAlcoholTests}  (Rate: ${data.annualAlcoholRatePercent}%, min ${data.minimumAlcoholRate}%)`,
+      200,
+      statsY + 44,
+    );
+
+    doc.fillColor('#666').text('Compliance Status:', 100, statsY + 66);
+    doc.fillColor(data.inCompliance ? '#16a34a' : '#dc2626').text(
+      data.inCompliance ? 'IN COMPLIANCE' : 'BELOW MINIMUM',
+      300,
+      statsY + 66,
+    );
+
+    doc.fillColor('#000');
+    doc.moveDown(6);
+
+    doc.fontSize(10).fillColor('#666');
+    doc.text('_________________________________', 80, 600);
+    doc.text('_________________________________', 330, 600);
+    doc.text(data.tpaBrandName, 80, 615);
+    doc.text('Date of Issue', 330, 615);
+    doc.fillColor('#000').text(new Date(data.generatedAt).toLocaleDateString(), 330, 630);
+
+    doc.fontSize(9).fillColor('#999').text(
+      `Retain this certificate per DOT recordkeeping requirements (49 CFR 382.401). Generated on ${new Date(data.generatedAt).toLocaleString()}.`,
+      50,
+      740,
+      { align: 'center', width: 512 },
+    );
+
+    doc.end();
+  });
+}
+
+// ============================================================================
+// MEDICAL EXAMINER'S CERTIFICATE (MEC) — Form MCSA-5876
+// FMCSA 49 CFR 391.41-391.49
+// ============================================================================
+
+export interface MecPdfData {
+  certificateNumber: string;
+  // Driver
+  driverName: string;
+  driverDob?: string | null;
+  driverLicenseNumber?: string | null;
+  driverLicenseState?: string | null;
+  driverAddress?: string | null;
+  driverCity?: string | null;
+  driverState?: string | null;
+  driverZip?: string | null;
+  // Certification
+  certificationStatus:
+    | 'medically_qualified'
+    | 'qualified_with_restrictions'
+    | 'temporarily_disqualified'
+    | 'disqualified'
+    | 'pending_evaluation';
+  examDate: Date;
+  mecExpiresOn: Date | null;
+  restrictions: string[];
+  // Examiner
+  examinerName: string;
+  examinerNRCMENumber: string;
+  examinerSignatureImage?: string | null; // base64 data URL
+  clinicName?: string | null;
+  clinicAddress?: string | null;
+  // Misc
+  examType: string;  // 'dot' etc.
+}
+
+function formatDateYmd(d: Date | null | undefined): string {
+  if (!d) return '—';
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+export async function generateMecPdf(data: MecPdfData): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const PAGE_WIDTH = 612;
+
+    // Header
+    doc.fontSize(16).fillColor('#000').font('Helvetica-Bold').text(
+      'MEDICAL EXAMINER\'S CERTIFICATE',
+      50, 50,
+      { align: 'center', width: PAGE_WIDTH - 100 }
+    );
+    doc.moveDown(0.3);
+    doc.fontSize(10).font('Helvetica').fillColor('#333').text(
+      'U.S. Department of Transportation / Federal Motor Carrier Safety Administration',
+      { align: 'center', width: PAGE_WIDTH - 100 }
+    );
+    doc.moveDown(0.2);
+    doc.fontSize(9).fillColor('#666').text(
+      'Issued pursuant to 49 CFR 391.43',
+      { align: 'center', width: PAGE_WIDTH - 100 }
+    );
+
+    // Divider
+    doc.moveDown(0.8);
+    doc.moveTo(50, doc.y).lineTo(PAGE_WIDTH - 50, doc.y).strokeColor('#000').lineWidth(1).stroke();
+    doc.moveDown(0.6);
+
+    // Driver info block
+    doc.fontSize(11).fillColor('#000').font('Helvetica-Bold').text('Driver Information');
+    doc.moveDown(0.3);
+    doc.font('Helvetica').fontSize(10);
+
+    const leftX = 50;
+    const rightX = 330;
+    let y = doc.y;
+
+    doc.fillColor('#555').text('Name:', leftX, y);
+    doc.fillColor('#000').text(data.driverName, leftX + 60, y, { width: 240 });
+
+    doc.fillColor('#555').text('Date of Birth:', rightX, y);
+    doc.fillColor('#000').text(data.driverDob || '—', rightX + 85, y, { width: 150 });
+
+    y += 18;
+    doc.fillColor('#555').text('License #:', leftX, y);
+    doc.fillColor('#000').text(data.driverLicenseNumber || '—', leftX + 60, y, { width: 240 });
+
+    doc.fillColor('#555').text('License State:', rightX, y);
+    doc.fillColor('#000').text(data.driverLicenseState || '—', rightX + 85, y, { width: 150 });
+
+    y += 18;
+    const addressLine = [data.driverAddress, [data.driverCity, data.driverState, data.driverZip].filter(Boolean).join(', ')]
+      .filter(Boolean)
+      .join(' — ') || '—';
+    doc.fillColor('#555').text('Address:', leftX, y);
+    doc.fillColor('#000').text(addressLine, leftX + 60, y, { width: 500 });
+
+    doc.y = y + 30;
+
+    // Certification statement
+    doc.moveDown(0.5);
+    doc.fontSize(10).fillColor('#000').font('Helvetica-Oblique').text(
+      'I hereby certify that I have examined the above-named driver in accordance with the ' +
+        'Federal Motor Carrier Safety Regulations (49 CFR 391.41–391.49) and that the above ' +
+        'information is correct. I have reviewed the driver\'s health history and completed a ' +
+        'physical examination to assess medical fitness for commercial motor vehicle operation.',
+      50, doc.y,
+      { width: PAGE_WIDTH - 100, align: 'left' }
+    );
+    doc.font('Helvetica');
+    doc.moveDown(0.8);
+
+    // Certification status block
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#000').text('Medical Certification Status');
+    doc.moveDown(0.3);
+    doc.font('Helvetica').fontSize(10);
+
+    const drawCheck = (checked: boolean, x: number, yy: number) => {
+      doc.rect(x, yy, 10, 10).strokeColor('#000').lineWidth(0.8).stroke();
+      if (checked) {
+        doc.moveTo(x + 2, yy + 5).lineTo(x + 4, yy + 8).lineTo(x + 9, yy + 2).strokeColor('#000').lineWidth(1.2).stroke();
+      }
+    };
+
+    const statusY = doc.y;
+    drawCheck(data.certificationStatus === 'medically_qualified', 55, statusY);
+    doc.fillColor('#000').text('Meets standards in 49 CFR 391.41; qualified for 2 years (or shorter as indicated)', 72, statusY - 1, { width: 480 });
+
+    drawCheck(data.certificationStatus === 'qualified_with_restrictions', 55, statusY + 18);
+    doc.text('Meets standards, but periodic evaluation required / qualified with restrictions', 72, statusY + 17, { width: 480 });
+
+    drawCheck(data.certificationStatus === 'temporarily_disqualified', 55, statusY + 36);
+    doc.text('Temporarily disqualified until treatment is established', 72, statusY + 35, { width: 480 });
+
+    drawCheck(data.certificationStatus === 'disqualified', 55, statusY + 54);
+    doc.text('Does not meet standards (specify reason on reverse or in restrictions)', 72, statusY + 53, { width: 480 });
+
+    drawCheck(data.certificationStatus === 'pending_evaluation', 55, statusY + 72);
+    doc.text('Pending specialist evaluation / incomplete', 72, statusY + 71, { width: 480 });
+
+    doc.y = statusY + 96;
+
+    // Restrictions / notes box
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#000').text('Restrictions / Waivers');
+    doc.moveDown(0.3);
+    doc.font('Helvetica').fontSize(10);
+
+    const restrictionsBoxY = doc.y;
+    doc.rect(50, restrictionsBoxY, PAGE_WIDTH - 100, 60).strokeColor('#999').lineWidth(0.5).stroke();
+    if (data.restrictions.length === 0) {
+      doc.fillColor('#666').text('None', 58, restrictionsBoxY + 8, { width: PAGE_WIDTH - 120 });
+    } else {
+      let ry = restrictionsBoxY + 8;
+      for (const r of data.restrictions) {
+        doc.fillColor('#000').text(`• ${r}`, 58, ry, { width: PAGE_WIDTH - 120 });
+        ry += 14;
+        if (ry > restrictionsBoxY + 52) break; // cap
+      }
+    }
+
+    doc.y = restrictionsBoxY + 70;
+
+    // Key dates
+    doc.moveDown(0.4);
+    const datesY = doc.y;
+    doc.fontSize(10).fillColor('#555').text('Date of Exam:', 50, datesY);
+    doc.fillColor('#000').font('Helvetica-Bold').text(formatDateYmd(data.examDate), 140, datesY);
+
+    doc.font('Helvetica').fillColor('#555').text('Certificate Expires:', 330, datesY);
+    doc.fillColor('#000').font('Helvetica-Bold').text(formatDateYmd(data.mecExpiresOn), 455, datesY);
+    doc.font('Helvetica');
+
+    doc.y = datesY + 30;
+
+    // Examiner block
+    doc.moveDown(0.4);
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#000').text('Medical Examiner');
+    doc.moveDown(0.3);
+    doc.font('Helvetica').fontSize(10);
+    const examY = doc.y;
+
+    doc.fillColor('#555').text('Name:', 50, examY);
+    doc.fillColor('#000').text(data.examinerName, 110, examY, { width: 220 });
+
+    doc.fillColor('#555').text('NRCME #:', 330, examY);
+    doc.fillColor('#000').text(data.examinerNRCMENumber, 400, examY, { width: 160 });
+
+    const clinicY = examY + 18;
+    if (data.clinicName) {
+      doc.fillColor('#555').text('Clinic:', 50, clinicY);
+      doc.fillColor('#000').text(data.clinicName, 110, clinicY, { width: 450 });
+    }
+
+    const clinicAddrY = data.clinicName ? clinicY + 18 : clinicY;
+    if (data.clinicAddress) {
+      doc.fillColor('#555').text('Address:', 50, clinicAddrY);
+      doc.fillColor('#000').text(data.clinicAddress, 110, clinicAddrY, { width: 450 });
+    }
+
+    // Signature line
+    const sigY = clinicAddrY + 40;
+    doc.moveTo(50, sigY).lineTo(300, sigY).strokeColor('#000').lineWidth(0.5).stroke();
+    doc.fontSize(9).fillColor('#555').text('Medical Examiner Signature', 50, sigY + 4);
+
+    if (data.examinerSignatureImage) {
+      try {
+        // Attempt to embed signature image (data URL)
+        const match = data.examinerSignatureImage.match(/^data:image\/(png|jpeg|jpg);base64,(.*)$/);
+        if (match) {
+          const buf = Buffer.from(match[2], 'base64');
+          doc.image(buf, 55, sigY - 35, { fit: [240, 32] });
+        }
+      } catch {
+        // ignore signature image errors
+      }
+    }
+
+    doc.moveTo(330, sigY).lineTo(540, sigY).strokeColor('#000').lineWidth(0.5).stroke();
+    doc.fontSize(9).fillColor('#555').text('Date of Issue', 330, sigY + 4);
+    doc.fontSize(10).fillColor('#000').text(formatDateYmd(data.examDate), 330, sigY - 14);
+
+    // Certificate number (bottom-right) and footer
+    const certBoxY = 720;
+    doc.fontSize(9).fillColor('#555').font('Helvetica-Bold').text('Certificate #:', 380, certBoxY);
+    doc.fillColor('#000').text(data.certificateNumber, 450, certBoxY);
+    doc.font('Helvetica');
+
+    // Footer
+    doc.fontSize(8).fillColor('#888').text(
+      'Form MCSA-5876 — Medical Examiner\'s Certificate — 49 CFR 391.43. Retain per DOT recordkeeping requirements.',
+      50, 750,
+      { align: 'center', width: PAGE_WIDTH - 100 }
+    );
+
+    doc.end();
+  });
+}
+
+// ============================================================================
+// OSHA Form 300 — Log of Work-Related Injuries and Illnesses
+// 29 CFR 1904 — covered employers must keep a log of recordable cases.
+// This renders our internal injury records into the OSHA 300 column layout
+// so a TPA safety officer can post / submit the annual log.
+// ============================================================================
+
+export interface Osha300Row {
+  incidentNumber: string;        // our case # (column A)
+  employeeName: string;          // column B
+  jobAtIncident: string;         // column C
+  incidentDate: Date;            // column D — date of injury
+  location: string;              // column E — where event occurred
+  description: string;           // column F — description of injury/illness
+  injuryType: string;            // feeds the illness-type checkboxes at right
+  severity: InjurySeverity;
+  lostDaysCount: number;
+  restrictedDaysCount: number;
+}
+
+export interface Osha300Input {
+  year: number;
+  establishmentName: string;
+  injuries: Osha300Row[];
+}
+
+/**
+ * Render an OSHA Form 300 log PDF. Uses landscape Letter so all 13 columns
+ * fit. Each case occupies one row; multi-line descriptions wrap inside their
+ * cell. Totals are summed at the bottom of each numeric column.
+ *
+ * The OSHA form defines six illness checkboxes: Injury, Skin Disorder,
+ * Respiratory Condition, Poisoning, Hearing Loss, All Other Illnesses. We
+ * pick the most likely bucket from `injuryType` — safety officers can still
+ * hand-adjust the posted copy, but having our best guess pre-filled is a
+ * real time saver.
+ */
+export async function generateOsha300Log(input: Osha300Input): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'LETTER', layout: 'landscape', margin: 30 });
+    const chunks: Buffer[] = [];
+    doc.on('data', (c) => chunks.push(c));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const pageWidth = doc.page.width; // 792 in landscape Letter
+    const marginX = 30;
+
+    // Title block
+    doc.fontSize(14).fillColor('#000').font('Helvetica-Bold').text(
+      `OSHA's Form 300 — Log of Work-Related Injuries and Illnesses`,
+      marginX,
+      30,
+    );
+    doc.font('Helvetica').fontSize(9).fillColor('#333').text(
+      `Year ${input.year}    |    Establishment: ${input.establishmentName}    |    U.S. Department of Labor — Occupational Safety and Health Administration`,
+      marginX,
+      50,
+    );
+    doc.fontSize(7).fillColor('#666').text(
+      'You must record information about every work-related injury or illness that involves loss of consciousness, restricted work activity or job transfer, days away from work, or medical treatment beyond first aid. (29 CFR 1904)',
+      marginX,
+      64,
+      { width: pageWidth - marginX * 2 },
+    );
+
+    // Column definitions. Widths are tuned to fit landscape Letter (732 usable).
+    type Col = { key: string; header: string; width: number };
+    const identifyCols: Col[] = [
+      { key: 'case',      header: '(A) Case #',   width: 50 },
+      { key: 'name',      header: '(B) Employee name', width: 90 },
+      { key: 'job',       header: '(C) Job title', width: 70 },
+      { key: 'date',      header: '(D) Date of injury', width: 55 },
+      { key: 'where',     header: '(E) Where event occurred', width: 80 },
+      { key: 'desc',      header: '(F) Description', width: 130 },
+    ];
+    const classifyCols: Col[] = [
+      { key: 'col_g', header: '(G) Death',   width: 30 },
+      { key: 'col_h', header: '(H) Days away', width: 30 },
+      { key: 'col_i', header: '(I) Job transfer / restriction', width: 38 },
+      { key: 'col_j', header: '(J) Other recordable', width: 38 },
+    ];
+    const daysCols: Col[] = [
+      { key: 'days_away', header: '(K) Days away', width: 34 },
+      { key: 'days_rest', header: '(L) Days restricted', width: 34 },
+    ];
+    const illnessCols: Col[] = [
+      { key: 'ill_injury', header: '(1) Injury', width: 22 },
+      { key: 'ill_skin',   header: '(2) Skin',   width: 22 },
+      { key: 'ill_resp',   header: '(3) Resp.',  width: 22 },
+      { key: 'ill_pois',   header: '(4) Pois.',  width: 22 },
+      { key: 'ill_hear',   header: '(5) Hear.',  width: 22 },
+      { key: 'ill_other',  header: '(6) Other',  width: 22 },
+    ];
+    const allCols: Col[] = [...identifyCols, ...classifyCols, ...daysCols, ...illnessCols];
+
+    // Compute column X positions.
+    const colX: number[] = [];
+    let x = marginX;
+    for (const c of allCols) {
+      colX.push(x);
+      x += c.width;
+    }
+    const tableRight = x;
+
+    // Section banner — group headers spanning the three right-side column groups.
+    const bannerY = 90;
+    doc.fontSize(8).fillColor('#000').font('Helvetica-Bold');
+
+    const identifyEnd = colX[identifyCols.length];
+    const classifyEnd = colX[identifyCols.length + classifyCols.length];
+    const daysEnd = colX[identifyCols.length + classifyCols.length + daysCols.length];
+
+    doc.rect(marginX, bannerY, identifyEnd - marginX, 14).fillAndStroke('#e5e7eb', '#000');
+    doc.fillColor('#000').text('Identify the person / case', marginX + 4, bannerY + 3, { width: identifyEnd - marginX - 8 });
+
+    doc.rect(identifyEnd, bannerY, classifyEnd - identifyEnd, 14).fillAndStroke('#dbeafe', '#000');
+    doc.fillColor('#000').text('CHECK ONLY ONE box for each case', identifyEnd + 4, bannerY + 3, { width: classifyEnd - identifyEnd - 8 });
+
+    doc.rect(classifyEnd, bannerY, daysEnd - classifyEnd, 14).fillAndStroke('#fef3c7', '#000');
+    doc.fillColor('#000').text('Enter # of days', classifyEnd + 4, bannerY + 3, { width: daysEnd - classifyEnd - 8 });
+
+    doc.rect(daysEnd, bannerY, tableRight - daysEnd, 14).fillAndStroke('#fce7f3', '#000');
+    doc.fillColor('#000').text('Injury / Illness Type', daysEnd + 4, bannerY + 3, { width: tableRight - daysEnd - 8 });
+
+    // Column header row
+    const headerY = bannerY + 14;
+    const headerHeight = 26;
+    doc.font('Helvetica-Bold').fontSize(6.5).fillColor('#000');
+    for (let i = 0; i < allCols.length; i++) {
+      doc.rect(colX[i], headerY, allCols[i].width, headerHeight).stroke();
+      doc.text(allCols[i].header, colX[i] + 2, headerY + 3, {
+        width: allCols[i].width - 4,
+        height: headerHeight - 4,
+      });
+    }
+
+    // Body rows
+    let cursorY = headerY + headerHeight;
+    const rowHeight = 32;
+    doc.font('Helvetica').fontSize(7).fillColor('#000');
+
+    // Running totals for days columns
+    let totalDaysAway = 0;
+    let totalDaysRestricted = 0;
+    const colTotals: Record<string, number> = {
+      col_g: 0, col_h: 0, col_i: 0, col_j: 0,
+      ill_injury: 0, ill_skin: 0, ill_resp: 0, ill_pois: 0, ill_hear: 0, ill_other: 0,
+    };
+
+    const illnessBucket = (injuryType: string): keyof typeof colTotals => {
+      const t = injuryType.toLowerCase();
+      if (t.includes('skin') || t.includes('dermat') || t.includes('burn')) return 'ill_skin';
+      if (t.includes('respir') || t.includes('asthma') || t.includes('lung') || t.includes('chemical_exposure')) return 'ill_resp';
+      if (t.includes('pois')) return 'ill_pois';
+      if (t.includes('hearing')) return 'ill_hear';
+      if (
+        t.includes('illness') ||
+        t.includes('heat') ||
+        t.includes('cold') ||
+        t.includes('infect')
+      ) {
+        return 'ill_other';
+      }
+      return 'ill_injury';
+    };
+
+    const drawRow = (row: Osha300Row) => {
+      // Page break check
+      if (cursorY + rowHeight > doc.page.height - 60) {
+        doc.addPage({ size: 'LETTER', layout: 'landscape', margin: 30 });
+        cursorY = 60;
+      }
+
+      const classification = classifyOsha300Row({
+        severity: row.severity,
+        lostDaysCount: row.lostDaysCount,
+        restrictedDaysCount: row.restrictedDaysCount,
+      });
+
+      const bucket = illnessBucket(row.injuryType);
+
+      const cells: Record<string, string> = {
+        case: row.incidentNumber,
+        name: row.employeeName,
+        job: row.jobAtIncident,
+        date: row.incidentDate.toLocaleDateString('en-US'),
+        where: row.location,
+        desc: row.description,
+        col_g: classification === 'death' ? 'X' : '',
+        col_h: classification === 'days_away' ? 'X' : '',
+        col_i: classification === 'transfer_restriction' ? 'X' : '',
+        col_j: classification === 'other' ? 'X' : '',
+        days_away: row.lostDaysCount > 0 ? String(row.lostDaysCount) : '',
+        days_rest: row.restrictedDaysCount > 0 ? String(row.restrictedDaysCount) : '',
+        ill_injury: bucket === 'ill_injury' ? 'X' : '',
+        ill_skin: bucket === 'ill_skin' ? 'X' : '',
+        ill_resp: bucket === 'ill_resp' ? 'X' : '',
+        ill_pois: bucket === 'ill_pois' ? 'X' : '',
+        ill_hear: bucket === 'ill_hear' ? 'X' : '',
+        ill_other: bucket === 'ill_other' ? 'X' : '',
+      };
+
+      // Update totals
+      totalDaysAway += row.lostDaysCount;
+      totalDaysRestricted += row.restrictedDaysCount;
+      if (classification === 'death') colTotals.col_g += 1;
+      if (classification === 'days_away') colTotals.col_h += 1;
+      if (classification === 'transfer_restriction') colTotals.col_i += 1;
+      if (classification === 'other') colTotals.col_j += 1;
+      colTotals[bucket] += 1;
+
+      for (let i = 0; i < allCols.length; i++) {
+        const col = allCols[i];
+        doc.rect(colX[i], cursorY, col.width, rowHeight).stroke();
+        const val = cells[col.key] ?? '';
+        const align = ['col_g', 'col_h', 'col_i', 'col_j', 'ill_injury', 'ill_skin', 'ill_resp', 'ill_pois', 'ill_hear', 'ill_other'].includes(col.key)
+          ? 'center'
+          : 'left';
+        doc.text(val, colX[i] + 2, cursorY + 3, {
+          width: col.width - 4,
+          height: rowHeight - 4,
+          align,
+          ellipsis: true,
+        });
+      }
+      cursorY += rowHeight;
+    };
+
+    if (input.injuries.length === 0) {
+      // Empty-log message spanning the full table width.
+      doc.rect(marginX, cursorY, tableRight - marginX, rowHeight).stroke();
+      doc
+        .fontSize(9)
+        .fillColor('#666')
+        .text(
+          `No OSHA recordable injuries reported for ${input.year}.`,
+          marginX + 8,
+          cursorY + 10,
+        );
+      cursorY += rowHeight;
+    } else {
+      for (const r of input.injuries) drawRow(r);
+    }
+
+    // Totals row
+    if (cursorY + rowHeight > doc.page.height - 60) {
+      doc.addPage({ size: 'LETTER', layout: 'landscape', margin: 30 });
+      cursorY = 60;
+    }
+    doc.font('Helvetica-Bold').fontSize(7);
+    const totalsValues: Record<string, string> = {
+      case: 'Totals',
+      name: '', job: '', date: '', where: '', desc: '',
+      col_g: colTotals.col_g ? String(colTotals.col_g) : '',
+      col_h: colTotals.col_h ? String(colTotals.col_h) : '',
+      col_i: colTotals.col_i ? String(colTotals.col_i) : '',
+      col_j: colTotals.col_j ? String(colTotals.col_j) : '',
+      days_away: totalDaysAway ? String(totalDaysAway) : '',
+      days_rest: totalDaysRestricted ? String(totalDaysRestricted) : '',
+      ill_injury: colTotals.ill_injury ? String(colTotals.ill_injury) : '',
+      ill_skin: colTotals.ill_skin ? String(colTotals.ill_skin) : '',
+      ill_resp: colTotals.ill_resp ? String(colTotals.ill_resp) : '',
+      ill_pois: colTotals.ill_pois ? String(colTotals.ill_pois) : '',
+      ill_hear: colTotals.ill_hear ? String(colTotals.ill_hear) : '',
+      ill_other: colTotals.ill_other ? String(colTotals.ill_other) : '',
+    };
+    for (let i = 0; i < allCols.length; i++) {
+      const col = allCols[i];
+      doc.rect(colX[i], cursorY, col.width, rowHeight).fillAndStroke('#f3f4f6', '#000');
+      doc.fillColor('#000').text(totalsValues[col.key] ?? '', colX[i] + 2, cursorY + 10, {
+        width: col.width - 4,
+        align: 'center',
+      });
+    }
+
+    // Footer
+    doc.font('Helvetica').fontSize(7).fillColor('#555').text(
+      'Public reporting burden for this collection of information is estimated to average 14 minutes per response. Post the Summary page (Form 300A) from February 1 through April 30 of the year following the year covered by the form.',
+      marginX,
+      doc.page.height - 40,
+      { width: pageWidth - marginX * 2 },
+    );
 
     doc.end();
   });

@@ -97,7 +97,7 @@ export function EventsTable() {
     },
     {
       header: 'Status',
-      accessor: (e: Event) => <StatusBadge status={e.status} />,
+      accessor: (e: Event) => <StatusBadge status={e.status as any} />,
     },
   ];
 

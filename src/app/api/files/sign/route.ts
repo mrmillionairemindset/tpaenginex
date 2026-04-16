@@ -79,7 +79,6 @@ export async function POST(request: NextRequest) {
         mimeType: contentType,
         fileSize: fileSize || null,
         uploadedBy: user.id,
-        uploadedAt: new Date(),
       })
       .returning();
 

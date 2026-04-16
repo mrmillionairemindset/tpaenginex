@@ -36,7 +36,7 @@ interface Assignment {
   jobsiteLocation: string;
   scheduledFor: string | null;
   notes: string | null;
-  candidate: {
+  person: {
     id: string;
     firstName: string;
     lastName: string;
@@ -347,27 +347,27 @@ export function CollectorAssignmentDetail({ orderId }: { orderId: string }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            {/* Candidate info */}
-            {assignment.candidate && (
+            {/* Person info */}
+            {assignment.person && (
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold text-foreground">
-                  Candidate
+                  Person
                 </h4>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <User className="h-4 w-4" />
                   <span>
-                    {assignment.candidate.firstName}{' '}
-                    {assignment.candidate.lastName}
+                    {assignment.person.firstName}{' '}
+                    {assignment.person.lastName}
                   </span>
                 </div>
-                {assignment.candidate.phone && (
+                {assignment.person.phone && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Phone className="h-4 w-4" />
                     <a
-                      href={`tel:${assignment.candidate.phone}`}
+                      href={`tel:${assignment.person.phone}`}
                       className="hover:underline"
                     >
-                      {assignment.candidate.phone}
+                      {assignment.person.phone}
                     </a>
                   </div>
                 )}

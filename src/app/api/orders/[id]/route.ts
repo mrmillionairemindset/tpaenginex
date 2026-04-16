@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { orders, candidates, auditLogs, orderChecklists, documents, notifications } from '@/db/schema';
+import { orders, persons, auditLogs, orderChecklists, documents, notifications } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { notifyResultsUploaded } from '@/lib/notifications';
+import { enqueueWebhookEvent } from '@/lib/webhooks';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -34,8 +35,8 @@ const updateOrderSchema = z.object({
   ccfAuditReason: z.string().optional(),
   collectorId: z.string().uuid().nullable().optional(),
   resultStatus: z.enum(['pending', 'received', 'delivered']).optional(),
-  // Candidate fields
-  candidate: z.object({
+  // Person fields
+  person: z.object({
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     email: z.string().email().optional(),
@@ -67,7 +68,7 @@ export async function GET(
   const order = await db.query.orders.findFirst({
     where: eq(orders.id, id),
     with: {
-      candidate: true,
+      person: true,
       organization: {
         columns: {
           id: true,
@@ -285,24 +286,39 @@ export async function PATCH(
         tpaOrgId: existingOrder.tpaOrgId,
       });
     }
+
+    // Emit webhook event
+    await enqueueWebhookEvent({
+      tpaOrgId: existingOrder.tpaOrgId,
+      event: 'order.completed',
+      payload: {
+        id,
+        orderNumber: existingOrder.orderNumber,
+        serviceType: existingOrder.serviceType,
+        isDOT: existingOrder.isDOT,
+        personId: existingOrder.personId,
+        clientOrgId: existingOrder.clientOrgId,
+        completedAt: updateData.completedAt || new Date(),
+      },
+    });
   }
 
-  // Update candidate if provided
-  if (data.candidate && existingOrder.candidateId) {
-    const candidateUpdate: any = { updatedAt: new Date() };
-    if (data.candidate.firstName !== undefined) candidateUpdate.firstName = data.candidate.firstName;
-    if (data.candidate.lastName !== undefined) candidateUpdate.lastName = data.candidate.lastName;
-    if (data.candidate.email !== undefined) candidateUpdate.email = data.candidate.email;
-    if (data.candidate.phone !== undefined) candidateUpdate.phone = data.candidate.phone;
-    if (data.candidate.dob !== undefined) candidateUpdate.dob = data.candidate.dob;
-    if (data.candidate.ssnLast4 !== undefined) candidateUpdate.ssnLast4 = data.candidate.ssnLast4;
-    if (data.candidate.address !== undefined) candidateUpdate.address = data.candidate.address;
-    if (data.candidate.city !== undefined) candidateUpdate.city = data.candidate.city;
-    if (data.candidate.state !== undefined) candidateUpdate.state = data.candidate.state;
-    if (data.candidate.zip !== undefined) candidateUpdate.zip = data.candidate.zip;
+  // Update person if provided
+  if (data.person && existingOrder.personId) {
+    const personUpdate: any = { updatedAt: new Date() };
+    if (data.person.firstName !== undefined) personUpdate.firstName = data.person.firstName;
+    if (data.person.lastName !== undefined) personUpdate.lastName = data.person.lastName;
+    if (data.person.email !== undefined) personUpdate.email = data.person.email;
+    if (data.person.phone !== undefined) personUpdate.phone = data.person.phone;
+    if (data.person.dob !== undefined) personUpdate.dob = data.person.dob;
+    if (data.person.ssnLast4 !== undefined) personUpdate.ssnLast4 = data.person.ssnLast4;
+    if (data.person.address !== undefined) personUpdate.address = data.person.address;
+    if (data.person.city !== undefined) personUpdate.city = data.person.city;
+    if (data.person.state !== undefined) personUpdate.state = data.person.state;
+    if (data.person.zip !== undefined) personUpdate.zip = data.person.zip;
 
-    if (Object.keys(candidateUpdate).length > 1) {
-      await db.update(candidates).set(candidateUpdate).where(eq(candidates.id, existingOrder.candidateId));
+    if (Object.keys(personUpdate).length > 1) {
+      await db.update(persons).set(personUpdate).where(eq(persons.id, existingOrder.personId));
     }
   }
 
@@ -315,7 +331,7 @@ export async function PATCH(
   const fullOrder = await db.query.orders.findFirst({
     where: eq(orders.id, id),
     with: {
-      candidate: true,
+      person: true,
       organization: {
         columns: {
           id: true,
@@ -442,7 +458,7 @@ export async function DELETE(
         orderNumber: existingOrder.orderNumber,
         status: existingOrder.status,
         reason: body.reason.trim(),
-        candidateId: existingOrder.candidateId,
+        personId: existingOrder.personId,
         serviceType: existingOrder.serviceType,
       },
     });

@@ -18,7 +18,8 @@ type NotificationType =
   | 'collector_confirm_reminder'
   | 'results_pending_followup'
   | 'order_completed_client'
-  | 'billing_queued';
+  | 'billing_queued'
+  | 'random_selection';
 
 interface CreateNotificationOptions {
   userId: string;
@@ -97,7 +98,7 @@ export async function notifyCollectorAssigned(orderId: string, orderNumber: stri
             users: true,
           },
         },
-        candidate: true,
+        person: true,
       },
     });
 
@@ -113,7 +114,7 @@ export async function notifyCollectorAssigned(orderId: string, orderNumber: stri
         userId: admin.id,
         type: 'collector_assigned',
         title: 'Collector Assigned',
-        message: `${collectorName} has been assigned for ${order.candidate.firstName} ${order.candidate.lastName} (${orderNumber})`,
+        message: `${collectorName} has been assigned for ${order.person.firstName} ${order.person.lastName} (${orderNumber})`,
         orderId,
         tpaOrgId: order.tpaOrgId || undefined,
       });

@@ -18,6 +18,9 @@ export function BrandingTab() {
     logoUrl: '',
     primaryColor: '#3b82f6',
     defaultEmailFooter: '',
+    customDomain: '',
+    faviconUrl: '',
+    loginMessage: '',
   });
 
   useEffect(() => {
@@ -31,6 +34,9 @@ export function BrandingTab() {
             logoUrl: data.settings.logoUrl || '',
             primaryColor: data.settings.primaryColor || '#3b82f6',
             defaultEmailFooter: data.settings.defaultEmailFooter || '',
+            customDomain: data.settings.customDomain || '',
+            faviconUrl: data.settings.faviconUrl || '',
+            loginMessage: data.settings.loginMessage || '',
           });
         }
       } catch (err) {
@@ -54,6 +60,9 @@ export function BrandingTab() {
           logoUrl: formData.logoUrl || null,
           primaryColor: formData.primaryColor || null,
           defaultEmailFooter: formData.defaultEmailFooter || null,
+          customDomain: formData.customDomain || null,
+          faviconUrl: formData.faviconUrl || null,
+          loginMessage: formData.loginMessage || null,
         }),
       });
       if (res.ok) {
@@ -95,6 +104,31 @@ export function BrandingTab() {
           <Label htmlFor="emailFooter">Email Footer</Label>
           <Textarea id="emailFooter" rows={3} placeholder="Text that appears at the bottom of all outgoing emails..." value={formData.defaultEmailFooter} onChange={(e) => setFormData({ ...formData, defaultEmailFooter: e.target.value })} />
         </div>
+
+        <div className="border-t pt-5 mt-5">
+          <h3 className="text-sm font-semibold mb-4">White-Label Settings</h3>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="customDomain">Custom Subdomain</Label>
+              <div className="flex items-center gap-2">
+                <Input id="customDomain" placeholder="yourcompany" value={formData.customDomain} onChange={(e) => setFormData({ ...formData, customDomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} className="max-w-[200px]" />
+                <span className="text-sm text-muted-foreground">.{typeof window !== 'undefined' ? window.location.hostname.split('.').slice(-2).join('.') : 'tpaplatform.com'}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Your branded login URL. Leave blank to use the default.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="faviconUrl">Favicon URL</Label>
+                <Input id="faviconUrl" type="url" placeholder="https://example.com/favicon.ico" value={formData.faviconUrl} onChange={(e) => setFormData({ ...formData, faviconUrl: e.target.value })} />
+              </div>
+              <div>
+                <Label htmlFor="loginMessage">Login Page Message</Label>
+                <Input id="loginMessage" placeholder="Welcome to your portal" value={formData.loginMessage} onChange={(e) => setFormData({ ...formData, loginMessage: e.target.value })} />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Branding'}</Button>
       </Card>
     </form>

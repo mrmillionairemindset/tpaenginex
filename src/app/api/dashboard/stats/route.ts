@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/auth/get-user';
 import { db } from '@/db';
-import { orders, candidates, organizations, events, invoices, collectors, leads } from '@/db/schema';
-import { eq, and, gte, ne, count } from 'drizzle-orm';
+import { orders, persons, organizations, events, invoices, collectors, leads, driverApplications, driverQualifications, annualReviews, complianceScores } from '@/db/schema';
+import { eq, and, gte, lte, ne, count, avg, sql } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         db.select({ count: count() }).from(orders).where(eq(orders.orgId, orgId!)),
         db.select({ count: count() }).from(orders).where(and(eq(orders.orgId, orgId!), eq(orders.status, 'complete'))),
         db.select({ count: count() }).from(orders).where(and(eq(orders.orgId, orgId!), gte(orders.createdAt, startOfMonth))),
-        db.select({ count: count() }).from(candidates).where(eq(candidates.orgId, orgId!)),
+        db.select({ count: count() }).from(persons).where(eq(persons.orgId, orgId!)),
       ]);
 
       return NextResponse.json({
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
           totalOrders: totalResult[0]?.count || 0,
           completedOrders: completedResult[0]?.count || 0,
           thisMonthOrders: monthResult[0]?.count || 0,
-          activeCandidates: candidateResult[0]?.count || 0,
+          activePersons: candidateResult[0]?.count || 0,
         },
       });
     } else if (tpaOrgId) {
@@ -83,6 +83,39 @@ export async function GET(request: NextRequest) {
         ),
       ]);
 
+      // DQF stats (run separately to avoid one giant promise array)
+      const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+      const [
+        activeDriversResult,
+        expiringQualsResult,
+        upcomingReviewsResult,
+        avgComplianceResult,
+      ] = await Promise.all([
+        db.select({ count: count() }).from(driverApplications).where(
+          and(eq(driverApplications.tpaOrgId, tpaOrgId), eq(driverApplications.status, 'approved'))
+        ),
+        db.select({ count: count() }).from(driverQualifications).where(
+          and(
+            eq(driverQualifications.tpaOrgId, tpaOrgId),
+            eq(driverQualifications.status, 'active'),
+            lte(driverQualifications.expiresAt, thirtyDaysFromNow),
+            gte(driverQualifications.expiresAt, now),
+          )
+        ),
+        db.select({ count: count() }).from(annualReviews).where(
+          and(
+            eq(annualReviews.tpaOrgId, tpaOrgId),
+            eq(annualReviews.status, 'scheduled'),
+            lte(annualReviews.scheduledDate, fourteenDaysFromNow),
+          )
+        ),
+        db.select({ average: sql<number>`COALESCE(AVG(${complianceScores.score}), 0)` }).from(complianceScores).where(
+          eq(complianceScores.tpaOrgId, tpaOrgId)
+        ),
+      ]);
+
       return NextResponse.json({
         stats: {
           totalOrders: totalOrdersResult[0]?.count || 0,
@@ -95,6 +128,11 @@ export async function GET(request: NextRequest) {
           activeCollectors: activeCollectorsResult[0]?.count || 0,
           openLeads: openLeadsResult[0]?.count || 0,
           totalClients: totalClientsResult[0]?.count || 0,
+          // DQF stats
+          activeDrivers: activeDriversResult[0]?.count || 0,
+          expiringQualifications: expiringQualsResult[0]?.count || 0,
+          upcomingReviews: upcomingReviewsResult[0]?.count || 0,
+          avgComplianceScore: Math.round(Number(avgComplianceResult[0]?.average) || 0),
         },
       });
     } else {

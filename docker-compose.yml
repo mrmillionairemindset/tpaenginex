@@ -1,0 +1,92 @@
+# Local development stack for TPAEngineX.
+#
+# Services:
+#   postgres  — database (port 5432)
+#   redis     — BullMQ + rate limit + session cache (port 6379)
+#   mailpit   — local SMTP/IMAP for email testing (SMTP 1025, UI 8025)
+#   app       — the Next.js app itself (port 3000) — profile: app
+#
+# Usage:
+#   docker compose up -d postgres redis mailpit    # run deps only; run app via `npm run dev`
+#   docker compose --profile app up                # run everything containerized
+#   docker compose down -v                          # wipe everything including volumes
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tpaengx-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tpaengx
+      POSTGRES_PASSWORD: tpaengx_dev
+      POSTGRES_DB: tpaengx
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tpaengx -d tpaengx"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: tpaengx-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Mailpit: catches all outbound SMTP during dev. Browse captured emails at http://localhost:8025
+  # Configure by setting SENDGRID equivalents to point at smtp://mailpit:1025 (no auth).
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: tpaengx-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  # Optional: run the Next.js app itself in a container. Enable with `--profile app`.
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: tpaengx-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://tpaengx:tpaengx_dev@postgres:5432/tpaengx
+      REDIS_URL: redis://redis:6379
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: dev-secret-not-for-prod-regenerate-locally
+      APP_ENCRYPTION_KEY: dev-key-32-chars-minimum-regenerate-locally-for-prod-xxx
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  postgres_data:
+  redis_data:

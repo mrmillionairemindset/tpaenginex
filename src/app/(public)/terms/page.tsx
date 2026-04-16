@@ -84,9 +84,9 @@ export default function TermsOfServicePage() {
 
         <h3>4.2 Client Users</h3>
         <ul>
-          <li>Submit accurate service requests with complete candidate information</li>
+          <li>Submit accurate service requests with complete individual information</li>
           <li>Ensure compliance with employment laws and regulations</li>
-          <li>Obtain necessary candidate authorizations and consents</li>
+          <li>Obtain necessary individual authorizations and consents</li>
           <li>Handle screening results in accordance with applicable laws</li>
         </ul>
 

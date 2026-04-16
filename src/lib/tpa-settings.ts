@@ -13,7 +13,7 @@ const AUTOMATION_DEFAULTS = {
   enableLeadFollowUpReminders: true,
 } as const;
 
-export type AutomationSettings = typeof AUTOMATION_DEFAULTS;
+export type AutomationSettings = { -readonly [K in keyof typeof AUTOMATION_DEFAULTS]: boolean };
 
 export async function getTpaAutomationSettings(tpaOrgId: string): Promise<AutomationSettings> {
   const settings = await db.query.tpaSettings.findFirst({

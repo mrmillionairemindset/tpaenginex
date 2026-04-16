@@ -39,7 +39,7 @@ export async function GET(
   const assignedOrders = await db.query.orders.findMany({
     where: eq(orders.collectorId, id),
     with: {
-      candidate: {
+      person: {
         columns: { firstName: true, lastName: true },
       },
       organization: {
@@ -67,8 +67,8 @@ export async function GET(
     id: order.id,
     type: 'order' as const,
     title: order.orderNumber,
-    subtitle: order.candidate
-      ? `${order.candidate.firstName} ${order.candidate.lastName}`
+    subtitle: order.person
+      ? `${order.person.firstName} ${order.person.lastName}`
       : '',
     client: order.organization?.name || '',
     serviceType: order.serviceType || order.testType,

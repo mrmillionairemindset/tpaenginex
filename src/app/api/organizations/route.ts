@@ -27,7 +27,7 @@ export const GET = withAuth(async (req, user) => {
               id: true,
             },
           },
-          candidates: {
+          persons: {
             columns: {
               id: true,
             },
@@ -44,7 +44,7 @@ export const GET = withAuth(async (req, user) => {
         ...org,
         _count: {
           orders: org.orders?.length || 0,
-          candidates: org.candidates?.length || 0,
+          persons: org.persons?.length || 0,
           users: org.members?.length || 0,
         },
       }));

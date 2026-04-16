@@ -189,11 +189,23 @@ export function BillingTable() {
   ];
 
   return (
-    <DataTable
-      data={items}
-      columns={columns}
-      loading={loading}
-      emptyMessage="No billing items found."
-    />
+    <div>
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => (window.location.href = '/api/billing/export')}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export CSV
+        </Button>
+      </div>
+      <DataTable
+        data={items}
+        columns={columns}
+        loading={loading}
+        emptyMessage="No billing items found."
+      />
+    </div>
   );
 }

@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 interface CompletedOrder {
   id: string;
   orderNumber: string;
-  candidateName: string;
+  personName: string;
   testType: string;
   completedAt: string;
   resultFileUrl: string | null;
@@ -30,8 +30,8 @@ export function ClientResultsTable() {
             (data.orders || []).map((order: Record<string, unknown>) => ({
               id: order.id as string,
               orderNumber: order.orderNumber as string,
-              candidateName: order.candidate
-                ? `${(order.candidate as Record<string, string>).firstName} ${(order.candidate as Record<string, string>).lastName}`
+              personName: order.person
+                ? `${(order.person as Record<string, string>).firstName} ${(order.person as Record<string, string>).lastName}`
                 : '-',
               testType: order.testType as string,
               completedAt: order.completedAt as string || order.updatedAt as string,
@@ -55,8 +55,8 @@ export function ClientResultsTable() {
       accessor: 'orderNumber' as const,
     },
     {
-      header: 'Candidate',
-      accessor: 'candidateName' as const,
+      header: 'Person',
+      accessor: 'personName' as const,
     },
     {
       header: 'Test Type',

@@ -19,7 +19,7 @@ interface Order {
   orderNumber: string;
   status: 'new' | 'needs_site' | 'scheduled' | 'in_progress' | 'complete' | 'cancelled';
   testType: string;
-  candidate: {
+  person: {
     firstName: string;
     lastName: string;
   };
@@ -102,7 +102,7 @@ export function RecentActivity({ userRole }: RecentActivityProps) {
                   <StatusBadge status={order.status} />
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
-                  {order.candidate.firstName} {order.candidate.lastName}
+                  {order.person.firstName} {order.person.lastName}
                   {isTpaUser ? ` — ${order.organization.name}` : ''}
                 </p>
               </div>

@@ -1,7 +1,23 @@
 import NextAuth from "next-auth";
 import { authConfig } from "@/auth.config";
+import { NextResponse } from "next/server";
+import { extractSubdomain } from "@/lib/subdomain";
 
-export const { auth: middleware } = NextAuth(authConfig);
+const { auth } = NextAuth(authConfig);
+
+export default auth((req) => {
+  const hostname = req.headers.get("host") || "";
+  const subdomain = extractSubdomain(hostname);
+
+  if (subdomain) {
+    // Tenant subdomain detected — pass it down via request header
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-tenant-subdomain", subdomain);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  return NextResponse.next();
+});
 
 export const config = {
   matcher: [

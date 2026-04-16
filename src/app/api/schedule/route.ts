@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
         ne(orders.status, 'cancelled'),
       ),
       with: {
-        candidate: { columns: { firstName: true, lastName: true } },
+        person: { columns: { firstName: true, lastName: true } },
         collector: { columns: { id: true, firstName: true, lastName: true } },
         clientOrg: { columns: { id: true, name: true } },
       },

@@ -18,35 +18,35 @@ async function main() {
   const { google } = await import('googleapis');
 
   try {
-    // Get the order with candidate info
+    // Get the order with person info
     const order = await db.query.orders.findFirst({
       where: eq(orders.orderNumber, 'ORD-1761409751280-MRX01'),
       with: {
-        candidate: true,
+        person: true,
       },
     });
 
-    if (!order || !order.candidate) {
-      console.error('❌ Order or candidate not found');
+    if (!order || !order.person) {
+      console.error('❌ Order or person not found');
       process.exit(1);
     }
 
     console.log(`✅ Found order: ${order.orderNumber}`);
-    console.log(`✅ Candidate: ${order.candidate.firstName} ${order.candidate.lastName}`);
+    console.log(`✅ Candidate: ${order.person.firstName} ${order.person.lastName}`);
 
     // Prepare complete row data (all 19 columns)
     const rowData = [
       order.orderNumber,                              // A: Order Number
-      order.candidate.firstName,                      // B: First Name
-      order.candidate.lastName,                       // C: Last Name
-      order.candidate.dob,                           // D: DOB
-      order.candidate.ssnLast4,                      // E: SSN Last 4
-      order.candidate.email,                         // F: Email
-      order.candidate.phone,                         // G: Phone
-      order.candidate.address,                       // H: Address
-      order.candidate.city,                          // I: City
-      order.candidate.state,                         // J: State
-      order.candidate.zip,                           // K: ZIP
+      order.person.firstName,                      // B: First Name
+      order.person.lastName,                       // C: Last Name
+      order.person.dob,                           // D: DOB
+      order.person.ssnLast4,                      // E: SSN Last 4
+      order.person.email,                         // F: Email
+      order.person.phone,                         // G: Phone
+      order.person.address,                       // H: Address
+      order.person.city,                          // I: City
+      order.person.state,                         // J: State
+      order.person.zip,                           // K: ZIP
       order.testType,                                // L: Test Type
       order.urgency || 'standard',                   // M: Urgency
       order.jobsiteLocation,                         // N: Jobsite Location

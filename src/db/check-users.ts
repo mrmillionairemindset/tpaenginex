@@ -10,7 +10,7 @@ async function checkUsers() {
   const allOrgs = await db.select().from(organizations);
   console.log(`Organizations: ${allOrgs.length}`);
   allOrgs.forEach(org => {
-    console.log(`  - ${org.name} (${org.type}) - Clerk ID: ${org.clerkOrgId}`);
+    console.log(`  - ${org.name} (${org.type}) - ID: ${org.id}`);
   });
 
   console.log('');
@@ -18,9 +18,9 @@ async function checkUsers() {
   const allUsers = await db.select().from(users);
   console.log(`Users: ${allUsers.length}`);
   allUsers.forEach(user => {
-    console.log(`  - ${user.firstName} ${user.lastName} (${user.email})`);
+    console.log(`  - ${user.name} (${user.email})`);
     console.log(`    Role: ${user.role}`);
-    console.log(`    Clerk ID: ${user.clerkUserId}`);
+    console.log(`    ID: ${user.id}`);
     console.log(`    Last login: ${user.lastLoginAt}`);
   });
 

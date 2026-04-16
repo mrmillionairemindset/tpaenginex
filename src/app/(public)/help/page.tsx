@@ -65,14 +65,14 @@ export default function HelpPage() {
         <ul>
           <li><strong>New:</strong> Order created, awaiting collector assignment</li>
           <li><strong>Assigned:</strong> Collector assigned, scheduling in progress</li>
-          <li><strong>Scheduled:</strong> Appointment confirmed with candidate</li>
+          <li><strong>Scheduled:</strong> Appointment confirmed with individual</li>
           <li><strong>In Progress:</strong> Collection underway</li>
           <li><strong>Complete:</strong> Results available</li>
         </ul>
 
-        <h3>How are candidates notified?</h3>
+        <h3>How are individuals notified?</h3>
         <p>
-          Candidates receive automated email and SMS notifications when:
+          Individuals receive automated email and SMS notifications when:
         </p>
         <ul>
           <li>An order is created</li>
@@ -93,7 +93,7 @@ export default function HelpPage() {
         <h3>How do I assign a collector to an order?</h3>
         <p>
           Open the order details and click "Assign Collector." Select an available collector
-          based on the candidate's location and confirm the scheduling details.
+          based on the individual's location and confirm the scheduling details.
         </p>
 
         <h3>How do I upload results?</h3>

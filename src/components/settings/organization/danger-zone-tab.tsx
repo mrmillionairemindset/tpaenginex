@@ -57,7 +57,7 @@ export function DangerZoneTab({ orgId, orgName }: DangerZoneTabProps) {
           <div className="flex-1">
             <h4 className="font-semibold text-red-600 dark:text-red-400">Delete Organization</h4>
             <p className="text-sm text-muted-foreground mt-1">
-              Permanently delete <strong>{orgName}</strong> and all associated data. This action cannot be undone. Organizations with existing orders or candidates cannot be deleted.
+              Permanently delete <strong>{orgName}</strong> and all associated data. This action cannot be undone. Organizations with existing orders or persons cannot be deleted.
             </p>
             <Button variant="destructive" size="sm" className="mt-4" onClick={() => setShowConfirm(true)}>
               Delete Organization
