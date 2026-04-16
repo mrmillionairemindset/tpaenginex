@@ -3,7 +3,7 @@ import { db } from '@/db';
 import { emailTemplates } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { and, eq } from 'drizzle-orm';
-import { AVAILABLE_TEMPLATE_KEYS } from '../route';
+import { AVAILABLE_TEMPLATE_KEYS } from '@/lib/email-template-keys';
 
 export const dynamic = 'force-dynamic';
 

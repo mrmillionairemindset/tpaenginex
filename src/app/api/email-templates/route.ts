@@ -3,25 +3,9 @@ import { db } from '@/db';
 import { emailTemplates } from '@/db/schema';
 import { getCurrentUser } from '@/auth/get-user';
 import { and, eq } from 'drizzle-orm';
+import { AVAILABLE_TEMPLATE_KEYS } from '@/lib/email-template-keys';
 
 export const dynamic = 'force-dynamic';
-
-export const AVAILABLE_TEMPLATE_KEYS = [
-  { key: 'collector_assigned', label: 'Collector Assigned', vars: ['personName', 'orderNumber', 'collectorName'] },
-  { key: 'order_completion', label: 'Order Completion', vars: ['personName', 'orderNumber'] },
-  { key: 'event_completion', label: 'Event Completion', vars: ['clientName', 'eventNumber', 'totalDone', 'totalPending'] },
-  { key: 'pending_results_reminder', label: 'Pending Results Reminder', vars: ['eventNumber', 'resultsCount'] },
-  { key: 'kit_mailing_reminder', label: 'Kit Mailing Reminder', vars: ['clientName', 'eventNumber'] },
-  { key: 'annual_review_reminder', label: 'Annual Review Reminder', vars: ['personName', 'reviewDate'] },
-  { key: 'license_expiry_alert', label: 'License Expiry Alert', vars: ['personName', 'qualificationType', 'expiresAt'] },
-  { key: 'mec_expiry_reminder', label: 'MEC Expiry Reminder', vars: ['driverName', 'expiresOn', 'daysUntil', 'recipientName'] },
-  { key: 'ticket_form_confirmation', label: 'Application Received', vars: ['applicantName'] },
-  {
-    key: 'random_selection_notification',
-    label: 'Random Selection Notification',
-    vars: ['recipientName', 'selectionType', 'testingType', 'scheduledByDate', 'reportingInstructions'],
-  },
-];
 
 const VALID_KEYS = new Set(AVAILABLE_TEMPLATE_KEYS.map((t) => t.key));
 
