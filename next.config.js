@@ -22,6 +22,21 @@ const nextConfig = {
       // Don't bundle PDFKit on the server
       config.externals = [...(config.externals || []), 'pdfkit'];
     }
+    // TypeORM (transitive dep from @boxyhq/saml-jackson) tries to import every
+    // database driver at build time. Ignore the ones we don't use.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'react-native-sqlite-storage': false,
+      '@sap/hana-client/extension/Stream': false,
+      'mysql': false,
+      'mysql2': false,
+      'better-sqlite3': false,
+      'oracledb': false,
+      'pg-query-stream': false,
+      'mssql': false,
+      'sql.js': false,
+      'mongodb': false,
+    };
     return config;
   },
 }
